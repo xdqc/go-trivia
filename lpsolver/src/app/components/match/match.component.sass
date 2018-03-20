@@ -1,0 +1,32 @@
+$columns: 5
+$gutterSize: 16px
+
+*
+  box-sizing: border-box
+
+html, body
+  background-color: #fafafa
+
+.square-container
+  padding: #{$gutterSize / 2}
+
+  &:after
+    content: ''
+    clear: both
+    display: block
+
+.square
+  width: calc(100% / #{$columns})
+  float: left
+  position: relative
+  padding-bottom: calc(100% / #{$columns})
+
+  .content
+    width: calc(100% - #{$gutterSize})
+    height: calc(100% - #{$gutterSize})
+    margin: #{$gutterSize / 2}
+    padding: 16px
+    position: absolute
+    border-radius: 4px
+    background-color: #ffffff
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26)

@@ -1,4 +1,86 @@
 <h3> match! {{matchIdNumber}}</h3>
 <div>
-  <h4>{{name}}</h4>
+  <div *ngFor="let match of matches; let i=index">
+    <h4>{{userNames[i]}}</h4>
+    <p>{{letterGrids[i]}}</p>
+    <div class="square-container">
+      <div class="square owner-{{tileGrids[i][20]['o']}}">
+        <div class="content ">{{tileGrids[i][20]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][21]['o']}}">
+        <div class="content">{{tileGrids[i][21]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][22]['o']}}">
+        <div class="content">{{tileGrids[i][22]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][23]['o']}}">
+        <div class="content">{{tileGrids[i][23]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][24]['o']}}">
+        <div class="content">{{tileGrids[i][24]['t']}}</div>
+      </div>
+    
+      <div class="square  owner-{{tileGrids[i][15]['o']}}">
+        <div class="content">{{tileGrids[i][15]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][16]['o']}}">
+        <div class="content">{{tileGrids[i][16]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][17]['o']}}">
+        <div class="content">{{tileGrids[i][17]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][18]['o']}}">
+        <div class="content">{{tileGrids[i][18]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][19]['o']}}">
+        <div class="content">{{tileGrids[i][19]['t']}}</div>
+      </div>    
+
+      <div class="square  owner-{{tileGrids[i][10]['o']}}">
+        <div class="content">{{tileGrids[i][10]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][11]['o']}}">
+        <div class="content">{{tileGrids[i][11]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][12]['o']}}">
+        <div class="content">{{tileGrids[i][12]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][13]['o']}}">
+        <div class="content">{{tileGrids[i][13]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][14]['o']}}">
+        <div class="content">{{tileGrids[i][14]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][5]['o']}}">
+        <div class="content">{{tileGrids[i][5]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][6]['o']}}">
+        <div class="content">{{tileGrids[i][6]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][7]['o']}}">
+        <div class="content">{{tileGrids[i][7]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][8]['o']}}">
+        <div class="content">{{tileGrids[i][8]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][9]['o']}}">
+        <div class="content">{{tileGrids[i][9]['t']}}</div>
+      </div>    
+      <div class="square  owner-{{tileGrids[i][0]['o']}}">
+        <div class="content">{{tileGrids[i][0]['t']}}</div>
+      </div>   
+      <div class="square  owner-{{tileGrids[i][1]['o']}}">
+        <div class="content">{{tileGrids[i][1]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][2]['o']}}">
+        <div class="content">{{tileGrids[i][2]['t']}}</div>
+      </div>   
+      <div class="square  owner-{{tileGrids[i][3]['o']}}">
+        <div class="content">{{tileGrids[i][3]['t']}}</div>
+      </div>
+      <div class="square  owner-{{tileGrids[i][4]['o']}}">
+        <div class="content">{{tileGrids[i][4]['t']}}</div>
+      </div>    
+    </div>
+  </div>
 </div>

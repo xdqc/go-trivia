@@ -9,26 +9,34 @@ import 'rxjs/add/operator/map';
   styleUrls: ['./match.component.css']
 })
 export class MatchComponent implements OnInit {
-  matchIdNumber:number;
-  name:string;
   data:matchInfo.MatchInfo;
-  matches:matchInfo.Match[];
-
+  matches:matchInfo.MatchInfo['matches'];
+  userNames:matchInfo.Participant['userName'][];
+  letterGrids:matchInfo.Match['letters'][];
+  tileGrids:matchInfo.Tile[][];
 
   constructor(private http: Http) {
     console.log("constructor do...");
+  
   }
 
   ngOnInit() {
-    console.log("ngOnInit...");
-
     this.http.get('http://localhost:8080/match')
-    .map((resp) => resp.json())
+    .map((resp) => resp.text() !== "" ? resp.json(): "")
     .subscribe(
-      (data) => this.data = data
-    )
-    this.matches = this.data.matches;
-    
+      (data) => {this.data = data;
+        if (this.data != undefined){
+          this.matches = data.matches;
+          console.log("this.matches");
+          this.userNames = this.matches.map(m => m.participants[0]['userName']);
+          console.log(this.userNames);
+          this.letterGrids = this.matches.map(m => m['letters']);
+          console.log(this.letterGrids);
+          this.tileGrids = this.matches.map(m => m['serverData']['tiles']);
+          console.log(this.tileGrids);
+        }
+      })
   }
+
 
 }
