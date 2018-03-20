@@ -7,6 +7,24 @@
 			"path": "github.com/coreos/goproxy",
 			"revision": "25fe2597a3d151ba954d9b3c0fd4663e79de48cc",
 			"revisionTime": "2017-02-22T23:35:30Z"
+		},
+		{
+			"checksumSHA1": "IkPM2QLv9urri7S49wzroQx9oXA=",
+			"path": "github.com/gorilla/context",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"revisionTime": "2016-08-17T18:46:32Z"
+		},
+		{
+			"checksumSHA1": "CVss9W01Rrm2VlhhjW0z5D35Xo8=",
+			"path": "github.com/gorilla/mux",
+			"revision": "4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06",
+			"revisionTime": "2018-03-14T16:31:26Z"
+		},
+		{
+			"checksumSHA1": "/hQCdwKdF4xPdjSQvYDV+cjYyYY=",
+			"path": "github.com/rs/cors",
+			"revision": "ff4d2805c9f577707553c1e36fbdc0c9d346d5f2",
+			"revisionTime": "2018-03-15T21:10:51Z"
 		}
 	],
 	"rootPath": "github.com/xdqc/letterpress-solver"
