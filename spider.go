@@ -63,7 +63,7 @@ func (s *spider) Init() {
 			//send letterpress match data to webserver
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
-			setMatch(string(bs))
+			setMatch(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		}
 		return resp

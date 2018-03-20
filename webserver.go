@@ -1,11 +1,63 @@
 package solver
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
-var matchInfo string
+var matchInfo []byte
+
+//MatchInfo ...
+type MatchInfo struct {
+	Success bool `json:"success"`
+	Matches []struct {
+		MatchID            string `json:"matchId"`
+		MatchIDNumber      int    `json:"matchIdNumber"`
+		MatchURL           string `json:"matchURL"`
+		CreateDate         string `json:"createDate"`
+		UpdateDate         string `json:"updateDate"`
+		MatchStatus        int    `json:"matchStatus"`
+		CurrentPlayerIndex int    `json:"currentPlayerIndex"`
+		Letters            string `json:"letters"`
+		RowCount           int    `json:"rowCount"`
+		ColumnCount        int    `json:"columnCount"`
+		TurnCount          int    `json:"turnCount"`
+		MatchData          string `json:"matchData"`
+		ServerData         struct {
+			Language  int   `json:"language"`
+			UsedTiles []int `json:"usedTiles"`
+			Tiles     []struct {
+				T string `json:"t"`
+				O int    `json:"o"`
+			} `json:"tiles"`
+			UsedWords  []string `json:"usedWords"`
+			MinVersion int      `json:"minVersion"`
+		} `json:"serverData"`
+		Participants []struct {
+			UserID                string      `json:"userId"`
+			UserName              string      `json:"userName"`
+			PlayerIndex           int         `json:"playerIndex"`
+			PlayerStatus          string      `json:"playerStatus"`
+			LastTurnStatus        string      `json:"lastTurnStatus"`
+			MatchOutcome          string      `json:"matchOutcome"`
+			TurnDate              string      `json:"turnDate"`
+			TimeoutDate           interface{} `json:"timeoutDate"`
+			AvatarURL             string      `json:"avatarURL"`
+			IsFavorite            bool        `json:"isFavorite"`
+			UseBadWords           bool        `json:"useBadWords"`
+			BlockChat             bool        `json:"blockChat"`
+			DeletedFromPlayerList bool        `json:"deletedFromPlayerList"`
+			Online                bool        `json:"online"`
+			ChatsUnread           int         `json:"chatsUnread"`
+			MuteChat              bool        `json:"muteChat"`
+			AbandonedMatch        bool        `json:"abandonedMatch"`
+			IsBot                 bool        `json:"isBot"`
+			BannedChat            bool        `json:"bannedChat"`
+		} `json:"participants"`
+	} `json:"matches"`
+}
 
 //RunWeb run a webserver
 func RunWeb(port string) {
@@ -26,13 +78,22 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// For this case, we will always pipe "Hello World" into the response writer
 
 	fmt.Fprintf(w, "Hello solver!\n")
-	fmt.Fprintf(w, getMatch())
+	for _, m := range getMatch().Matches {
+		fmt.Fprintf(w, m.Letters)
+	}
 }
 
-func getMatch() string {
-	return matchInfo
+func getMatch() MatchInfo {
+	matches := MatchInfo{}
+	if matchInfo != nil {
+		err := json.Unmarshal(matchInfo, &matches)
+		if err != nil {
+			log.Fatal("Error while parse matches info", err)
+		}
+	}
+	return matches
 }
 
-func setMatch(json string) {
-	matchInfo = json
+func setMatch(jsn []byte) {
+	matchInfo = jsn
 }
