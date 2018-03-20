@@ -1,4 +1,11 @@
-<h3> match! {{matchIdNumber}}</h3>
+<h3> Hi ! {{playerName}}</h3>
+<div>
+
+  <input [(ngModel)]="playerName" type="text" name="playerName" id="playerName" class="playerName">
+  <br>
+  <button (click)="fetchGames()">Fetch Games!</button>
+</div>
+
 <div>
   <div *ngFor="let match of matches; let i=index">
     <h4>{{userNames[i]}}</h4>

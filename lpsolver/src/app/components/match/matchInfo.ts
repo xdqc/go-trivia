@@ -55,6 +55,7 @@ declare namespace MatchInfo {
     export interface MatchInfo {
         success: boolean;
         matches: Match[];
+        match: Match;
     }
 }
 
