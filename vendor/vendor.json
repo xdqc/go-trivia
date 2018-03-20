@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "QpGNbTTMybnPm1ou0Vs1DdJe9j8=",
+			"path": "github.com/coreos/goproxy",
+			"revision": "25fe2597a3d151ba954d9b3c0fd4663e79de48cc",
+			"revisionTime": "2017-02-22T23:35:30Z"
+		}
+	],
+	"rootPath": "github.com/xdqc/letterpress-solver"
+}
