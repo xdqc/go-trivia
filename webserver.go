@@ -77,7 +77,6 @@ func RunWeb(port string) {
 	r := mux.NewRouter()
 	r.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{\"hello\": \"world\"}"))
 		w.Write(matchInfo)
 	})
 
