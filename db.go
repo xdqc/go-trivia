@@ -60,7 +60,7 @@ func init() {
 
 func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 
-	var args []int
+	var args []interface{}
 	var sqlclause string
 	for _, v := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		l, ok := loBound[v]
@@ -84,7 +84,9 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 
 	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause
 	log.Println(sql)
-	result, err := db.Query("SELECT word FROM db_english_all_words WHERE valid = 1 AND A >= (?)", 3)
+
+	//unpack array as args
+	result, err := db.Query(sql, args...)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -93,6 +95,7 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 	for result.Next() {
 		var word Word
 		err = result.Scan(&word.Word)
+		fmt.Println(word.Word)
 		if err != nil {
 			panic(err.Error())
 		}
