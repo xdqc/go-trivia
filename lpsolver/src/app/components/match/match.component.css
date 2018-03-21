@@ -37,8 +37,8 @@
     padding: 3px;
     position: absolute;
     border-radius: 4px;
-    -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
+    /* -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26); */
   }
 
   /******* tile container ends *******/
@@ -115,5 +115,10 @@
   .owner-0 {
       background-color: #fecaca;
   }
-  
+  .owner-1.surrounded-true {
+    background-color: #57bcff;
+  }
+  .owner-0.surrounded-true {
+      background-color: #ff7e7e;
+  }
   

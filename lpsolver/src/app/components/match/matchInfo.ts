@@ -3,6 +3,7 @@ declare namespace MatchInfo {
     export interface Tile {
         t: string;
         o: number;
+        s: boolean;
     }
 
     export interface ServerData {

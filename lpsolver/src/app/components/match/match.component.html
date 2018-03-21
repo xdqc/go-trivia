@@ -13,7 +13,7 @@
     <p>{{selected[i]}}</p>
     <div class="square-container">
       <div *ngFor="let tile of tileGrids[i]; let j=index">
-        <div class="square owner-{{tileGrids[i][j]['o']}}">
+        <div class="square owner-{{tileGrids[i][j]['o']}} surrounded-{{tileGrids[i][j]['s']}}">
           <div class="content">
             <div class="toggle">
               <input #cb type="checkbox" (change)="selectLetter(cb, i, j)" name="check-{{i}}-20" value="{{tileGrids[i][j]['t']}}">
