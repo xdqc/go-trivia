@@ -3,10 +3,20 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "appengine/cloudsql",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "QpGNbTTMybnPm1ou0Vs1DdJe9j8=",
 			"path": "github.com/coreos/goproxy",
 			"revision": "25fe2597a3d151ba954d9b3c0fd4663e79de48cc",
 			"revisionTime": "2017-02-22T23:35:30Z"
+		},
+		{
+			"checksumSHA1": "zFv0xWYC94gU6aClN7LlZF5EaAs=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "1a676ac6e4dce68e9303a1800773861350374a9e",
+			"revisionTime": "2018-03-08T10:03:10Z"
 		},
 		{
 			"checksumSHA1": "IkPM2QLv9urri7S49wzroQx9oXA=",
@@ -25,6 +35,12 @@
 			"path": "github.com/rs/cors",
 			"revision": "ff4d2805c9f577707553c1e36fbdc0c9d346d5f2",
 			"revisionTime": "2018-03-15T21:10:51Z"
+		},
+		{
+			"checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
+			"path": "google.golang.org/appengine/cloudsql",
+			"revision": "5bee14b453b4c71be47ec1781b0fa61c2ea182db",
+			"revisionTime": "2017-12-12T22:30:47Z"
 		}
 	],
 	"rootPath": "github.com/xdqc/letterpress-solver"

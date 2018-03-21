@@ -30,32 +30,19 @@
     vertical-align:bottom; 
     display:table-cell;
   }
-  .square .content {
+  .square .toggle {
     width: calc(100% - 6px);
     height: calc(100% - 6px);
     margin: 3px;
-    padding: 3px;
+    /* padding: 3px; */
     position: absolute;
     border-radius: 4px;
-    /* -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26); */
+    display: inline-block;
   }
 
   /******* tile container ends *******/
 
   /******* toggle button begin *******/
-
-  
-  .toggle {
-    display: inline-block;
-  }
-  
-  .toggle {
-    border-radius: 80px;
-    position: relative;
-    height: 100%;
-    width: 100%;
-  }
 
   .toggle .button {
     -webkit-filter: blur(1px);
@@ -73,8 +60,8 @@
     line-height: auto;
     text-align: center;
     position: absolute;
-    font-weight: 700;
-    font-size: 40px;
+    font-weight: 600;
+    font-size: 50px;
     display: block;
     opacity: 0.9;
     height: 100%;
@@ -97,7 +84,7 @@
     color: rgba(0, 0, 0, 0.45);
   }
   .toggle input:checked ~ .button {
-    box-shadow: 0 15px 25px -4px rgba(0, 0, 0, 0.4), inset 0 -8px 25px -1px rgba(255, 255, 255, 0.9), 0 -10px 15px -1px rgba(255, 255, 255, 0.1), inset 0 8px 20px 0 rgba(0, 0, 0, 0.6), inset 0 0 5px 1px rgba(255, 255, 255, 0.6);
+    box-shadow: 0 5px 5px -4px rgba(100, 100, 100, 0.9), inset 0 -10px 25px -1px rgba(200, 200, 200, 0.9), 0 -2px 15px -1px rgba(100, 150, 255, 0.1), inset 0 8px 20px 0 rgba(100, 150, 200, 0.6), inset 0 0 5px 1px rgba(100, 150, 200, 0.6);
   }
   .toggle input:checked ~ .label {
     font-size: 40px;
