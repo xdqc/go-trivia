@@ -9,8 +9,7 @@
 <div>
   <div *ngFor="let match of matches; let i=index">
     <h4>{{userNames[i]}}</h4>
-    <p>{{letterGrids[i]}}</p>
-    <p>{{selected[i]}}</p>
+    <h2>{{choosingWord[i]}}</h2>
     <div class="square-container">
       <div *ngFor="let tile of tileGrids[i]; let j=index">
         <div class="square owner-{{tileGrids[i][j]['o']}} surrounded-{{tileGrids[i][j]['s']}}">
@@ -25,5 +24,8 @@
       </div>
     </div>
     <button (click)="findWords(i)" >Find!</button>
+    <select #sl ng-selected="choosingWord[i]" (change)="chooseWord(sl,i)">
+        <option *ngFor="let word of foundWords[i]" >{{word}}</option>
+    </select>
   </div>
 </div>

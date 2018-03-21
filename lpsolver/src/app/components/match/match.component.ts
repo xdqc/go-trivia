@@ -20,6 +20,7 @@ export class MatchComponent implements OnInit {
 
   selected: string[];
   foundWords: string[][];
+  choosingWord: string[];
 
   constructor(private http: Http) {
     console.log("constructor do...");
@@ -77,7 +78,7 @@ export class MatchComponent implements OnInit {
             }
 
             this.foundWords = Array<string[]>(this.matches.length);
-
+            this.choosingWord = Array<string>(this.matches.length)
           }
         })
   }
@@ -104,7 +105,15 @@ export class MatchComponent implements OnInit {
 
     this.http.get('http://localhost:8080/words?selected='+selected+'&letters='+letters)
       .map(resp => resp.json())
-      .subscribe(data => this.foundWords[i] = data)
+      .subscribe(data => {
+        console.log(data);
+        this.foundWords[i] = data;
+        this.foundWords[i] = this.foundWords[i].filter(w => !(this.matches[i].serverData.usedWords).includes(w))
+        this.choosingWord[i] = this.foundWords[i][0];
+      })
   }
 
+  chooseWord(e: HTMLSelectElement, i:number){
+    this.choosingWord[i] = e.selectedOptions.item(0).value.toUpperCase()
+  }
 }

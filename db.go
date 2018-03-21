@@ -3,7 +3,6 @@ package solver
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -55,7 +54,7 @@ func init() {
 		panic(err.Error())
 	}
 
-	fmt.Println("successfully connected to mysql")
+	log.Println("successfully connected to mysql")
 }
 
 func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
@@ -78,12 +77,7 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 		sqlclause = sqlclause + "AND " + string(v) + " >= (?) AND " + string(v) + " <= (?) "
 	}
 
-	for i, n := range args {
-		println(i, n)
-	}
-
-	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause
-	log.Println(sql)
+	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause + `ORDER BY length DESC`
 
 	//unpack array as args
 	result, err := db.Query(sql, args...)
@@ -95,7 +89,7 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 	for result.Next() {
 		var word Word
 		err = result.Scan(&word.Word)
-		fmt.Println(word.Word)
+		res = append(res, word.Word)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -106,7 +100,7 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 func readWords() []Word {
 	raw, err := ioutil.ReadFile("./english_all_words.json")
 	if err != nil {
-		fmt.Println("Fatal ", err.Error())
+		log.Println("Fatal ", err.Error())
 		os.Exit(1)
 	}
 	var w []Word
@@ -114,6 +108,6 @@ func readWords() []Word {
 	if err != nil {
 		println("umsh err", err.Error())
 	}
-	fmt.Println("read file done")
+	log.Println("read file done")
 	return w
 }

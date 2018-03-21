@@ -89,7 +89,6 @@ func findWords(w http.ResponseWriter, r *http.Request) {
 
 	minLetters, _ := r.URL.Query()["selected"]
 	maxLetters, _ := r.URL.Query()["letters"]
-	log.Println("params: ", minLetters[0], maxLetters[0])
 
 	loFreq := make(map[rune]int)
 	hiFreq := make(map[rune]int)
@@ -110,14 +109,10 @@ func findWords(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var words Words
 	res := selectWords(loFreq, hiFreq)
-
-	for i, word := range res {
-		words[i].Word = word
-	}
+	ws, _ := json.Marshal(res)
+	log.Println("Fourd words: ", len(res))
 	w.Header().Set("Content-Type", "application/json")
-	ws, _ := json.Marshal(words)
 	w.Write(ws)
 }
 
