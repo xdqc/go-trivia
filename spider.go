@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/coreos/goproxy"
 )
@@ -68,6 +69,8 @@ func (s *spider) Init() {
 			println(string(bs))
 			setMatch(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if strings.Contains(ctx.Req.URL.Path, "ad") {
+			resp.Body = ioutil.NopCloser(bytes.NewReader(*new([]byte)))
 		}
 		return resp
 	}

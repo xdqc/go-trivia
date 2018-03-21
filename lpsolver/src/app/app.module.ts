@@ -9,7 +9,7 @@ import { MatchComponent } from './components/match/match.component';
 @NgModule({
   declarations: [
     AppComponent,
-    MatchComponent
+    MatchComponent,
   ],
   imports: [
     BrowserModule,

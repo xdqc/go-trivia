@@ -1,12 +1,16 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:700);
 * {
     -webkit-box-sizing: border-box;
             box-sizing: border-box;
   }
-  
   html, body {
+    font-family: "Lato", sans-serif;
+    text-align: center;
+    height: 100%;
     background-color: #fafafa;
   }
   
+  /******* tile container begin *******/
   .square-container {
     padding: 3px;
     max-width: 400px;
@@ -15,7 +19,7 @@
   .square-container:after {
     content: "";
     clear: both;
-    display: block;
+    display: block;    
   }
   
   .square {
@@ -23,18 +27,87 @@
     float: left;
     position: relative;
     padding-bottom: calc(100% / 5);
+    vertical-align:bottom; 
+    display:table-cell;
   }
   .square .content {
     width: calc(100% - 6px);
     height: calc(100% - 6px);
     margin: 3px;
-    padding: 16px;
+    padding: 3px;
     position: absolute;
     border-radius: 4px;
-    /*background-color: #ffffff;*/
     -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.26);
   }
+
+  /******* tile container ends *******/
+
+  /******* toggle button begin *******/
+
+  
+  .toggle {
+    display: inline-block;
+  }
+  
+  .toggle {
+    border-radius: 80px;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+
+  .toggle .button {
+    -webkit-filter: blur(1px);
+    -moz-filter: blur(1px);
+    filter: blur(1px);
+    transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);
+    border-radius: 1px;
+    position: absolute;
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+  .toggle .label {
+    transition: color 300ms ease-out;
+    line-height: auto;
+    text-align: center;
+    position: absolute;
+    font-weight: 700;
+    font-size: 40px;
+    display: block;
+    opacity: 0.9;
+    height: 100%;
+    width: 100%;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  .toggle input {
+    opacity: 0;
+    position: absolute;
+    cursor: pointer;
+    z-index: 1;
+    height: 100%;
+    width: 100%;
+  }
+  .toggle input:active ~ .button {
+    box-shadow: 0 15px 25px -4px rgba(0, 0, 0, 0.4), inset 0 -8px 30px 1px rgba(255, 255, 255, 0.9), 0 -10px 15px -1px rgba(255, 255, 255, 0.6), inset 0 8px 25px 0 rgba(0, 0, 0, 0.4), inset 0 0 10px 1px rgba(255, 255, 255, 0.6);
+  }
+  .toggle input:active ~ .label {
+    font-size: 40px;
+    color: rgba(0, 0, 0, 0.45);
+  }
+  .toggle input:checked ~ .button {
+    box-shadow: 0 15px 25px -4px rgba(0, 0, 0, 0.4), inset 0 -8px 25px -1px rgba(255, 255, 255, 0.9), 0 -10px 15px -1px rgba(255, 255, 255, 0.1), inset 0 8px 20px 0 rgba(0, 0, 0, 0.6), inset 0 0 5px 1px rgba(255, 255, 255, 0.6);
+  }
+  .toggle input:checked ~ .label {
+    font-size: 40px;
+    color: rgba(0, 0, 0, 0.4);
+  }
+  
+
+  /******* toggle button ends *******/
+
+
 
   .owner-1 {
       background-color: #aaddfe;
