@@ -27,7 +27,7 @@ func Run(port string, mode int) {
 }
 
 func Close() {
-	// memoryDb.Close()
+	db.Close()
 }
 
 func newSpider() *spider {

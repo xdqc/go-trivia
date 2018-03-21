@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
-	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var ()
+var (
+	db  *sql.DB
+	err error
+)
 
 type Word struct {
 	id     int    `json:"id"`
@@ -47,37 +50,54 @@ type Word struct {
 }
 
 func init() {
-	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/qd16")
+	db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/qd16")
 	if err != nil {
 		panic(err.Error())
 	}
-	defer db.Close()
 
 	fmt.Println("successfully connected to mysql")
+}
 
-	var m MatchInfo
+func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 
-	var args []interface{}
-	for _, v := range m.Matches {
-		t, _ := strconv.Atoi(v.CreateDate)
-		args = append(args, t)
+	var args []int
+	var sqlclause string
+	for _, v := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		l, ok := loBound[v]
+		if ok {
+			args = append(args, l)
+		} else {
+			args = append(args, 0)
+		}
+		h, ok := hiBound[v]
+		if ok {
+			args = append(args, h)
+		} else {
+			args = append(args, 0)
+		}
+		sqlclause = sqlclause + "AND " + string(v) + " >= (?) AND " + string(v) + " <= (?) "
 	}
-	args = append(args, args)
-	result, err := db.Query(`SELECT word FROM db_english_all_words 
-		WHERE A >= (?) AND A <= (?)`, args)
 
+	for i, n := range args {
+		println(i, n)
+	}
+
+	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause
+	log.Println(sql)
+	result, err := db.Query("SELECT word FROM db_english_all_words WHERE valid = 1 AND A >= (?)", 3)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	res := make([]string, 0, 200)
 	for result.Next() {
 		var word Word
 		err = result.Scan(&word.Word)
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Println(word.Word)
 	}
-}
-
-func findWords() {
-
+	return res
 }
 
 func readWords() []Word {

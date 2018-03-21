@@ -19,6 +19,7 @@ export class MatchComponent implements OnInit {
   tileGrids: matchInfo.Tile[][];
 
   selected: string[];
+  foundWords: string[][];
 
   constructor(private http: Http) {
     console.log("constructor do...");
@@ -75,6 +76,8 @@ export class MatchComponent implements OnInit {
               this.selected[i] = "_".repeat(25);
             }
 
+            this.foundWords = Array<string[]>(this.matches.length);
+
           }
         })
   }
@@ -89,6 +92,19 @@ export class MatchComponent implements OnInit {
     } else {
       this.selected[i] = this.selected[i].substr(0, n) + '_' + this.selected[i].substr(n + 1);
     }
+  }
+
+  findWords(i: number) {
+    let selected = this.selected[i];
+    let letters = this.matches[i].letters
+    let data = {
+      "selected":selected,
+      "letters":letters
+    }
+
+    this.http.get('http://localhost:8080/words?selected='+selected+'&letters='+letters)
+      .map(resp => resp.json())
+      .subscribe(data => this.foundWords[i] = data)
   }
 
 }

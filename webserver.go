@@ -61,6 +61,10 @@ type MatchInfo struct {
 	} `json:"matches"`
 }
 
+type Words []struct {
+	Word string `json:"word"`
+}
+
 //RunWeb run a webserver
 func RunWeb(port string) {
 
@@ -68,7 +72,9 @@ func RunWeb(port string) {
 	r.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(matchInfo)
-	})
+	}).Methods("GET")
+
+	r.HandleFunc("/words", findWords).Methods("GET")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 
@@ -77,6 +83,42 @@ func RunWeb(port string) {
 
 	http.ListenAndServe(":"+port, handler)
 
+}
+
+func findWords(w http.ResponseWriter, r *http.Request) {
+
+	minLetters, _ := r.URL.Query()["selected"]
+	maxLetters, _ := r.URL.Query()["letters"]
+	log.Println("params: ", minLetters[0], maxLetters[0])
+
+	loFreq := make(map[rune]int)
+	hiFreq := make(map[rune]int)
+	for _, c := range minLetters[0] {
+		_, ok := loFreq[c]
+		if ok {
+			loFreq[c]++
+		} else {
+			loFreq[c] = 1
+		}
+	}
+	for _, c := range maxLetters[0] {
+		_, ok := hiFreq[c]
+		if ok {
+			hiFreq[c]++
+		} else {
+			hiFreq[c] = 1
+		}
+	}
+
+	var words Words
+	res := selectWords(loFreq, hiFreq)
+
+	for i, word := range res {
+		words[i].Word = word
+	}
+	w.Header().Set("Content-Type", "application/json")
+	ws, _ := json.Marshal(words)
+	w.Write(ws)
 }
 
 func getMatch() MatchInfo {
