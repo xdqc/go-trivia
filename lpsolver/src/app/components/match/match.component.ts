@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Http } from '@angular/http';
+import { Http, Headers } from '@angular/http';
 import { environment } from '../../../environments/environment';
 import * as matchInfo from 'matchInfo';
 import 'rxjs/add/operator/map';
@@ -24,7 +24,7 @@ export class MatchComponent implements OnInit {
 
   constructor(private http: Http) {
     console.log('constructor do...');
-    this.playerName = 'Samuell';
+    this.playerName = environment.player[1].name;
   }
 
   ngOnInit() {
@@ -105,9 +105,10 @@ export class MatchComponent implements OnInit {
     this.http.get('http://localhost:8080/words?selected=' + selected + '&letters=' + letters)
       .map(resp => resp.json())
       .subscribe(data => {
-        console.log(data);
         this.foundWords[i] = data;
-        this.foundWords[i] = this.foundWords[i].filter(w => !(this.matches[i].serverData.usedWords).includes(w));
+        const usedWords = this.matches[i].serverData.usedWords;
+        // filter out usedWords
+        this.foundWords[i] = this.foundWords[i].filter(w => !usedWords.some(uw => uw.indexOf(w)===0));
         this.choosingWord[i] = this.foundWords[i][0];
       });
   }

@@ -5,7 +5,6 @@
 
 export const environment = {
   production: false,
-  // 2018/03/22 18:12:37 GET https://solebonapi.com:443/api/1.0/lplist_matches.json?appkey=VI2ET0P4&offset=0&count=50 HTTP/1.1
   player: [
     {
       name: "Sammuel",
