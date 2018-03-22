@@ -119,6 +119,16 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 	return res
 }
 
+func deleteWord(word string) {
+	sql := `UPDATE db_english_all_words SET valid = 0 WHERE word = (?) `
+	_, err := db.Exec(sql, word)
+	if err != nil {
+		panic(err.Error())
+	} else {
+		log.Println("deleted :", word)
+	}
+}
+
 func readWords() []Word {
 	raw, err := ioutil.ReadFile("./english_all_words.json")
 	if err != nil {

@@ -7,7 +7,7 @@ export const environment = {
   production: false,
   player: [
     {
-      name: "Sammuel",
+      name: "Samuell",
       Host: 'https://solebonapi.com:443',
       header: {
         'accept': '*/*',

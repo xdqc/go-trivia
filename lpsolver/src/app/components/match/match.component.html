@@ -9,7 +9,7 @@
 <div>
   <div *ngFor="let match of matches; let i=index">
     <h4>{{userNames[i]}}</h4>
-    <h2>{{choosingWord[i]}}<button>x</button></h2>
+    <h2>{{choosingWord[i]}}</h2>
     <div class="square-container">
       <div *ngFor="let tile of tileGrids[i]; let j=index">
         <div class="square owner-{{tileGrids[i][j]['o']}} surrounded-{{tileGrids[i][j]['s']}}">

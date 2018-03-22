@@ -24,7 +24,7 @@ export class MatchComponent implements OnInit {
 
   constructor(private http: Http) {
     console.log('constructor do...');
-    this.playerName = environment.player[1].name;
+    this.playerName = environment.player[0].name;
   }
 
   ngOnInit() {

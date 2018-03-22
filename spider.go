@@ -79,6 +79,11 @@ func (s *spider) Init() {
 		} else if ctx.Req.URL.Path == "/api/1.0/lp_check_word.json" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
+			println(ctx.Req.URL.RawQuery)
+			if strings.Contains(string(bs), "\"found\":false") {
+				inValidWord := strings.Split(ctx.Req.URL.RawQuery, "=")[2]
+				deleteWord(inValidWord)
+			}
 
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if strings.Contains(ctx.Req.URL.Path, "ad") {
