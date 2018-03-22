@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/coreos/goproxy"
@@ -34,8 +33,8 @@ func Close() {
 func newSpider() *spider {
 	sp := &spider{}
 	sp.proxy = goproxy.NewProxyHttpServer()
-	r, _ := regexp.Compile("solebon.*")
-	sp.proxy.OnRequest(goproxy.ReqHostMatches(r)).HandleConnect(goproxy.AlwaysMitm)
+	// r, _ := regexp.Compile("solebon.*")	goproxy.ReqHostMatches(r)
+	sp.proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 	return sp
 }
 
@@ -56,12 +55,12 @@ func (s *spider) Init() {
 			resp.Body = ioutil.NopCloser(bytes.NewReader(goproxy.CA_CERT))
 		} else if ctx.Req.URL.Host == "solebonapi.com:443" {
 
-			log.Println(formatRequest(req))
+			log.Println("\n", formatRequest(req))
 
 			// bs, _ := ioutil.ReadAll(req.Body)
 			// println(string(bs))
 		}
-		return
+		return req, nil
 	}
 	responseHandleFunc := func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 		if resp == nil {
@@ -70,24 +69,21 @@ func (s *spider) Init() {
 		println(ctx.Req.URL.Host)
 		println(ctx.Req.URL.Path)
 
-		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" {
+		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
 			//send letterpress match data to webserver
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
-			setMatch(bs)
+			go setMatch(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/api/1.0/lp_check_word.json" {
 			bs, _ := ioutil.ReadAll(resp.Body)
-			println(string(bs))
-			println(ctx.Req.URL.RawQuery)
 			if strings.Contains(string(bs), "\"found\":false") {
 				inValidWord := strings.Split(ctx.Req.URL.RawQuery, "=")[2]
 				deleteWord(inValidWord)
 			}
-
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if strings.Contains(ctx.Req.URL.Path, "ad") {
-			resp.Body = ioutil.NopCloser(bytes.NewReader(*new([]byte)))
+		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {
+			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
 		}
 		return resp
 	}

@@ -7,7 +7,8 @@ export const environment = {
   production: false,
   player: [
     {
-      name: "Samuell",
+      id: '4WUD4X8522HSRM6X',
+      name: 'Samuell',
       Host: 'https://solebonapi.com:443',
       header: {
         'accept': '*/*',
@@ -24,6 +25,7 @@ export const environment = {
       }
     },
     {
+      id:'MMSJUKH9SYLQVZDY',
       name: "semiconductor",
       Host: 'https://solebonapi.com:443',
       header: {

@@ -8,14 +8,15 @@
 
 <div>
   <div *ngFor="let match of matches; let i=index">
-    <h4>{{userNames[i]}}</h4>
+    <h4>{{opponentNames[i]}}</h4>
     <h2>{{choosingWord[i]}}</h2>
     <div class="square-container">
       <div *ngFor="let tile of tileGrids[i]; let j=index">
         <div class="square owner-{{tileGrids[i][j]['o']}} surrounded-{{tileGrids[i][j]['s']}}">
           <div class="content">
             <div class="toggle">
-              <input #cb type="checkbox" (change)="selectLetter(cb, i, j)" name="check-{{i}}-20" value="{{tileGrids[i][j]['t']}}">
+              <input #cb type="checkbox" [(ngModel)]="selectedTile[i][j]"  name="check-{{i}}-20" value="{{tileGrids[i][j]['t']}}">
+              <!-- (change)="selectLetter(cb, i, j)" -->
               <span class="button"></span>
               <span class="label">{{tileGrids[i][j]['t']}}</span>
             </div>
