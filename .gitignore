@@ -28,4 +28,5 @@ npm-debug.log
 *.log
 *.stackdump
 .properties
-
+conf.json
+/**/environments/environment.ts

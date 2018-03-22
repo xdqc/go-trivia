@@ -91,11 +91,10 @@
     color: rgba(0, 0, 0, 0.4);
   }
   
-
   /******* toggle button ends *******/
 
 
-
+  /******* highlight button begin *******/
   .owner-1 {
       background-color: #aaddfe;
   }
@@ -109,3 +108,5 @@
       background-color: #ff7e7e;
   }
   
+
+  /******* highlight button ends *******/

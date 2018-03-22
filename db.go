@@ -3,6 +3,7 @@ package solver
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,17 @@ var (
 	db  *sql.DB
 	err error
 )
+
+type Conf struct {
+	Database struct {
+		Drive  string   `json:"drive"`
+		User   string   `json:"user"`
+		Pass   string   `json:"pass"`
+		Host   string   `json:"host"`
+		Port   string   `json:"port"`
+		Scheme []string `json:"scheme"`
+	} `json:"database"`
+}
 
 type Word struct {
 	id     int    `json:"id"`
@@ -49,9 +61,19 @@ type Word struct {
 }
 
 func init() {
-	db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/qd16")
+	file, _ := os.Open("conf.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	conf := Conf{}
+	err := decoder.Decode(&conf)
 	if err != nil {
 		panic(err.Error())
+	}
+
+	dbconf := conf.Database
+	db, err = sql.Open(dbconf.Drive, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbconf.User, dbconf.Pass, dbconf.Host, dbconf.Port, dbconf.Scheme[0]))
+	if err != nil {
+		log.Panic("open db error", err.Error())
 	}
 
 	log.Println("successfully connected to mysql")
