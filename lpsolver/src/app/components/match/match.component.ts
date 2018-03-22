@@ -38,6 +38,12 @@ export class MatchComponent implements OnInit {
         (data) => {
           if (data) {
             this.processGameData(data);
+            // auto find words for played matches
+            for (let i = 0; i < this.matches.length; i++) {
+              if(this.matches[i].matchStatus != 4){   //matchStatus==4: new game
+                this.findWords(i);
+              }
+            }
           }
         });
   }
@@ -122,6 +128,14 @@ export class MatchComponent implements OnInit {
         const usedWords = this.matches[i].serverData.usedWords
         // filter out usedWords
         this.foundWords[i] = this.foundWords[i].filter(w => !usedWords.some(uw => uw.indexOf(w) === 0));
+
+        //TODO: evalue word
+        // basic score (-): covers all pink tiles = 0; miss -1
+        // aggro score (+): covers white tile; add +1
+        // waste score (+): covers blue or dark red tile; add +1
+        // critical staus : hard / soft
+        // more sophisticated: consider position, maybe need some machine learing
+
         this.choosingWord[i] = this.foundWords[i][0];
       });
   }

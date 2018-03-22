@@ -99,7 +99,7 @@ func selectWordsDb(loBound map[rune]int, hiBound map[rune]int) []string {
 		sqlclause = sqlclause + "AND " + string(v) + " >= (?) AND " + string(v) + " <= (?) "
 	}
 
-	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause + `ORDER BY length DESC`
+	sql := `SELECT word FROM db_english_all_words WHERE valid = 1 ` + sqlclause + `ORDER BY length ASC`
 
 	//unpack array as args
 	result, err := db.Query(sql, args...)

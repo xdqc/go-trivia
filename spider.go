@@ -69,8 +69,9 @@ func (s *spider) Init() {
 		println(ctx.Req.URL.Host)
 		println(ctx.Req.URL.Path)
 
-		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
+		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" {
 			//send letterpress match data to webserver
+			// || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json"
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
 			go setMatch(bs)
