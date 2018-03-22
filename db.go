@@ -79,7 +79,7 @@ func init() {
 	log.Println("successfully connected to mysql")
 }
 
-func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
+func selectWordsDb(loBound map[rune]int, hiBound map[rune]int) []string {
 
 	var args []interface{}
 	var sqlclause string
@@ -119,7 +119,7 @@ func selectWords(loBound map[rune]int, hiBound map[rune]int) []string {
 	return res
 }
 
-func deleteWord(word string) {
+func deleteWordDb(word string) {
 	sql := `UPDATE db_english_all_words SET valid = 0 WHERE word = (?) `
 	_, err := db.Exec(sql, word)
 	if err != nil {

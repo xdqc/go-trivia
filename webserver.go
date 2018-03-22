@@ -75,11 +75,12 @@ func RunWeb(port string) {
 	}).Methods("GET")
 
 	r.HandleFunc("/words", findWords).Methods("GET")
+	r.HandleFunc("/word", deleteWord).Methods("DELETE")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 
 	// Use default options
-	handler := cors.Default().Handler(r)
+	handler := cors.AllowAll().Handler(r)
 
 	http.ListenAndServe(":"+port, handler)
 
@@ -109,11 +110,17 @@ func findWords(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := selectWords(loFreq, hiFreq)
+	res := selectWordsDb(loFreq, hiFreq)
 	ws, _ := json.Marshal(res)
 	log.Println("Fourd words: ", len(res))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(ws)
+}
+
+func deleteWord(w http.ResponseWriter, r *http.Request) {
+	word, _ := r.URL.Query()["delete"]
+	log.Println(word[0])
+	deleteWordDb(word[0])
 }
 
 func getMatch() MatchInfo {

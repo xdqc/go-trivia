@@ -3,20 +3,28 @@
 
   <input [(ngModel)]="playerName" type="text" name="playerName" id="playerName" class="playerName" placeholder="your username">
   <br>
-  <button (click)="fetchGames()">Fetch Games!</button>
+  <button (click)="fetchGames()" class="btn btn-red"><span>Fetch Games!</span></button>
 </div>
 
 <div>
   <div *ngFor="let match of matches; let i=index">
     <h4>{{opponentNames[i]}}</h4>
-    <h2>{{choosingWord[i]}}</h2>
+    <h2>{{choosingWord[i]?.toUpperCase()}}</h2>
+    <div class="select">
+      <select [(ngModel)]="choosingWord[i]" class="select-text">
+        <option *ngFor="let word of foundWords[i]">{{word}}</option>
+      </select>
+      <span class="select-bar"></span>
+    </div>
+    <button (click)="deleteWord(i)">x</button>
+    <button (click)="findWords(i)" class="btn"><span>Find! {{foundWords[i]?.length}}</span></button>
+    <button (click)=clearSelected(i) class="btn btn-orange"><span>Clear</span></button>
     <div class="square-container">
       <div *ngFor="let tile of tileGrids[i]; let j=index">
         <div class="square owner-{{tileGrids[i][j]['o']}} surrounded-{{tileGrids[i][j]['s']}}">
           <div class="content">
             <div class="toggle">
-              <input #cb type="checkbox" [(ngModel)]="selectedTile[i][j]"  name="check-{{i}}-20" value="{{tileGrids[i][j]['t']}}">
-              <!-- (change)="selectLetter(cb, i, j)" -->
+              <input type="checkbox" [(ngModel)]="selectedTile[i][j]" name="check-{{i}}-20" value="{{tileGrids[i][j]['t']}}">
               <span class="button"></span>
               <span class="label">{{tileGrids[i][j]['t']}}</span>
             </div>
@@ -24,9 +32,5 @@
         </div>
       </div>
     </div>
-    <button (click)="findWords(i)" >Find!</button>
-    <select #sl ng-selected="choosingWord[i]" (change)="chooseWord(sl,i)">
-        <option *ngFor="let word of foundWords[i]" >{{word}}</option>
-    </select>
   </div>
 </div>

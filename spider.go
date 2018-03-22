@@ -79,7 +79,7 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			if strings.Contains(string(bs), "\"found\":false") {
 				inValidWord := strings.Split(ctx.Req.URL.RawQuery, "=")[2]
-				deleteWord(inValidWord)
+				deleteWordDb(inValidWord)
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {

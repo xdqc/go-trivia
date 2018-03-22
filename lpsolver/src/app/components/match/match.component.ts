@@ -19,7 +19,6 @@ export class MatchComponent implements OnInit {
   tileGrids: matchInfo.Tile[][];
 
   selectedTile: boolean[][];
-  // selected: string[];
   foundWords: string[][];
   choosingWord: string[];
 
@@ -95,9 +94,8 @@ export class MatchComponent implements OnInit {
       this.selectedTile[i] = Array<boolean>(25);
       const tg = this.tileGrids[i];
       for (let k = 0; k < 25; k++) {
-        if (tg[k].o == 0 && !tg[k].s) {
-          this.selectedTile[i][k] = true;
-        }
+        // auto select unsurrounded opponent's tiles
+        this.selectedTile[i][k] = (tg[k].o == 0 && !tg[k].s);
       }
     }
 
@@ -108,12 +106,12 @@ export class MatchComponent implements OnInit {
 
 
   findWords(i: number) {
-    const letters = this.tileGrids[i].map(t => t.t).join('');
+    const letters = this.tileGrids[i].map(t => t.t).join('').toUpperCase();
     let selected = [];
     for (let k = 0; k < 25; k++) {
-       if (this.selectedTile[i][k]){
-         selected.push(letters[k])
-       }
+      if (this.selectedTile[i][k]) {
+        selected.push(letters[k])
+      }
     }
     console.log(letters);
     console.log(selected.join(''));
@@ -128,7 +126,14 @@ export class MatchComponent implements OnInit {
       });
   }
 
-  chooseWord(e: HTMLSelectElement, i: number) {
-    this.choosingWord[i] = e.selectedOptions.item(0).value.toUpperCase();
+  clearSelected(i: number) {
+    this.selectedTile[i].fill(false)
   }
+
+  deleteWord(i: number) {
+    this.http.delete('http://localhost:8080/word?delete=' + this.choosingWord[i])
+    .subscribe()
+    console.log(this.choosingWord, 'deleted');
+  }
+
 }
