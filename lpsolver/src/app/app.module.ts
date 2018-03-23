@@ -5,11 +5,13 @@ import { FormsModule } from "@angular/forms";
 
 import { AppComponent } from './app.component';
 import { MatchComponent } from './components/match/match.component';
+import { BrainComponent } from './components/brain/brain.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MatchComponent,
+    BrainComponent,
   ],
   imports: [
     BrowserModule,

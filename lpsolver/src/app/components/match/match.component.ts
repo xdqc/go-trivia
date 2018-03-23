@@ -23,7 +23,6 @@ export class MatchComponent implements OnInit {
   choosingWord: string[];
 
   constructor(private http: Http) {
-    console.log('constructor do...');
     this.playersId = environment.player.map(p => p.id);
   }
 

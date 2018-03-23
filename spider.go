@@ -39,7 +39,7 @@ func newSpider() *spider {
 }
 
 func (s *spider) Run(port string) {
-	log.Println("server will at port:" + port)
+	log.Println("proxy server at port:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, s.proxy))
 }
 
@@ -60,7 +60,7 @@ func (s *spider) Init() {
 			// bs, _ := ioutil.ReadAll(req.Body)
 			// println(string(bs))
 		}
-		return req, nil
+		return
 	}
 	responseHandleFunc := func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 		if resp == nil {
@@ -80,9 +80,19 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			if strings.Contains(string(bs), "\"found\":false") {
 				inValidWord := strings.Split(ctx.Req.URL.RawQuery, "=")[2]
-				deleteWordDb(inValidWord)
+				go deleteWordDb(inValidWord)
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/fight/findQuiz" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			//bsNew, ansPos := handleQuestionResp(bs)
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+			go handleQuestionResp(bs) //no need of autoclick
+
+		} else if ctx.Req.URL.Path == "/question/bat/choose" || ctx.Req.URL.Path == "/question/fight/choose" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+			go handleChooseResponse(bs)
 		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {
 			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
 		}

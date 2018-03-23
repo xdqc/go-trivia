@@ -9,7 +9,10 @@ import (
 	"github.com/rs/cors"
 )
 
-var matchInfo []byte
+var (
+	matchInfo    []byte
+	questionInfo *Question
+)
 
 //MatchInfo ...
 type MatchInfo struct {
@@ -82,6 +85,7 @@ func RunWeb(port string) {
 	// Use default options
 	handler := cors.AllowAll().Handler(r)
 
+	log.Println("web server at port", port)
 	http.ListenAndServe(":"+port, handler)
 
 }
@@ -136,4 +140,8 @@ func getMatch() MatchInfo {
 
 func setMatch(jsonBytes []byte) {
 	matchInfo = jsonBytes
+}
+
+func setAnswer(q *Question) {
+	questionInfo = q
 }
