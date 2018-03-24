@@ -1,0 +1,82 @@
+/*multiple selector*/
+// * {
+//     margin: 0;
+//     padding: 0;
+//     box-sizing: border-box;
+//   }
+  
+//   body {
+//     margin: 0 auto;
+//     font-family: 'Lato', sans-serif;
+//     color: #b3b3b3;
+//     background-color: #31a2ac;
+//     text-align: center;
+//     margin-top: 0;
+//   }
+  
+  /*========================================================
+            Quiz Section
+  ========================================================*/
+  /*styling quiz area*/
+  .main {
+    background-color: #fcfcfc;
+    margin: 0 auto;
+    width: 60%;
+    margin-top: 30px;
+    padding: 30px;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+  }
+  
+  /*Editing the number of questions*/
+  span {
+    float: left;
+  }
+  
+  /*Editing the number of questions*/
+  span {
+    float: left;
+  }
+  
+  /*format text*/
+  p {
+    padding: 10px 10px 0;
+  }
+  
+  /*Form area width*/
+  .form-area, ul {
+    margin: 20px auto;
+    max-width: 550px;
+  }
+  
+  /*formatting answers*/
+  li {
+    list-style-type: none;
+    text-align: left;
+    background-color: transparent;
+    margin: 10px 5px;
+    padding: 5px 10px;
+    border: 1px solid lightgray;
+    font-weight: normal;
+  }
+  
+  li:hover {
+    background: #ECEEF0;
+  }
+  
+  /*Change effect of question when the questions is selected*/
+  .selected, .selected:hover {
+    background: #FFDEAD;
+  }
+  
+  /*change correct answer background*/
+  .correct-true, .correct-true:hover {
+    background: rgb(69, 139, 69);
+    color: white;
+  }
+  
+  /*change wrong answer background*/
+  .wrong, .wrong:hover {
+    background: #db3c3c;
+    color: white;
+  }
+  

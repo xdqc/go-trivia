@@ -1,11 +1,9 @@
 package solver
 
 import (
-	"bytes"
 	"encoding/json"
 	"log"
 	"math"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -38,54 +36,46 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	SetQuestion(question)
 
 	ansPos = 0
-	respQuestion := &Question{}
-	json.Unmarshal(bs, respQuestion)
+	answerItem := "不知道"
 	if question.CalData.TrueAnswer != "" {
-		for i, option := range respQuestion.Data.Options {
+		for i, option := range question.Data.Options {
 			if option == question.CalData.TrueAnswer {
-				respQuestion.Data.Options[i] = option + " ."
+				// question.Data.Options[i] = option + "[.]"
 				ansPos = i + 1
+				answerItem = option
 				break
 			}
 		}
 	} else if strings.Contains(question.Data.Quiz, "不") && !strings.Contains(question.Data.Quiz, "「") {
 		//当题目中有“不”时，选取百度结果中最罕见的选项
 		var min = math.MaxInt32
-		for i, option := range respQuestion.Data.Options {
-			respQuestion.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+		for i, option := range question.Data.Options {
+			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
 			if ret[option] < min {
 				min = ret[option]
 				ansPos = i + 1
+				answerItem = option
 			}
 		}
 	} else {
 		var max int = 0
-		for i, option := range respQuestion.Data.Options {
+		for i, option := range question.Data.Options {
 			if ret[option] > 0 {
-				respQuestion.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
 				if ret[option] > max {
 					max = ret[option]
 					ansPos = i + 1
+					answerItem = option
 				}
 			}
 		}
 	}
-	bsNew, _ = json.Marshal(respQuestion)
 
-	var out bytes.Buffer
-	json.Indent(&out, bsNew, "", " ")
-	//log.Printf("Question answer predict => %v\n", out.String())
-	var answerItem string = "N/A"
-	if ansPos != 0 {
-		answerItem = respQuestion.Data.Options[ansPos-1]
-	} else {
-		//随机点击
-		ansPos = rand.Intn(4) + 1
-	}
-	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", respQuestion.Data.Quiz, answerItem)
-	respQuestion.CalData.Answer = answerItem
-	respQuestion.CalData.AnswerPos = ansPos
-	setAnswer(respQuestion)
+	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
+	question.CalData.Answer = answerItem
+	question.CalData.AnswerPos = ansPos
+	questionInfo, _ = json.Marshal(question)
+	println(string(questionInfo))
 
 	//返回答案
 	return bs, ansPos
@@ -121,15 +111,14 @@ type Question struct {
 		EndTime     int      `json:"endTime"`
 		CurTime     int      `json:"curTime"`
 	} `json:"data"`
-	Errcode int `json:"errcode"`
-
 	CalData struct {
 		RoomID     string
 		quizNum    string
 		Answer     string
 		AnswerPos  int
 		TrueAnswer string
-	} `json:"-"`
+	} `json:"caldata"`
+	Errcode int `json:"errcode"`
 }
 
 type ChooseResp struct {

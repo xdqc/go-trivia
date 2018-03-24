@@ -7,7 +7,7 @@ import 'rxjs/add/operator/map';
 @Component({
   selector: 'app-match',
   templateUrl: './match.component.html',
-  styleUrls: ['./match.component.css']
+  styleUrls: ['./match.component.css', './match.component.sass']
 })
 export class MatchComponent implements OnInit {
 
@@ -60,8 +60,8 @@ export class MatchComponent implements OnInit {
     this.matches = this.matches.filter(m => this.playersId.includes(m.participants[m.currentPlayerIndex].userId));
 
     // sort new turns on top
-    this.matches.sort((b, a) => Math.max(a.participants[0].turnDate.valueOf(), a.participants[1].turnDate.valueOf())
-      - Math.max(b.participants[0].turnDate.valueOf(), b.participants[1].turnDate.valueOf()));
+    // this.matches.sort((b, a) => a.participants[a.currentPlayerIndex==1?0:1].turnDate.valueOf()
+    //   - b.participants[b.currentPlayerIndex==1?0:1].turnDate.valueOf());
     console.log(this.matches);
 
     this.opponentNames = this.matches.map(m => this.playersId.includes(m.participants[0].userId) ? m.participants[1].userName : m.participants[0].userName);

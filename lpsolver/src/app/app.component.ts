@@ -8,4 +8,8 @@ import { environment } from '../environments/environment';
 })
 export class AppComponent {
   title = 'LP solver';
+  showBrain:boolean;
+  constructor(){
+    this.showBrain = false;
+  }
 }

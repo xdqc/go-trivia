@@ -11,7 +11,7 @@ import (
 
 var (
 	matchInfo    []byte
-	questionInfo *Question
+	questionInfo []byte
 )
 
 //MatchInfo ...
@@ -79,6 +79,10 @@ func RunWeb(port string) {
 
 	r.HandleFunc("/words", findWords).Methods("GET")
 	r.HandleFunc("/word", deleteWord).Methods("DELETE")
+	r.HandleFunc("/answer", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(questionInfo)
+	}).Methods("GET")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 
@@ -127,21 +131,6 @@ func deleteWord(w http.ResponseWriter, r *http.Request) {
 	deleteWordDb(word[0])
 }
 
-func getMatch() MatchInfo {
-	matches := MatchInfo{}
-	if matchInfo != nil {
-		err := json.Unmarshal(matchInfo, &matches)
-		if err != nil {
-			log.Fatal("Error while parse matches info", err)
-		}
-	}
-	return matches
-}
-
 func setMatch(jsonBytes []byte) {
 	matchInfo = jsonBytes
-}
-
-func setAnswer(q *Question) {
-	questionInfo = q
 }

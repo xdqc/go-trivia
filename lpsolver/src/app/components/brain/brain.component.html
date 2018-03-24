@@ -1,3 +1,18 @@
-<p>
-  brain works!
-</p>
+<!-- Main page -->
+<label for="speaker">Speaker</label>
+<input type="checkbox" [(ngModel)]="speakOn" id="speaker">
+<div class="main form-area">
+  <!-- Number of Question  -->
+  <div class="wrapper" id="pages">
+    <span id="quizNumber">{{qNum}}</span>
+    <span>/{{total}}</span>
+  </div>
+
+  <!-- Quiz Question -->
+  <div class="quiz-questions" id="display-area">
+    <p id="question">{{quiz}}</p>
+    <ul id="answer">
+      <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">{{option}}</li>
+    </ul>
+  </div>
+</div>

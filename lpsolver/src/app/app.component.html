@@ -1,6 +1,9 @@
-  <h1>
-    Welcome to {{ title }}!
-  </h1>
-
-    <app-match></app-match>
-
+<h1>
+  Welcome to {{ title }}!
+</h1>
+<label for="showBrain">Show Brain</label>
+<input type="checkbox" [(ngModel)]="showBrain" id="showBrain">
+<div *ngIf="showBrain">
+  <app-brain id="brain"></app-brain>
+</div>
+<app-match></app-match>

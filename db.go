@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -127,19 +126,4 @@ func deleteWordDb(word string) {
 	} else {
 		log.Println("deleted :", word)
 	}
-}
-
-func readWords() []Word {
-	raw, err := ioutil.ReadFile("./english_all_words.json")
-	if err != nil {
-		log.Println("Fatal ", err.Error())
-		os.Exit(1)
-	}
-	var w []Word
-	err = json.Unmarshal(raw, &w)
-	if err != nil {
-		println("umsh err", err.Error())
-	}
-	log.Println("read file done")
-	return w
 }
