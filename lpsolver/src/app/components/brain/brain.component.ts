@@ -49,11 +49,11 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.q = data;
             if (this.speakOn && this.qNum !== this.q.data.num) {
               // speak out new question answer
-              let msg = new SpeechSynthesisUtterance('选' + this.q.caldata.AnswerPos + '。 ' + this.q.data.quiz + this.q.caldata.Answer);
+              let msg = new SpeechSynthesisUtterance('选' + this.q.caldata.AnswerPos + '。 ' );//+ this.q.data.quiz + this.q.caldata.Answer
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
-              console.log(msg);
+              // console.log(msg);
               speechSynthesis.speak(msg)
             }
 

@@ -54,12 +54,6 @@ func (s *spider) Init() {
 			resp.Header.Add("Content-Disposition", "attachment; filename=ca.crt")
 			resp.Header.Add("Content-Type", "application/octet-stream")
 			resp.Body = ioutil.NopCloser(bytes.NewReader(goproxy.CA_CERT))
-		} else if ctx.Req.URL.Host == "solebonapi.com:443" {
-
-			log.Println("\n", formatRequest(req))
-
-			// bs, _ := ioutil.ReadAll(req.Body)
-			// println(string(bs))
 		}
 		return
 	}
