@@ -88,6 +88,11 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 			go handleChooseResponse(bs)
+		} else if ctx.Req.URL.Host == "scwca-uploads-admin.cdn.itwlw.com:443" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			println(string(bs))
+			go setIdiom(bs)
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {
 			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
 		}

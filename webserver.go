@@ -12,6 +12,7 @@ import (
 var (
 	matchInfo    []byte
 	questionInfo []byte
+	idiomInfo    []byte
 )
 
 //MatchInfo ...
@@ -76,12 +77,17 @@ func RunWeb(port string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(matchInfo)
 	}).Methods("GET")
-
 	r.HandleFunc("/words", findWords).Methods("GET")
 	r.HandleFunc("/word", deleteWord).Methods("DELETE")
+
 	r.HandleFunc("/answer", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(questionInfo)
+	}).Methods("GET")
+
+	r.HandleFunc("/idiom", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(idiomInfo)
 	}).Methods("GET")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
@@ -133,4 +139,8 @@ func deleteWord(w http.ResponseWriter, r *http.Request) {
 
 func setMatch(jsonBytes []byte) {
 	matchInfo = jsonBytes
+}
+
+func setIdiom(jsonBytes []byte) {
+	idiomInfo = jsonBytes
 }
