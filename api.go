@@ -3,6 +3,7 @@ package solver
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -28,11 +29,20 @@ func GetFromApi(quiz string, options []string) map[string]int {
 	println("\n.......................here................................\n")
 	str := <-sg + <-sb
 	println("str:\n" + str)
+	totalCount := 0
 	for _, option := range options {
 		res[option] = strings.Count(str, option)
+		totalCount += res[option]
 	}
 
-	//add option count to its superstring option count
+	// if all option got 0 match, search the each option.trimLastChar (xx省 -> xx)
+	if totalCount == 0 {
+		for _, option := range options {
+			res[option] = strings.Count(str, option[:len(option)-1])
+		}
+	}
+
+	// add option count to its superstring option count （红色 add to 红色变无色）
 	for _, opt := range options {
 		for _, subopt := range options {
 			if opt != subopt && strings.Contains(opt, subopt) {
@@ -40,6 +50,15 @@ func GetFromApi(quiz string, options []string) map[string]int {
 			}
 		}
 	}
+
+	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
+	re := regexp.MustCompile("「.*不.*」")
+	if strings.Contains(quiz, "不") && !re.MatchString(quiz) {
+		for _, option := range options {
+			res[option] = -res[option]
+		}
+	}
+
 	return res
 }
 

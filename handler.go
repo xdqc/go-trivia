@@ -5,7 +5,6 @@ import (
 	"log"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -47,27 +46,14 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 				break
 			}
 		}
-	} else if strings.Contains(question.Data.Quiz, "不") && !strings.Contains(question.Data.Quiz, "「") {
-		//当题目中有“不”时，选取百度结果中最罕见的选项
-		var min = math.MaxInt32
+	} else {
+		max := math.MinInt32
 		for i, option := range question.Data.Options {
 			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-			if ret[option] < min {
-				min = ret[option]
+			if ret[option] > max {
+				max = ret[option]
 				ansPos = i + 1
 				answerItem = option
-			}
-		}
-	} else {
-		var max int = 0
-		for i, option := range question.Data.Options {
-			if ret[option] > 0 {
-				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-				if ret[option] > max {
-					max = ret[option]
-					ansPos = i + 1
-					answerItem = option
-				}
 			}
 		}
 	}
