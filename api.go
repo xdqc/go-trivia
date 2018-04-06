@@ -1,7 +1,6 @@
 package solver
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,53 +13,60 @@ var (
 	baidu_url = "http://www.baidu.com/s?"
 )
 
-func GetFromBaidu(quiz string, options []string) map[string]int {
+func GetFromApi(quiz string, options []string) map[string]int {
+	res := make(map[string]int, len(options))
+	for _, option := range options {
+		res[option] = 0
+	}
+
+	sg := make(chan string)
+	sb := make(chan string)
+
+	go getFromGoogle(quiz, options, sg)
+	go getFromBaidu(quiz, options, sb)
+
+	println("\n.......................here................................\n")
+	str := <-sg + <-sb
+	println("str:\n" + str)
+	for _, option := range options {
+		res[option] = strings.Count(str, option)
+	}
+
+	//add option count to its superstring option count
+	for _, opt := range options {
+		for _, subopt := range options {
+			if opt != subopt && strings.Contains(opt, subopt) {
+				res[opt] += res[subopt]
+			}
+		}
+	}
+	return res
+}
+
+func getFromBaidu(quiz string, options []string, c chan string) {
 	values := url.Values{}
 	values.Add("wd", quiz)
 	req, _ := http.NewRequest("GET", baidu_url+values.Encode(), nil)
-	return GetFromApi(req, quiz, options)
-}
-
-func GetFromApi(req *http.Request, quiz string, options []string) (res map[string]int) {
-	res = make(map[string]int, len(options))
-	for _, option := range options {
-		res[option] = 0
-	}
 	resp, _ := http.DefaultClient.Do(req)
 	if resp == nil {
-		return
+		c <- ""
+	} else {
+		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		c <- doc.Find("#content_left .t").Text() + doc.Find(".c-abstract").Text()
 	}
-	doc, _ := goquery.NewDocumentFromReader(resp.Body)
-	defer resp.Body.Close()
-	str := doc.Find("#content_left .result").Text()
-	for _, option := range options {
-		res[option] = strings.Count(str, option)
-	}
-	return
+
 }
 
-func GetFromGoogle(quiz string, options []string) (res map[string]int) {
+func getFromGoogle(quiz string, options []string, c chan string) {
 	values := url.Values{}
 	values.Add("q", quiz)
-
-	res = make(map[string]int, len(options))
-	for _, option := range options {
-		res[option] = 0
-	}
-	resp, _ := http.Get(googleUrl + values.Encode())
+	req, _ := http.NewRequest("GET", googleUrl+values.Encode(), nil)
+	resp, _ := http.DefaultClient.Do(req)
 	if resp == nil {
-		return
+		c <- ""
+	} else {
+		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		str := doc.Find(".r").Text() + doc.Find(".st").Text()
+		c <- str
 	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	println(body)
-
-	doc, _ := goquery.NewDocumentFromReader(resp.Body)
-	println(doc.Get(0).Data)
-	defer resp.Body.Close()
-	str := doc.Find(".st").Text()
-	for _, option := range options {
-		res[option] = strings.Count(str, option)
-	}
-	return
 }

@@ -26,7 +26,8 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	var ret map[string]int
 	if answer == "" {
 		tx := time.Now()
-		ret = GetFromBaidu(question.Data.Quiz, question.Data.Options)
+		// ret = GetFromBaidu(question.Data.Quiz, question.Data.Options)
+		ret = GetFromApi(question.Data.Quiz, question.Data.Options)
 		tx2 := time.Now()
 		log.Printf("Cost time %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 		log.Printf("Google predict => %v\n", ret)
