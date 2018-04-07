@@ -1,5 +1,5 @@
 # letterpress-solver-online
-Golang HTTP/HTTPS proxy , RESTful server + Bolt DB + Angular frontend
+Golang HTTP/HTTPS proxy + mySQL + Angular
 
 ## Getting started
 
