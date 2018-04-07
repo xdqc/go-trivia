@@ -22,22 +22,15 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 
 	//Get the answer from the db
 	answer := FetchQuestion(question)
-	var ret map[string]int
-	if answer == "" {
-		tx := time.Now()
-		// ret = GetFromBaidu(question.Data.Quiz, question.Data.Options)
-		ret = GetFromApi(question.Data.Quiz, question.Data.Options)
-		tx2 := time.Now()
-		log.Printf("Cost time %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
-		log.Printf("Google predict => %v\n", ret)
-	}
-	question.CalData.TrueAnswer = answer
-	question.CalData.Answer = answer
-	SetQuestion(question)
+
+	// question.CalData.TrueAnswer = answer
+	// question.CalData.Answer = answer
+	go SetQuestion(question)
 
 	ansPos = 0
 	answerItem := "不知道"
-	if question.CalData.TrueAnswer != "" {
+
+	if answer != "" {
 		for i, option := range question.Data.Options {
 			if option == question.CalData.TrueAnswer {
 				// question.Data.Options[i] = option + "[.]"
@@ -46,11 +39,21 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 				break
 			}
 		}
-	} else {
+	}
+
+	if answerItem == "不知道" {
+		var ret map[string]int
+		tx := time.Now()
+		// ret = GetFromBaidu(question.Data.Quiz, question.Data.Options)
+		ret = GetFromApi(question.Data.Quiz, question.Data.Options)
+		tx2 := time.Now()
+		log.Printf("Cost time %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
+		log.Printf("Google predict => %v\n", ret)
+
 		max := math.MinInt32
 		for i, option := range question.Data.Options {
 			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-			if ret[option] > max {
+			if ret[option] > max && ret[option] != 0 {
 				max = ret[option]
 				ansPos = i + 1
 				answerItem = option
