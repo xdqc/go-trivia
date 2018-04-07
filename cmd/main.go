@@ -29,4 +29,5 @@ func main() {
 	}()
 	<-c
 	solver.Close()
+	return
 }

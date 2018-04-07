@@ -5,7 +5,6 @@ import (
 	"log"
 	"math"
 	"strconv"
-	"time"
 )
 
 var (
@@ -32,7 +31,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 
 	if answer != "" {
 		for i, option := range question.Data.Options {
-			if option == question.CalData.TrueAnswer {
+			if option == answer {
 				// question.Data.Options[i] = option + "[.]"
 				ansPos = i + 1
 				answerItem = option
@@ -43,11 +42,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 
 	if answerItem == "不知道" {
 		var ret map[string]int
-		tx := time.Now()
-		// ret = GetFromBaidu(question.Data.Quiz, question.Data.Options)
-		ret = GetFromApi(question.Data.Quiz, question.Data.Options)
-		tx2 := time.Now()
-		log.Printf("Cost time %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
+		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
 
 		max := math.MinInt32
