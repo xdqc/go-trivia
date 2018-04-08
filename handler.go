@@ -60,7 +60,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	question.CalData.Answer = answerItem
 	question.CalData.AnswerPos = ansPos
 	questionInfo, _ = json.Marshal(question)
-	println(string(questionInfo))
+	// println(string(questionInfo))
 
 	//返回答案
 	return bs, ansPos
