@@ -111,6 +111,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
 	str := re.ReplaceAllString(rawStr, "")
 	println(str)
+	strs := []rune(str)
 	qz := re.ReplaceAllString(quiz, "")
 
 	// width := len([]rune(qz))
@@ -137,10 +138,11 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		opti = re.ReplaceAllString(opti, "")
 		opt := []rune(opti)
 		optLen := len(opt)
-		strs := []rune(str)
+		optCount := 0
 		for i := range strs[0 : len(strs)-40] {
 			// find the index of option in the search text
 			if string(strs[i:i+optLen]) == opti {
+				optCount++
 				windowR := strs[i+len(opt) : i+len(opt)+width]
 				windowL := strs[i-width : i]
 				// Reverse windowL
@@ -183,6 +185,8 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				fmt.Printf("%s%6d\t%40s %40s\n", option, res[option], string(windowL), string(windowR))
 			}
 		}
+		// calculate the match density per occurence
+		res[option] = res[option] / optCount
 	}
 }
 
@@ -268,8 +272,8 @@ func searchFeelingLucky(quiz string, options []string, c chan string) {
 		text += doc.Find("body").Text()
 		// log.Println(text)
 	}
-	if len(text) > 5000 {
-		text = text[:5000]
+	if len(text) > 10000 {
+		text = text[:10000]
 	}
 	c <- text
 }

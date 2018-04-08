@@ -27,7 +27,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	// question.CalData.Answer = answer
 	go SetQuestion(question)
 
-	ansPos = 0
+	ansPos = 1
 	answerItem := "不知道"
 	var odds [4]float32
 
@@ -42,8 +42,9 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 			}
 		}
 	}
+	storedAnsPos := ansPos
 
-	if answerItem == "不知道" {
+	if true || answerItem == "不知道" {
 		var ret map[string]int
 		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
@@ -63,6 +64,24 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 				max = ret[option]
 				ansPos = i + 1
 				answerItem = option
+			}
+		}
+		// verify the stored answer
+		if answer == answerItem {
+			//good
+			odds[ansPos-1] = 888
+		} else if answer != answerItem {
+			if answer != "" && odds[ansPos-1] < 5 {
+				// searched result could be wrong
+				log.Println("searched answer could be wrong...")
+				answerItem = answer
+				ansPos = storedAnsPos
+				odds[ansPos-1] = 99
+			} else if answer != "" {
+				// stored answer may be corrupted
+				log.Println("stored answer may be corrupted...")
+			} else {
+				log.Println("new question got!")
 			}
 		}
 	}

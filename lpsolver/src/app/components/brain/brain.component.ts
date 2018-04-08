@@ -57,9 +57,18 @@ export class BrainComponent implements OnInit, OnDestroy {
         data => {
           if (data) {
             this.q = data;
+            this.options = this.q.data.options;
+            this.ans = this.q.caldata.Answer;
+            this.ansPos = this.q.caldata.AnswerPos;
+            this.odds = this.q.caldata.Odds;
+            for (let i = 0; i < 4; i++) {
+              let n = parseFloat(this.odds[i])
+              this.odds[i] = n >= 999 ? "999" : n >= 100 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+            }
             if (this.speakOn && this.quiz !== this.q.data.quiz) {
               // speak out new question answer
-              let msg = new SpeechSynthesisUtterance('选' + this.q.caldata.AnswerPos + '。 ');//+ this.q.data.quiz + this.q.caldata.Answer
+              let utterance = this.odds.some(n => parseFloat(n) > 5) ? '选' : '可能';
+              let msg = new SpeechSynthesisUtterance(utterance + this.q.caldata.AnswerPos + '。 ');//+ this.q.data.quiz + this.q.caldata.Answer
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
@@ -70,13 +79,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
             this.quiz = this.q.data.quiz;
             this.qNum = this.q.data.num;
-            this.options = this.q.data.options;
-            this.ans = this.q.caldata.Answer;
-            this.ansPos = this.q.caldata.AnswerPos;
-            this.odds = this.q.caldata.Odds;
-            for(let i = 0; i<4; i++){
-              this.odds[i] = parseFloat(this.odds[i])>0.005 ? parseFloat(this.odds[i]).toFixed(2) : "0";
-            }
+
           }
         }
       );
@@ -94,7 +97,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       });
   }
 
-  showIdioms(){
+  showIdioms() {
     let data = JSON.parse(this.rawIdioms);
     this.idioms = data;
     this.idioms.forEach(i => i['words'] = i['words'].split(''))
