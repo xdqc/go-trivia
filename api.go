@@ -3,6 +3,7 @@ package solver
 import (
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -35,7 +36,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	go searchGoogleWithOptions(quiz, options, search)
 
 	println("\n.......................searching..............................\n")
-	rawStr := "                    "
+	rawStr := "                                        "
 	count := cap(search)
 	go func() {
 		for {
@@ -57,7 +58,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	case <-time.After(2 * time.Second):
 		fmt.Println("search timeout")
 	}
-	rawStr += "                    "
+	rawStr += "                                        "
 	tx2 := time.Now()
 	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
@@ -85,7 +86,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[同充分对称足够]")
+	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
@@ -107,8 +108,8 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	println(str)
 	qz := re.ReplaceAllString(quiz, "")
 	width := len([]rune(qz))
-	if width > 20 {
-		width = 20 //max window size
+	if width > 40 {
+		width = 40 //max window size
 	}
 	for _, option := range options {
 		opti := option
@@ -119,7 +120,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		opt := []rune(opti)
 		optLen := len(opt)
 		strs := []rune(str)
-		for i := range strs {
+		for i := range strs[0 : len(strs)-40] {
 			// find the index of option in the search text
 			if string(strs[i:i+optLen]) == opti {
 				windowR := strs[i+len(opt) : i+len(opt)+width]
@@ -131,7 +132,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 					}
 					return s
 				}(windowL)
-				// Evaluate pts of each window. Quiz the closer to option, the high points (triangular distribution)
+				// Evaluate pts of each window. Quiz the closer to option, the high points (gaussian distribution)
 				if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
 					for j, ch := range windowL {
 						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
@@ -141,7 +142,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							res[option] += width - j
+							res[option] += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=200
 						}
 					}
 				}
@@ -151,11 +152,11 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							res[option] += width - j
+							res[option] += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.2, factor=100
 						}
 					}
 				}
-				fmt.Printf("%s%6d\t%25s%25s\n", option, res[option], string(windowL), string(windowR))
+				fmt.Printf("%s%6d\t%40s %40s\n", option, res[option], string(windowL), string(windowR))
 			}
 		}
 	}

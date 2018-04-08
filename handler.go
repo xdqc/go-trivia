@@ -40,7 +40,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 		}
 	}
 
-	if answerItem == "不知道" {
+	if true || answerItem == "不知道" {
 		var ret map[string]int
 		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
