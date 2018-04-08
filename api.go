@@ -86,7 +86,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得]")
+	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
@@ -107,10 +107,19 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	str := re.ReplaceAllString(rawStr, "")
 	println(str)
 	qz := re.ReplaceAllString(quiz, "")
+
 	width := len([]rune(qz))
 	if width > 40 {
 		width = 40 //max window size
 	}
+
+	// Only match the important part of quiz, in neighbors of options
+	if strings.Contains(qz, "最") {
+		qz = qz[strings.Index(qz, "最"):]
+	} else if strings.Contains(qz, "的") {
+		qz = qz[strings.Index(qz, "的"):]
+	}
+
 	for _, option := range options {
 		opti := option
 		if strings.Index(option, "·") > 0 {
