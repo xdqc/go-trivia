@@ -81,13 +81,12 @@ func (s *spider) Init() {
 		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/fight/findQuiz" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
-			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 			go handleQuestionResp(bs) //no need of autoclick
-
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/choose" || ctx.Req.URL.Path == "/question/fight/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
-			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 			go handleChooseResponse(bs)
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "scwca-uploads-admin.cdn.itwlw.com:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))

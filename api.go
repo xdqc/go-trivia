@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -87,7 +88,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
 	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太值锈]")
-	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在")) &&
+	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
 			res[option] = -res[option] - 1
@@ -120,17 +121,20 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	// }
 
 	// Only match the important part of quiz, in neighbors of options
-	if strings.Index(qz, "最") > 0 && strings.Index(qz, "最") < len(qz)-1 {
+	if strings.Index(qz, "最") >= 0 && strings.Index(qz, "最") < len(qz)-4 {
 		qz = qz[strings.Index(qz, "最"):]
-	} else if strings.Index(qz, "属于") > 0 && strings.Index(qz, "属于") < len(qz)-1 {
-		qz = qz[strings.Index(qz, "属于"):]
-	} else if strings.Index(qz, "中") > 0 && strings.Index(qz, "中") < len(qz)-1 {
+		// } else if strings.Index(qz, "属于") >= 0 && strings.Index(qz, "属于") < len(qz)-4 {
+		// 	qz = qz[strings.Index(qz, "属于"):]
+	} else if strings.Index(qz, "中") >= 0 && strings.Index(qz, "中") < len(qz)-4 {
 		qz = qz[strings.Index(qz, "中"):]
-	} else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-1 && !hasQuote {
+	} else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-4 && !hasQuote {
 		qz = qz[strings.Index(qz, "的"):]
 	}
+	log.Println("truncated qz: \t" + qz)
 
-	for _, option := range options {
+	var optCounts [4]int
+
+	for k, option := range options {
 		opti := option
 		if strings.Index(option, "·") > 0 {
 			opti = option[strings.Index(option, "·")+1:] //only match last name
@@ -138,11 +142,14 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		opti = re.ReplaceAllString(opti, "")
 		opt := []rune(opti)
 		optLen := len(opt)
-		optCount := 0
+		optCount := 1
+		var optMatches []int
+		optMatches = append(optMatches, 1)
 		for i := range strs[0 : len(strs)-40] {
 			// find the index of option in the search text
 			if string(strs[i:i+optLen]) == opti {
 				optCount++
+				optMatch := 0
 				windowR := strs[i+len(opt) : i+len(opt)+width]
 				windowL := strs[i-width : i]
 				// Reverse windowL
@@ -162,10 +169,10 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							res[option] += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=200
+							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=200
 						}
 						if hasQuote && strings.ContainsRune(quoted, ch) {
-							res[option] += 200
+							optMatch += 200
 						}
 					}
 				}
@@ -175,19 +182,38 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							res[option] += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.2, factor=100
+							optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.2, factor=100
 						}
 						if hasQuote && strings.ContainsRune(quoted, ch) {
-							res[option] += 200
+							optMatch += 200
 						}
 					}
 				}
-				fmt.Printf("%s%6d\t%40s %40s\n", option, res[option], string(windowL), string(windowR))
+				res[option] += optMatch
+				optMatches = append(optMatches, optMatch)
+				fmt.Printf("%s%8d%8d\t%35s %35s\n", option, optMatch, res[option], string(windowLr), string(windowR))
 			}
 		}
-		// calculate the match density per occurence
-		res[option] = res[option] / optCount
+		optCounts[k] = optCount
+		sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
+		//only take first lg(len) number of top matches, sum up as the result of the option
+		optMatches = optMatches[0:int(math.Log2(float64(len(optMatches))))]
+		matches := 0
+		for _, m := range optMatches {
+			matches += m
+		}
+		res[option] = matches
 	}
+
+	// calculate the match density per occurence: (sum of squre per option) / (option count + harmonic mean counts)
+	// recipSum := 0.0
+	// for i := range options {
+	// 	recipSum += 1.0 / float64(optCounts[i])
+	// }
+	// harmonicMeanCount := int(4.0 / recipSum)
+	// for i, option := range options {
+	// 	res[option] = res[option] / (int(math.Sqrt(float64(optCounts[i]))))
+	// }
 }
 
 func searchBaidu(quiz string, options []string, c chan string) {
