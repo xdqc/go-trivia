@@ -2,6 +2,7 @@ package solver
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -28,6 +29,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 
 	ansPos = 0
 	answerItem := "不知道"
+	var odds [4]float32
 
 	if answer != "" {
 		for i, option := range question.Data.Options {
@@ -35,18 +37,27 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 				// question.Data.Options[i] = option + "[.]"
 				ansPos = i + 1
 				answerItem = option
+				odds[i] = 999
 				break
 			}
 		}
 	}
 
-	if true || answerItem == "不知道" {
+	if answerItem == "不知道" {
 		var ret map[string]int
 		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
+		total := 1
 
+		for _, option := range question.Data.Options {
+			total += ret[option]
+		}
 		max := math.MinInt32
 		for i, option := range question.Data.Options {
+			odd := float32(ret[option]) / float32(total-ret[option])
+			fmt.Printf("|%-10s|%6.2f\n", option, odd)
+			odds[i] = odd
+
 			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
 			if ret[option] > max && ret[option] != 0 {
 				max = ret[option]
@@ -59,6 +70,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
 	question.CalData.Answer = answerItem
 	question.CalData.AnswerPos = ansPos
+	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 	// println(string(questionInfo))
 
@@ -102,6 +114,7 @@ type Question struct {
 		Answer     string
 		AnswerPos  int
 		TrueAnswer string
+		Odds       [4]float32
 	} `json:"caldata"`
 	Errcode int `json:"errcode"`
 }

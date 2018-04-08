@@ -12,25 +12,28 @@
   <div class="quiz-questions" id="display-area">
     <p id="question">{{quiz}}</p>
     <ul id="answer">
-      <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">{{option}}</li>
+      <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">
+        {{option}}
+        <span class="odds">{{odds[i]}}</span>
+      </li>
     </ul>
   </div>
 </div>
 
-  <!-- Idioms -->
-  <div>
-    <textarea  [(ngModel)]="rawIdioms" id="rawIdioms"></textarea>
-    <button (click)="showIdioms()">Show Idioms</button>
-    <div *ngFor="let idiom of idioms">
-      <p class="idiom-confound">
-        <span *ngFor="let word of idiom['words']" class="
+<!-- Idioms -->
+<div>
+  <textarea [(ngModel)]="rawIdioms" id="rawIdioms"></textarea>
+  <button (click)="showIdioms()">Show Idioms</button>
+  <div *ngFor="let idiom of idioms">
+    <p class="idiom-confound">
+      <span *ngFor="let word of idiom['words']" class="
         first-{{word==idiom['idiom'][0]}} 
         second-{{word==idiom['idiom'][1]}} 
         third-{{word==idiom['idiom'][2]}}
         fourth-{{word==idiom['idiom'][3]}}
         ">{{word}}</span>
-      </p>
-      <h4>{{idiom['idiom']}}</h4>
-      <br>
-    </div>
+    </p>
+    <h4>{{idiom['idiom']}}</h4>
+    <br>
   </div>
+</div>

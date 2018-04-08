@@ -21,6 +21,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   qNum: qInfo.QuestionInfo['data']['num'];
   ans: qInfo.Caldata['Answer']
   ansPos: qInfo.Caldata['AnswerPos']
+  odds: qInfo.Caldata['Odds']
 
   speakOn: boolean;
 
@@ -72,6 +73,10 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.options = this.q.data.options;
             this.ans = this.q.caldata.Answer;
             this.ansPos = this.q.caldata.AnswerPos;
+            this.odds = this.q.caldata.Odds;
+            for(let i = 0; i<4; i++){
+              this.odds[i] = parseFloat(this.odds[i])>0.005 ? parseFloat(this.odds[i]).toFixed(2) : "0";
+            }
           }
         }
       );

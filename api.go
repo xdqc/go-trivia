@@ -86,7 +86,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太]")
+	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太值锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
@@ -102,21 +102,30 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 func CountMatches(quiz string, options []string, rawStr string, res map[string]int) {
+	hasQuote := strings.Contains(quiz, "「")
+	quoted := ""
+	if hasQuote {
+		quoted = quiz[strings.Index(quiz, "「"):strings.Index(quiz, "」")]
+	}
 	// filter out non alphanumeric/chinese/space
 	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
 	str := re.ReplaceAllString(rawStr, "")
 	println(str)
 	qz := re.ReplaceAllString(quiz, "")
 
-	width := len([]rune(qz))
-	if width > 40 {
-		width = 40 //max window size
-	}
+	// width := len([]rune(qz))
+	// if width > 40 {
+	width := 30 //max window size
+	// }
 
 	// Only match the important part of quiz, in neighbors of options
-	if strings.Contains(qz, "最") {
+	if strings.Index(qz, "最") > 0 && strings.Index(qz, "最") < len(qz)-1 {
 		qz = qz[strings.Index(qz, "最"):]
-	} else if strings.Contains(qz, "的") {
+	} else if strings.Index(qz, "属于") > 0 && strings.Index(qz, "属于") < len(qz)-1 {
+		qz = qz[strings.Index(qz, "属于"):]
+	} else if strings.Index(qz, "中") > 0 && strings.Index(qz, "中") < len(qz)-1 {
+		qz = qz[strings.Index(qz, "中"):]
+	} else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-1 && !hasQuote {
 		qz = qz[strings.Index(qz, "的"):]
 	}
 
@@ -135,7 +144,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				windowR := strs[i+len(opt) : i+len(opt)+width]
 				windowL := strs[i-width : i]
 				// Reverse windowL
-				windowL = func(s []rune) []rune {
+				windowLr := func(s []rune) []rune {
 					for l, r := 0, len(s)-1; l < r; l, r = l+1, r-1 {
 						s[l], s[r] = s[r], s[l]
 					}
@@ -143,7 +152,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				}(windowL)
 				// Evaluate pts of each window. Quiz the closer to option, the high points (gaussian distribution)
 				if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
-					for j, ch := range windowL {
+					for j, ch := range windowLr {
 						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
 							// stop match ABCD choices
 							break
@@ -152,6 +161,9 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						}
 						if strings.ContainsRune(qz, ch) {
 							res[option] += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=200
+						}
+						if hasQuote && strings.ContainsRune(quoted, ch) {
+							res[option] += 200
 						}
 					}
 				}
@@ -162,6 +174,9 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						}
 						if strings.ContainsRune(qz, ch) {
 							res[option] += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.2, factor=100
+						}
+						if hasQuote && strings.ContainsRune(quoted, ch) {
+							res[option] += 200
 						}
 					}
 				}

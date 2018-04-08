@@ -16,6 +16,7 @@ declare module QuestionInfo {
         Answer: string;
         AnswerPos: number;
         TrueAnswer: string;
+        Odds: string[];
     }
 
     export interface QuestionInfo {
