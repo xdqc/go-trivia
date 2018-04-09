@@ -44,7 +44,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	go searchBaiduWithOptions(quiz, options, search)
 
 	println("\n.......................searching..............................\n")
-	rawStr := "                                        "
+	rawStr := "                                            "
 	count := cap(search)
 	go func() {
 		for {
@@ -67,7 +67,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	case <-time.After(2 * time.Second):
 		fmt.Println("search timeout")
 	}
-	rawStr += "                                        "
+	rawStr += "                                            "
 	tx2 := time.Now()
 	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
@@ -95,8 +95,9 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太值敢锈]")
-	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
+	nonegreg := regexp.MustCompile("不[能同充分对称足够断停止得太值敢锈]")
+	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") ||
+		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
 			res[option] = -res[option] - 1
@@ -105,14 +106,13 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	tx3 := time.Now()
 	log.Printf("Processing time %d ms\n", tx3.Sub(tx2).Nanoseconds()/1e6)
-
 	return res
 }
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 func CountMatches(quiz string, options []string, rawStr string, res map[string]int) {
 	// filter out non alphanumeric/chinese/space
-	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
+	re := regexp.MustCompile("[^\\w\\p{Han}\\p{Greek} ]+")
 	str := re.ReplaceAllString(rawStr, "")
 	strs := []rune(str)
 	qz := re.ReplaceAllString(quiz, "")
@@ -124,7 +124,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		log.Println("quoted part of quiz: ", quoted)
 	}
 
-	width := 30 //max window size
+	width := 40 //max window size
 
 	var qkeywords []string
 	// Only match the important part of quiz, in neighbors of options
@@ -133,8 +133,8 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 			qz = qz[strings.IndexRune(qz, '最'):]
 			// } else if strings.Index(qz, "属于") >= 0 && strings.Index(qz, "属于") < len(qz)-4 {
 			// 	qz = qz[strings.Index(qz, "属于"):]
-		} else if strings.IndexRune(qz, '中') >= 0 && strings.IndexRune(qz, '中') < len(qz)-4 {
-			qz = qz[strings.IndexRune(qz, '中'):]
+			// } else if strings.IndexRune(qz, '中') >= 0 && strings.IndexRune(qz, '中') < len(qz)-4 {
+			// 	qz = qz[strings.IndexRune(qz, '中')+3:]
 			// } else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-4 && !hasQuote {
 			// 	qz = qz[strings.Index(qz, "的"):]
 		}
@@ -146,8 +146,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	words := JB.CutForSearch(qz, true)
 	var keywords []string
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "可以" || w == "什么" || w == "选项" || w == "属于" || w=="中") {
-			println(w)
+		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "以下" || w == "可以" || w == "什么" || w == "选项" || w == "属于" || w == "中") {
 			keywords = append(keywords, w)
 		}
 	}
@@ -158,7 +157,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	for k, option := range options {
 		opti := option
 		if strings.IndexRune(option, '·') > 0 {
-			opti = option[strings.IndexRune(option, '·')+1:] //only match last name
+			opti = option[strings.IndexRune(option, '·')+2:] //only match last name
 			log.Println("last name of ", option, " : ", opti)
 		}
 		opti = re.ReplaceAllString(opti, "")
@@ -197,8 +196,10 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						}
 					}
 					if quizMark > 1 {
-						plainQuizCount++
+						plainQuizCount += quizMark
 						continue
+					} else if quizMark == 1 {
+						plainQuizCount++
 					}
 					for j, w := range wordsL {
 						for _, word := range keywords {
@@ -223,8 +224,10 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						}
 					}
 					if quizMark > 1 {
-						plainQuizCount++
+						plainQuizCount += quizMark
 						continue
+					} else if quizMark == 1 {
+						plainQuizCount++
 					}
 					for j, w := range wordsR {
 						for _, word := range keywords {
@@ -243,13 +246,13 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				}
 				res[option] += optMatch
 				optMatches = append(optMatches, optMatch)
-				fmt.Printf("%s%4d%6d\t%v %v\n", option, optMatch, res[option], wordsL, wordsR)
+				fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
 			}
 		}
 		optCounts[k] = optCount
 		sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
 		//only take first lg(len) number of top matches, sum up as the result of the option
-		optMatches = optMatches[0:int(math.Log2(float64(len(optMatches))))]
+		optMatches = optMatches[0:int(2*math.Log2(float64(len(optMatches))))]
 		matches := 0
 		for _, m := range optMatches {
 			matches += m
@@ -257,15 +260,27 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		res[option] = matches
 	}
 
-	// if more than half matches are plain quiz, simplely set matches as the count of each option
+	// if majority matches are plain quiz, simplely set matches as the count of each option
 	sumCounts := 0
 	for i := range optCounts {
 		sumCounts += optCounts[i]
 	}
+	log.Println("Sum Count: ", sumCounts)
+	log.Println("PlainQuiz: ", plainQuizCount)
+	log.Printf("Key words: %v", keywords)
 	if plainQuizCount > sumCounts {
 		for i, option := range options {
 			res[option] = optCounts[i]
 		}
+	}
+
+	total := 1
+	for _, option := range options {
+		total += res[option]
+	}
+	for i, option := range options{
+		odd := float32(res[option]) / float32(total-res[option])
+		fmt.Printf("|%-6.12s|%4d|%8.2f\n", option, optCounts[i]-1,odd)
 	}
 
 }

@@ -2,7 +2,6 @@ package solver
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math"
 	"strconv"
@@ -56,7 +55,6 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 		max := math.MinInt32
 		for i, option := range question.Data.Options {
 			odd := float32(ret[option]) / float32(total-ret[option])
-			fmt.Printf("|%-10s|%6.2f\n", option, odd)
 			odds[i] = odd
 
 			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
