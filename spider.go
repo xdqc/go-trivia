@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/coreos/goproxy"
+	"github.com/yanyiwu/gojieba"
 )
 
 var (
@@ -29,14 +30,15 @@ func Run(port string, mode int) {
 func Close() {
 	db.Close()
 	memoryDb.Close()
-	J.Free()
+	JB.Free()
 }
 
 func newSpider() *spider {
 	sp := &spider{}
 	sp.proxy = goproxy.NewProxyHttpServer()
-	// r, _ := regexp.Compile("solebon.*")	goproxy.ReqHostMatches(r)
 	sp.proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	//Initialze jieba segmentor
+	JB = gojieba.NewJieba()
 	return sp
 }
 

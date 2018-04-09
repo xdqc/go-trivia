@@ -19,15 +19,11 @@ var (
 	google_URL = "http://www.google.com/search?"
 	baidu_URL  = "http://www.baidu.com/s?"
 	so360_URL  = "http://www.so.com/s?"
-	J          *gojieba.Jieba
+	JB         *gojieba.Jieba
 )
 
 //GetFromAPI searh the quiz via popular search engins
 func GetFromAPI(quiz string, options []string) map[string]int {
-	tx21 := time.Now()
-	J = gojieba.NewJieba()
-	tx22 := time.Now()
-	log.Printf("init jieba time: %d ms\n", tx22.Sub(tx21).Nanoseconds()/1e6)
 
 	res := make(map[string]int, len(options))
 	for _, option := range options {
@@ -75,17 +71,6 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	tx2 := time.Now()
 	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
-	// filter out non alphanumeric/chinese/space
-	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
-	qz := re.ReplaceAllString(quiz, "")
-	words := J.CutForSearch(qz, true)
-	var keywords []string
-	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "可以" || w == "什么" || w == "选项" || w == "属于") {
-			println(w)
-			keywords = append(keywords, w)
-		}
-	}
 	// sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 	CountMatches(quiz, options, rawStr, res)
 
@@ -97,7 +82,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	// }
 
 	// For no-number option, add count to its superstring option count （米波 add to 毫米波)
-	re = regexp.MustCompile("[\\d]+")
+	re := regexp.MustCompile("[\\d]+")
 	for _, opt := range options {
 		if !re.MatchString(opt) {
 			for _, subopt := range options {
@@ -126,24 +111,22 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 func CountMatches(quiz string, options []string, rawStr string, res map[string]int) {
+	// filter out non alphanumeric/chinese/space
+	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
+	str := re.ReplaceAllString(rawStr, "")
+	strs := []rune(str)
+	qz := re.ReplaceAllString(quiz, "")
+
 	hasQuote := strings.ContainsRune(quiz, '「')
 	quoted := ""
 	if hasQuote {
 		quoted = quiz[strings.IndexRune(quiz, '「'):strings.IndexRune(quiz, '」')]
 		log.Println("quoted part of quiz: ", quoted)
 	}
-	// filter out non alphanumeric/chinese/space
-	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
-	str := re.ReplaceAllString(rawStr, "")
-	println(str)
-	strs := []rune(str)
-	qz := re.ReplaceAllString(quiz, "")
 
-	// width := len([]rune(qz))
-	// if width > 40 {
 	width := 30 //max window size
-	// }
 
+	var qkeywords []string
 	// Only match the important part of quiz, in neighbors of options
 	if !hasQuote {
 		if strings.IndexRune(qz, '最') >= 0 && strings.IndexRune(qz, '最') < len(qz)-4 {
@@ -155,8 +138,19 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 			// } else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-4 && !hasQuote {
 			// 	qz = qz[strings.Index(qz, "的"):]
 		}
+	} else {
+		qkeywords = JB.Cut(quoted, true)
 	}
 	log.Println("truncated qz: \t" + qz)
+
+	words := JB.CutForSearch(qz, true)
+	var keywords []string
+	for _, w := range words {
+		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "可以" || w == "什么" || w == "选项" || w == "属于" || w=="中") {
+			println(w)
+			keywords = append(keywords, w)
+		}
+	}
 
 	var optCounts [4]int
 	plainQuizCount := 0
@@ -186,50 +180,70 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				windowR := wstrs[i+len(opt) : i+len(opt)+width]
 				windowL := wstrs[i-width : i]
 				// Reverse windowL
-				func(s []rune) []rune {
-					for l, r := 0, len(s)-1; l < r; l, r = l+1, r-1 {
-						s[l], s[r] = s[r], s[l]
-					}
-					return s
-				}(windowL)
+				// func(s []rune) []rune {
+				// 	for l, r := 0, len(s)-1; l < r; l, r = l+1, r-1 {
+				// 		s[l], s[r] = s[r], s[l]
+				// 	}
+				// 	return s
+				// }(windowL)
+				wordsL := JB.Cut(string(windowL), true)
+				wordsR := JB.Cut(string(windowR), true)
 				// Evaluate match-points of each window. Quiz the closer to option, the high points (gaussian distribution)
 				if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
-					for j, ch := range windowL {
-						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
-							// stop match ABCD choices
-							plainQuizCount++
-							continue
-						} else if ch == '的' {
-							continue
+					quizMark := 0
+					for _, w := range wordsL {
+						if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
+							quizMark++
 						}
-						if strings.ContainsRune(qz, ch) {
-							optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
+					}
+					if quizMark > 1 {
+						plainQuizCount++
+						continue
+					}
+					for j, w := range wordsL {
+						for _, word := range keywords {
+							if w == word {
+								optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
+							}
 						}
-						if hasQuote && strings.ContainsRune(quoted, ch) {
-							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1)) //e^(-x^2), sigma=1, factor=200
+						if hasQuote {
+							for _, word := range qkeywords {
+								if w == word {
+									optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1))
+								}
+							}
 						}
 					}
 				}
 				if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
-					for j, ch := range windowR {
-						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
-							// stop match ABCD choices
-							plainQuizCount++
-							continue
-						} else if ch == '的' {
-							continue
+					quizMark := 0
+					for _, w := range wordsR {
+						if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
+							quizMark++
 						}
-						if strings.ContainsRune(qz, ch) {
-							optMatch += int(75 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.15)) //e^(-x^2), sigma=0.15, factor=75
+					}
+					if quizMark > 1 {
+						plainQuizCount++
+						continue
+					}
+					for j, w := range wordsR {
+						for _, word := range keywords {
+							if w == word {
+								optMatch += int(75 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.15)) //e^(-x^2), sigma=0.1, factor=100
+							}
 						}
-						if hasQuote && strings.ContainsRune(quoted, ch) {
-							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1)) //e^(-x^2), sigma=1, factor=200
+						if hasQuote {
+							for _, word := range qkeywords {
+								if w == word {
+									optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1))
+								}
+							}
 						}
 					}
 				}
 				res[option] += optMatch
 				optMatches = append(optMatches, optMatch)
-				fmt.Printf("%s%8d%8d\t%35s %35s\n", option, optMatch, res[option], string(windowL), string(windowR))
+				fmt.Printf("%s%4d%6d\t%v %v\n", option, optMatch, res[option], wordsL, wordsR)
 			}
 		}
 		optCounts[k] = optCount
