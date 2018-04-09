@@ -71,7 +71,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 			//good
 			odds[ansPos-1] = 888
 		} else if answer != answerItem {
-			if answer != "" && odds[ansPos-1] < 5 {
+			if answer != "" && odds[ansPos-1] < 1 {
 				// searched result could be wrong
 				log.Println("searched answer could be wrong...")
 				answerItem = answer

@@ -29,6 +29,7 @@ func Run(port string, mode int) {
 func Close() {
 	db.Close()
 	memoryDb.Close()
+	J.Free()
 }
 
 func newSpider() *spider {

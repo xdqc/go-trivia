@@ -49,6 +49,12 @@
 			"revisionTime": "2018-03-15T21:10:51Z"
 		},
 		{
+			"checksumSHA1": "Hv9z6TVaG7s7EJAyuJ8N3pt0fOI=",
+			"path": "github.com/yanyiwu/gojieba",
+			"revision": "78c7e2ab4e2aaf35fcb394d26e5bca4805fc057d",
+			"revisionTime": "2017-07-15T13:47:19Z"
+		},
+		{
 			"checksumSHA1": "L68uqaYKEOxkq2xwnNV2bRP7yO4=",
 			"path": "golang.org/x/net/html",
 			"revision": "6078986fec03a1dcc236c34816c71b0e05018fda",

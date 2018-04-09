@@ -12,29 +12,40 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/yanyiwu/gojieba"
 )
 
 var (
 	google_URL = "http://www.google.com/search?"
 	baidu_URL  = "http://www.baidu.com/s?"
 	so360_URL  = "http://www.so.com/s?"
+	J          *gojieba.Jieba
 )
 
 //GetFromAPI searh the quiz via popular search engins
 func GetFromAPI(quiz string, options []string) map[string]int {
+	tx21 := time.Now()
+	J = gojieba.NewJieba()
+	tx22 := time.Now()
+	log.Printf("init jieba time: %d ms\n", tx22.Sub(tx21).Nanoseconds()/1e6)
+
 	res := make(map[string]int, len(options))
 	for _, option := range options {
 		res[option] = 0
 	}
-
-	search := make(chan string, 4)
+	search := make(chan string, 5)
 	done := make(chan bool, 1)
 	tx := time.Now()
 
-	go searchFeelingLucky(quiz, options, search)
+	go searchFeelingLucky(quiz, options, 0, search)
+	// go searchFeelingLucky(quiz, options, 1, search)
+	// go searchFeelingLucky(quiz, options, 2, search)
+	// go searchFeelingLucky(quiz, options, 3, search)
+	// go searchFeelingLucky(quiz, options, 4, search)
 	go searchGoogle(quiz, options, search)
 	go searchBaidu(quiz, options, search)
 	go searchGoogleWithOptions(quiz, options, search)
+	go searchBaiduWithOptions(quiz, options, search)
 
 	println("\n.......................searching..............................\n")
 	rawStr := "                                        "
@@ -43,6 +54,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 		for {
 			s, more := <-search
 			if more {
+				// First 7 chars in text is the identifier of the search source
 				log.Println("search received...", s[:7])
 				rawStr += s[7:]
 				count--
@@ -63,6 +75,17 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	tx2 := time.Now()
 	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
+	// filter out non alphanumeric/chinese/space
+	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
+	qz := re.ReplaceAllString(quiz, "")
+	words := J.CutForSearch(qz, true)
+	var keywords []string
+	for _, w := range words {
+		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "可以" || w == "什么" || w == "选项" || w == "属于") {
+			println(w)
+			keywords = append(keywords, w)
+		}
+	}
 	// sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 	CountMatches(quiz, options, rawStr, res)
 
@@ -74,7 +97,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	// }
 
 	// For no-number option, add count to its superstring option count （米波 add to 毫米波)
-	re := regexp.MustCompile("[\\d]+")
+	re = regexp.MustCompile("[\\d]+")
 	for _, opt := range options {
 		if !re.MatchString(opt) {
 			for _, subopt := range options {
@@ -87,7 +110,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太值锈]")
+	nonegreg := regexp.MustCompile("不[同充分对称足够断停止得太值敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {
 		for _, option := range options {
@@ -103,10 +126,11 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 func CountMatches(quiz string, options []string, rawStr string, res map[string]int) {
-	hasQuote := strings.Contains(quiz, "「")
+	hasQuote := strings.ContainsRune(quiz, '「')
 	quoted := ""
 	if hasQuote {
-		quoted = quiz[strings.Index(quiz, "「"):strings.Index(quiz, "」")]
+		quoted = quiz[strings.IndexRune(quiz, '「'):strings.IndexRune(quiz, '」')]
+		log.Println("quoted part of quiz: ", quoted)
 	}
 	// filter out non alphanumeric/chinese/space
 	re := regexp.MustCompile("[^\\w\\p{Han} ]+")
@@ -121,77 +145,91 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	// }
 
 	// Only match the important part of quiz, in neighbors of options
-	if strings.Index(qz, "最") >= 0 && strings.Index(qz, "最") < len(qz)-4 {
-		qz = qz[strings.Index(qz, "最"):]
-		// } else if strings.Index(qz, "属于") >= 0 && strings.Index(qz, "属于") < len(qz)-4 {
-		// 	qz = qz[strings.Index(qz, "属于"):]
-	} else if strings.Index(qz, "中") >= 0 && strings.Index(qz, "中") < len(qz)-4 {
-		qz = qz[strings.Index(qz, "中"):]
-	} else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-4 && !hasQuote {
-		qz = qz[strings.Index(qz, "的"):]
+	if !hasQuote {
+		if strings.IndexRune(qz, '最') >= 0 && strings.IndexRune(qz, '最') < len(qz)-4 {
+			qz = qz[strings.IndexRune(qz, '最'):]
+			// } else if strings.Index(qz, "属于") >= 0 && strings.Index(qz, "属于") < len(qz)-4 {
+			// 	qz = qz[strings.Index(qz, "属于"):]
+		} else if strings.IndexRune(qz, '中') >= 0 && strings.IndexRune(qz, '中') < len(qz)-4 {
+			qz = qz[strings.IndexRune(qz, '中'):]
+			// } else if strings.Index(qz, "的") > 0 && strings.Index(qz, "的") < len(qz)-4 && !hasQuote {
+			// 	qz = qz[strings.Index(qz, "的"):]
+		}
 	}
 	log.Println("truncated qz: \t" + qz)
 
 	var optCounts [4]int
+	plainQuizCount := 0
 
 	for k, option := range options {
 		opti := option
-		if strings.Index(option, "·") > 0 {
-			opti = option[strings.Index(option, "·")+1:] //only match last name
+		if strings.IndexRune(option, '·') > 0 {
+			opti = option[strings.IndexRune(option, '·')+1:] //only match last name
+			log.Println("last name of ", option, " : ", opti)
 		}
 		opti = re.ReplaceAllString(opti, "")
 		opt := []rune(opti)
 		optLen := len(opt)
 		optCount := 1
 		var optMatches []int
-		optMatches = append(optMatches, 1)
-		for i := range strs[0 : len(strs)-40] {
+		optMatches = append(optMatches, 0)
+		for i, r := range strs {
+			if r == ' ' {
+				continue
+			}
 			// find the index of option in the search text
 			if string(strs[i:i+optLen]) == opti {
 				optCount++
 				optMatch := 0
-				windowR := strs[i+len(opt) : i+len(opt)+width]
-				windowL := strs[i-width : i]
+				// create aother slice of runes, avoiding mess with strs
+				wstrs := []rune(str)
+				windowR := wstrs[i+len(opt) : i+len(opt)+width]
+				windowL := wstrs[i-width : i]
 				// Reverse windowL
-				windowLr := func(s []rune) []rune {
+				func(s []rune) []rune {
 					for l, r := 0, len(s)-1; l < r; l, r = l+1, r-1 {
 						s[l], s[r] = s[r], s[l]
 					}
 					return s
 				}(windowL)
-				// Evaluate pts of each window. Quiz the closer to option, the high points (gaussian distribution)
+				// Evaluate match-points of each window. Quiz the closer to option, the high points (gaussian distribution)
 				if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
-					for j, ch := range windowLr {
+					for j, ch := range windowL {
 						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
 							// stop match ABCD choices
-							break
+							plainQuizCount++
+							continue
 						} else if ch == '的' {
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=200
+							optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
 						}
 						if hasQuote && strings.ContainsRune(quoted, ch) {
-							optMatch += 200
+							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1)) //e^(-x^2), sigma=1, factor=200
 						}
 					}
 				}
 				if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
 					for j, ch := range windowR {
-						if ch == '的' {
+						if ch == 'A' || ch == 'B' || ch == 'C' || ch == 'D' {
+							// stop match ABCD choices
+							plainQuizCount++
+							continue
+						} else if ch == '的' {
 							continue
 						}
 						if strings.ContainsRune(qz, ch) {
-							optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.2, factor=100
+							optMatch += int(75 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.15)) //e^(-x^2), sigma=0.15, factor=75
 						}
 						if hasQuote && strings.ContainsRune(quoted, ch) {
-							optMatch += 200
+							optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1)) //e^(-x^2), sigma=1, factor=200
 						}
 					}
 				}
 				res[option] += optMatch
 				optMatches = append(optMatches, optMatch)
-				fmt.Printf("%s%8d%8d\t%35s %35s\n", option, optMatch, res[option], string(windowLr), string(windowR))
+				fmt.Printf("%s%8d%8d\t%35s %35s\n", option, optMatch, res[option], string(windowL), string(windowR))
 			}
 		}
 		optCounts[k] = optCount
@@ -205,15 +243,17 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 		res[option] = matches
 	}
 
-	// calculate the match density per occurence: (sum of squre per option) / (option count + harmonic mean counts)
-	// recipSum := 0.0
-	// for i := range options {
-	// 	recipSum += 1.0 / float64(optCounts[i])
-	// }
-	// harmonicMeanCount := int(4.0 / recipSum)
-	// for i, option := range options {
-	// 	res[option] = res[option] / (int(math.Sqrt(float64(optCounts[i]))))
-	// }
+	// if more than half matches are plain quiz, simplely set matches as the count of each option
+	sumCounts := 0
+	for i := range optCounts {
+		sumCounts += optCounts[i]
+	}
+	if plainQuizCount > sumCounts {
+		for i, option := range options {
+			res[option] = optCounts[i]
+		}
+	}
+
 }
 
 func searchBaidu(quiz string, options []string, c chan string) {
@@ -272,16 +312,20 @@ func searchGoogleWithOptions(quiz string, options []string, c chan string) {
 	c <- text // 2x weight
 }
 
-func searchFeelingLucky(quiz string, options []string, c chan string) {
+func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
 	values := url.Values{}
-	values.Add("q", quiz)
+	if id == 0 {
+		values.Add("q", quiz)
+	} else {
+		values.Add("q", options[id-1])
+	}
 	values.Add("btnI", "") //click I'm feeling lucky! button
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
 
-	log.Println("-------- luck url:  " + resp.Request.URL.Host + resp.Request.URL.Path + " /// " + resp.Request.Host)
-	text := "Lucky  "
+	log.Println("------------------------- lucky url:  " + resp.Request.URL.Host + resp.Request.URL.Path + " /// " + resp.Request.Host)
+	text := ""
 	if resp == nil || resp.Request.Host == "www.google.com" {
 
 	} else if resp.Request.URL.Host == "zh.wikipedia.org" {
@@ -294,12 +338,28 @@ func searchFeelingLucky(quiz string, options []string, c chan string) {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find("#bodyContent").Text()
 	} else {
-		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		text += doc.Find("body").Text()
+		//doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		//text += doc.Find("body").Text()
 		// log.Println(text)
 	}
+
+	// For options wiki, if no significant occurence of quiz in text, drop it
+	// if id > 0 {
+	// 	text := re.ReplaceAllString(text, "")
+	// 	numQzMatch := 0
+	// 	for _, w := range keywords {
+	// 		if strings.Contains(text, w) {
+	// 			numQzMatch++
+	// 		}
+	// 	}
+	// 	if float32(numQzMatch)/float32(len(keywords)) < 0.6 {
+	// 		text = ""
+	// 		log.Printf("Dropped search result of wiki %d : %s\n", id, options[id-1])
+	// 	}
+	// }
+
 	if len(text) > 10000 {
 		text = text[:10000]
 	}
-	c <- text
+	c <- fmt.Sprintf("Lucky %d", id) + text
 }
