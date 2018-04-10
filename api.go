@@ -67,7 +67,6 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	case <-time.After(2 * time.Second):
 		fmt.Println("search timeout")
 	}
-	rawStr += "                                            "
 	tx2 := time.Now()
 	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
@@ -146,7 +145,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	words := JB.CutForSearch(qz, true)
 	var keywords []string
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是") || w == "下列" || w == "以下" || w == "可以" || w == "什么" || w == "选项" || w == "属于" || w == "中") {
+		if !(strings.ContainsAny(w, " 的哪是了于") || w == "下列" || w == "以下" || w == "可以" || w == "什么" || w == "多少" || w == "选项" || w == "属于" || w == "中" || w == "中") {
 			keywords = append(keywords, w)
 		}
 	}
@@ -175,9 +174,9 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 				optCount++
 				optMatch := 0
 				// create aother slice of runes, avoiding mess with strs
-				wstrs := []rune(str)
-				windowR := wstrs[i+len(opt) : i+len(opt)+width]
-				windowL := wstrs[i-width : i]
+				// wstrs := []rune(str)
+				windowR := strs[i+len(opt) : i+len(opt)+width]
+				windowL := strs[i-width : i]
 				// Reverse windowL
 				// func(s []rune) []rune {
 				// 	for l, r := 0, len(s)-1; l < r; l, r = l+1, r-1 {
@@ -195,13 +194,14 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							quizMark++
 						}
 					}
-					if quizMark > 1 {
-						plainQuizCount += quizMark
-						continue
-					} else if quizMark == 1 {
-						plainQuizCount++
-					}
+					plainQuizCount += quizMark
 					for j, w := range wordsL {
+						if w == "答案" {
+							plainQuizCount -= quizMark
+							// if the option comes after "答案", gives very high match
+							optMatch += int(1000 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.025))
+						}
+
 						for _, word := range keywords {
 							if w == word {
 								optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
@@ -210,7 +210,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						if hasQuote {
 							for _, word := range qkeywords {
 								if w == word {
-									optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1))
+									optMatch += int(200 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
 								}
 							}
 						}
@@ -223,13 +223,12 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 							quizMark++
 						}
 					}
-					if quizMark > 1 {
-						plainQuizCount += quizMark
-						continue
-					} else if quizMark == 1 {
-						plainQuizCount++
-					}
+					plainQuizCount += quizMark
 					for j, w := range wordsR {
+						if w == "答案" {
+							plainQuizCount -= quizMark
+						}
+
 						for _, word := range keywords {
 							if w == word {
 								optMatch += int(75 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.15)) //e^(-x^2), sigma=0.1, factor=100
@@ -238,7 +237,7 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 						if hasQuote {
 							for _, word := range qkeywords {
 								if w == word {
-									optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/1))
+									optMatch += int(200 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
 								}
 							}
 						}
@@ -278,9 +277,9 @@ func CountMatches(quiz string, options []string, rawStr string, res map[string]i
 	for _, option := range options {
 		total += res[option]
 	}
-	for i, option := range options{
+	for i, option := range options {
 		odd := float32(res[option]) / float32(total-res[option])
-		fmt.Printf("|%-6.12s|%4d|%8.2f\n", option, optCounts[i]-1,odd)
+		fmt.Printf("%4d|%8.2f|%s\n", optCounts[i]-1, odd, option)
 	}
 
 }
@@ -296,7 +295,7 @@ func searchBaidu(quiz string, options []string, c chan string) {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text() + doc.Find("#content_left .m").Text() //.m ~zhidao
 	}
-	c <- text // 2x weight
+	c <- text + "                                            "
 }
 
 func searchBaiduWithOptions(quiz string, options []string, c chan string) {
@@ -310,7 +309,7 @@ func searchBaiduWithOptions(quiz string, options []string, c chan string) {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text()
 	}
-	c <- text
+	c <- text + "                                            "
 }
 
 func searchGoogle(quiz string, options []string, c chan string) {
@@ -324,7 +323,7 @@ func searchGoogle(quiz string, options []string, c chan string) {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
 	}
-	c <- text
+	c <- text + "                                            "
 }
 
 func searchGoogleWithOptions(quiz string, options []string, c chan string) {
@@ -338,7 +337,7 @@ func searchGoogleWithOptions(quiz string, options []string, c chan string) {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
 	}
-	c <- text // 2x weight
+	c <- text + "                                            " // 2x weight
 }
 
 func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
@@ -390,5 +389,5 @@ func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
 	if len(text) > 10000 {
 		text = text[:10000]
 	}
-	c <- fmt.Sprintf("Lucky %d", id) + text
+	c <- fmt.Sprintf("Lucky %d", id) + text + "                                            "
 }
