@@ -128,19 +128,19 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)         // testing
-	go searchGoogle(quiz, options, false, true, search)                                        // testing
-	go searchGoogleWithOptions(quiz, options, false, true, search)                             // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[0:1], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[1:2], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[2:3], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[3:4], false, true, search) // testing
-	go searchBaidu(quiz, quote, options, true, false, search)                                  // training
-	go searchBaiduWithOptions(quiz, options, true, false, search)                              // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[0:1], true, false, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[1:2], true, false, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[2:3], true, false, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[3:4], true, false, search)  // training
+	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search) // testing
+	go searchGoogle(quiz, options, false, true, search)                                // testing
+	go searchGoogleWithOptions(quiz, options, false, true, search)                     // testing
+	go searchGoogleWithOptions(quiz, options[0:1], true, true, search)                 // testing
+	go searchGoogleWithOptions(quiz, options[1:2], true, true, search)                 // testing
+	go searchGoogleWithOptions(quiz, options[2:3], true, true, search)                 // testing
+	go searchGoogleWithOptions(quiz, options[3:4], true, true, search)                 // testing
+	go searchBaidu(quiz, quote, options, false, true, search)                          // training
+	go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
+	go searchBaiduWithOptions(quiz, options[0:1], true, true, search)                  // training
+	go searchBaiduWithOptions(quiz, options[1:2], true, true, search)                  // training
+	go searchBaiduWithOptions(quiz, options[2:3], true, true, search)                  // training
+	go searchBaiduWithOptions(quiz, options[3:4], true, true, search)                  // training
 
 	println("\n.......................searching..............................\n")
 	rawStrTraining := "                                                  "
@@ -187,16 +187,16 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	// }
 
 	// For no-number option, add count to its superstring option count （米波 add to 毫米波)
-	reg := regexp.MustCompile("[\\d]+")
-	for _, opt := range options {
-		if !reg.MatchString(opt) {
-			for _, subopt := range options {
-				if opt != subopt && strings.Contains(opt, subopt) {
-					res[opt] += res[subopt]
-				}
-			}
-		}
-	}
+	// reg := regexp.MustCompile("[\\d]+")
+	// for _, opt := range options {
+	// 	if !reg.MatchString(opt) {
+	// 		for _, subopt := range options {
+	// 			if opt != subopt && strings.Contains(opt, subopt) {
+	// 				res[opt] += res[subopt]
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	negreg := regexp.MustCompile("「[^」]*[不][^」]*」")
@@ -223,10 +223,9 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	training := []rune(trainingStr)
 	testing := []rune(testingStr)
 	log.Printf("\t\t\t\tTraining: %d\tTesting: %d", len(training), len(testing))
-	qz := re.ReplaceAllString(quiz, "")
+	// qz := re.ReplaceAllString(quiz, "")
 
-	keywords, _ := preProcessQuiz(quiz, true)
-	shortOptions := preProcessOptions(options)
+	keywords, _ := preProcessQuiz(quiz, false)
 
 	// var qkeywords []string
 	// if quoted != "" {
@@ -234,109 +233,108 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	// }
 
 	// Calculate RSD of keywords of options, give each keyword a weight
-	kwWeight := trainKeyWords(training, keywords, shortOptions)
+	log.Println("\n each single results: ")
+	optCounts, plainQuizCount := trainKeyWords(training, keywords, options, res)
+	log.Println("\n combined results: ")
+	optCounts, plainQuizCount = trainKeyWords(testing, keywords, options, res)
+	//width := 50
+	// for k, option := range options {
+	// 	opti := string(shortOptions[k])
+	// 	optLen := len(shortOptions[k])
+	// 	var optMatches []int
+	// 	optMatches = append(optMatches, 0)
 
-	var optCounts [4]int
-	plainQuizCount := 0
+	// 	// calculate matching keywords in slinding window around each option
+	// 	for i, r := range testing {
+	// 		if r == ' ' {
+	// 			continue
+	// 		}
+	// 		// find the index of option in the search text
+	// 		if string(testing[i:i+optLen]) == opti {
+	// 			optMatch := 0
+	// 			windowR := testing[i+optLen : i+optLen+width]
+	// 			windowL := testing[i-width : i]
+	// 			wordsL := JB.Cut(string(windowL), true)
+	// 			wordsR := JB.Cut(string(windowR), true)
+	// 			// Evaluate match-points of each window. Quiz the closer to option, the high points (gaussian distribution)
+	// 			if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
+	// 				quizMark := 0
+	// 				for _, w := range wordsL {
+	// 					if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
+	// 						quizMark++
+	// 					}
+	// 				}
+	// 				plainQuizCount += quizMark
+	// 				if quizMark > 1 {
+	// 					optMatch = 0
+	// 					continue
+	// 				}
+	// 				for j, w := range wordsL {
+	// 					if w == "不是" && j == len(wordsL)-1 {
+	// 						optMatch = 0
+	// 						break
+	// 					}
+	// 					for _, word := range keywords {
+	// 						if w == word {
+	// 							optMatch += int(100 * kwWeight[w] * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
+	// 						}
+	// 					}
+	// 					// if quoted != "" {
+	// 					// 	for _, word := range qkeywords {
+	// 					// 		if w == word {
+	// 					// 			optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
+	// 					// 		}
+	// 					// 	}
+	// 					// }
+	// 				}
+	// 			}
+	// 			if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
+	// 				quizMark := 0
+	// 				for _, w := range wordsR {
+	// 					if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
+	// 						quizMark++
+	// 					}
+	// 				}
+	// 				plainQuizCount += quizMark
+	// 				if quizMark > 1 {
+	// 					optMatch = 0
+	// 					continue
+	// 				}
+	// 				for j, w := range wordsR {
+	// 					if w == "答案" {
+	// 						plainQuizCount -= quizMark
+	// 					}
 
-	width := 50
-	for k, option := range options {
-		opti := string(shortOptions[k])
-		optLen := len(shortOptions[k])
-		var optMatches []int
-		optMatches = append(optMatches, 0)
-
-		// calculate matching keywords in slinding window around each option
-		for i, r := range testing {
-			if r == ' ' {
-				continue
-			}
-			// find the index of option in the search text
-			if string(testing[i:i+optLen]) == opti {
-				optMatch := 0
-				windowR := testing[i+optLen : i+optLen+width]
-				windowL := testing[i-width : i]
-				wordsL := JB.Cut(string(windowL), true)
-				wordsR := JB.Cut(string(windowR), true)
-				// Evaluate match-points of each window. Quiz the closer to option, the high points (gaussian distribution)
-				if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
-					quizMark := 0
-					for _, w := range wordsL {
-						if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
-							quizMark++
-						}
-					}
-					plainQuizCount += quizMark
-					if quizMark > 1 {
-						optMatch = 0
-						continue
-					}
-					for j, w := range wordsL {
-						if w == "不是" && j == len(wordsL)-1 {
-							optMatch = 0
-							break
-						}
-						for _, word := range keywords {
-							if w == word {
-								optMatch += int(100 * kwWeight[w] * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
-							}
-						}
-						// if quoted != "" {
-						// 	for _, word := range qkeywords {
-						// 		if w == word {
-						// 			optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
-						// 		}
-						// 	}
-						// }
-					}
-				}
-				if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
-					quizMark := 0
-					for _, w := range wordsR {
-						if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
-							quizMark++
-						}
-					}
-					plainQuizCount += quizMark
-					if quizMark > 1 {
-						optMatch = 0
-						continue
-					}
-					for j, w := range wordsR {
-						if w == "答案" {
-							plainQuizCount -= quizMark
-						}
-
-						for _, word := range keywords {
-							if w == word {
-								optMatch += int(50 * kwWeight[w] * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
-							}
-						}
-						// if quoted != "" {
-						// 	for _, word := range qkeywords {
-						// 		if w == word {
-						// 			optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
-						// 		}
-						// 	}
-						// }
-					}
-				}
-				res[option] += optMatch
-				optMatches = append(optMatches, optMatch)
-				fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
-			}
-		}
-		optCounts[k] = len(optMatches)
-		sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
-		//only take first lg(len) number of top matches, sum up as the result of the option
-		logCount := int(math.Log2(float64(len(optMatches))))
-		optMatches = optMatches[0:logCount]
-		matches := 0
-		for _, m := range optMatches {
-			matches += m
-		}
-		res[option] = matches
-	}
+	// 					for _, word := range keywords {
+	// 						if w == word {
+	// 							optMatch += int(50 * kwWeight[w] * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
+	// 						}
+	// 					}
+	// 					// if quoted != "" {
+	// 					// 	for _, word := range qkeywords {
+	// 					// 		if w == word {
+	// 					// 			optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
+	// 					// 		}
+	// 					// 	}
+	// 					// }
+	// 				}
+	// 			}
+	// 			res[option] += optMatch
+	// 			optMatches = append(optMatches, optMatch)
+	// 			// fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
+	// 		}
+	// 	}
+	// 	optCounts[k] = len(optMatches)
+	// 	sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
+	// 	//only take first lg(len) number of top matches, sum up as the result of the option
+	// 	logCount := int(math.Log2(float64(len(optMatches))))
+	// 	optMatches = optMatches[0:logCount]
+	// 	matches := 0
+	// 	for _, m := range optMatches {
+	// 		matches += m
+	// 	}
+	// 	res[option] = matches
+	// }
 
 	sumCounts := 0
 	for i := range optCounts {
@@ -344,7 +342,6 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 	log.Println("Sum Count: ", sumCounts)
 	log.Println("PlainQuiz: ", plainQuizCount)
-	log.Printf("Key words: %v", keywords)
 	// if majority matches are plain quiz, simplely set matches as the count of each option
 	if sumCounts < 6 || 2*sumCounts < plainQuizCount {
 		for i, option := range options {
@@ -362,46 +359,78 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 }
 
-func trainKeyWords(training []rune, keywords []string, shortOptions [4][]rune) (kwWeight map[string]float64) {
+func trainKeyWords(training []rune, keywords []string, options []string, res map[string]int) ([4]int, int) {
 	// Evaluate the match points of each keywords for each option
 	kwMap := make(map[string][]int)
 	for _, kw := range keywords {
 		kwMap[kw] = make([]int, 4)
 	}
 
-	width := 30 //sliding window size
+	shortOptions := preProcessOptions(options)
+
+	var optCounts [4]int
+	plainQuizCount := 0
+
+	width := 50 //sliding window size
 
 	for k := range shortOptions {
 		opti := string(shortOptions[k])
 		optLen := len(shortOptions[k])
+		optCount := 1
 		for i, r := range training {
 			if r == ' ' {
 				continue
 			}
 			if string(training[i:i+optLen]) == opti {
+				optCount++
 				windowR := training[i+optLen : i+optLen+width]
 				windowL := training[i-width : i]
 				wordsL := JB.Cut(string(windowL), true)
 				wordsR := JB.Cut(string(windowR), true)
-				words := append(wordsL, wordsR...)
-				for _, w := range words {
+				wordsLR := append(wordsL, wordsR...)
+				quizMark := 0
+				for _, w := range wordsLR {
+					if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
+						quizMark++
+					}
+				}
+				plainQuizCount += quizMark
+				if quizMark > 1 {
+					continue
+				}
+				for j, w := range wordsL {
 					for _, word := range keywords {
 						if w == word {
-							kwMap[w][k]++
-							//kwMap[w][k] += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
+							// kwMap[w][k]++
+							kwMap[w][k] += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
+						}
+					}
+				}
+				for j, w := range wordsR {
+					for _, word := range keywords {
+						if w == word {
+							// kwMap[w][k]++
+							kwMap[w][k] += int(80 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 						}
 					}
 				}
 			}
 		}
+		optCounts[k] = optCount
 	}
 
-	// kwWeight := make(map[string]float64)
-	for kw, vect := range kwMap {
+	var kwKeys []string
+	for k := range kwMap {
+		kwKeys = append(kwKeys, k)
+	}
+	sort.Strings(kwKeys)
+
+	kwWeight := make(map[string]float64)
+	for _, kw := range kwKeys {
 		sum := 0
 		recpSum := 0.0
 		sqSum := 0
-		for _, v := range vect {
+		for _, v := range kwMap[kw] {
 			sum += v
 			sqSum += v * v
 			recpSum += 1.0 / float64(v+1)
@@ -411,9 +440,24 @@ func trainKeyWords(training []rune, keywords []string, shortOptions [4][]rune) (
 		hamonicMean := 4.0 / recpSum
 		rsd := math.Sqrt(variance) / hamonicMean
 		kwWeight[kw] = rsd
-		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", rsd*100, kw, vect)
+		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", rsd*100, kw, kwMap[kw])
 	}
-	return
+
+	optMatrix := make([][]float64, 4)
+	for i, option := range options {
+		optMatrix[i] = make([]float64, len(kwMap))
+		vNorm := 0.0
+		for j, kw := range kwKeys {
+			val := float64(kwMap[kw][i]) * kwWeight[kw]
+			optMatrix[i][j] = val
+			vNorm += val * val
+		}
+		vNorm = math.Sqrt(vNorm)
+		res[option] = int(vNorm)
+		fmt.Printf("%10s %6.2f\t%.0f\n", option, math.Log2(vNorm+1), optMatrix[i])
+	}
+
+	return optCounts, plainQuizCount
 }
 
 func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isTest bool, c chan string) {
