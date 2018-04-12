@@ -1,6 +1,7 @@
 package solver
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"math"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/yanyiwu/gojieba"
+	"golang.org/x/net/html"
 )
 
 var (
@@ -24,7 +26,7 @@ var (
 )
 
 func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted string) {
-	re := regexp.MustCompile("[^\\w\\p{Han}\\p{Greek} ]+")
+	re := regexp.MustCompile("[^\\p{L}\\p{N}\\p{Han} ]+")
 	qz := re.ReplaceAllString(quiz, ",")
 	var words []string
 	if isForSearch {
@@ -32,9 +34,9 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "未曾", "中"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "未曾", "不", "在", "上", "和", "与", "为", "被", "中", "其", "及", "将", "会", "指"}
 	for _, w := range words {
-		if !(strings.ContainsAny(w, ", 的哪是了于")) {
+		if !(strings.ContainsAny(w, ", 的哪是了几而谁")) {
 			stop := false
 			for _, sw := range stopwords {
 				if w == sw {
@@ -56,18 +58,11 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	return
 }
 
-func preProcessOptions(options []string, id int) (string, int) {
-	re := regexp.MustCompile("[^\\w\\p{Han}\\p{Greek} ]+")
-	var newOptions [][]rune
+func preProcessOptions(options []string) [4][]rune {
+	re := regexp.MustCompile("[\\p{N}\\p{Ll}\\p{Lu}\\p{Lt}]+")
+	var newOptions [4][]rune
 	for i, option := range options {
-		opti := option
-		if strings.IndexRune(option, '·') > 0 {
-			opti = option[strings.IndexRune(option, '·')+2:] //only match last name
-			log.Println("last name of ", option, " : ", opti)
-		}
-		opti = re.ReplaceAllString(opti, "")
-		opt := []rune(opti)
-		newOptions[i] = opt
+		newOptions[i] = []rune(option)
 	}
 	//trim begin/end commons of options
 	isSameBegin := true
@@ -75,6 +70,9 @@ func preProcessOptions(options []string, id int) (string, int) {
 	for isSameBegin || isSameEnd {
 		begin := newOptions[0][0]
 		end := newOptions[0][len(newOptions[0])-1]
+		if re.MatchString(string(begin)) || re.MatchString(string(end)) {
+			break
+		}
 		for _, option := range newOptions {
 			if option[0] != begin {
 				isSameBegin = false
@@ -84,19 +82,36 @@ func preProcessOptions(options []string, id int) (string, int) {
 			}
 		}
 		if isSameBegin {
-			for _, option := range newOptions {
+			for i, option := range newOptions {
 				option = option[1:]
+				newOptions[i] = option
+				log.Printf("options: %v", string(option))
 			}
-		} else if isSameEnd {
-			for _, option := range newOptions {
+		}
+		if isSameEnd {
+			for i, option := range newOptions {
 				option = option[:len(option)-1]
+				newOptions[i] = option
+				log.Printf("options: %v", string(option))
 			}
-		} else {
-			break
 		}
 	}
-
-	return string(newOptions[id]), len(newOptions[id])
+	for i, option := range newOptions {
+		idxDot := -1
+		for j, r := range option {
+			if r == '·' {
+				idxDot = j
+			}
+		}
+		if idxDot >= 0 && idxDot < len(option)-1 {
+			opti := option[idxDot+1:] //only match last name
+			newOptions[i] = opti
+		} else if idxDot == len(option)-1 {
+			opti := option[:idxDot] //trim end dot
+			newOptions[i] = opti
+		}
+	}
+	return newOptions
 }
 
 //GetFromAPI searh the quiz via popular search engins
@@ -107,33 +122,42 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 		res[option] = 0
 	}
 
-	search := make(chan string, 5)
+	search := make(chan string, 13)
 	done := make(chan bool, 1)
 	tx := time.Now()
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, search)   // testing
-	go searchGoogle(strings.Join(keywords, ""), options, search)            // testing
-	go searchBaidu(strings.Join(keywords, ""), quote, options, search)      // testing
-	go searchGoogleWithOptions(strings.Join(keywords, ""), options, search) // training
-	go searchBaiduWithOptions("", quote, options, search)                   // training
+	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)         // testing
+	go searchGoogle(quiz, options, false, true, search)                                        // testing
+	go searchGoogleWithOptions(quiz, options, false, true, search)                             // testing
+	go searchGoogleWithOptions(strings.Join(keywords, " "), options[0:1], false, true, search) // testing
+	go searchGoogleWithOptions(strings.Join(keywords, " "), options[1:2], false, true, search) // testing
+	go searchGoogleWithOptions(strings.Join(keywords, " "), options[2:3], false, true, search) // testing
+	go searchGoogleWithOptions(strings.Join(keywords, " "), options[3:4], false, true, search) // testing
+	go searchBaidu(quiz, quote, options, true, false, search)                                  // training
+	go searchBaiduWithOptions(quiz, options, true, false, search)                              // training
+	go searchBaiduWithOptions(strings.Join(keywords, " "), options[0:1], true, false, search)  // training
+	go searchBaiduWithOptions(strings.Join(keywords, " "), options[1:2], true, false, search)  // training
+	go searchBaiduWithOptions(strings.Join(keywords, " "), options[2:3], true, false, search)  // training
+	go searchBaiduWithOptions(strings.Join(keywords, " "), options[3:4], true, false, search)  // training
 
 	println("\n.......................searching..............................\n")
-	rawStrTraining := "                                            "
-	rawStrTesting := "                                            "
+	rawStrTraining := "                                                  "
+	rawStrTesting := "                                                  "
 	count := cap(search)
 	go func() {
 		for {
 			s, more := <-search
 			if more {
-				// First 7 chars in text is the identifier of the search source
-				id := s[:7]
-				log.Println("search received...", id)
-				if id[6] == '0' {
-					rawStrTraining += s[7:]
-				} else {
-					rawStrTesting += s[7:]
+				// First 8 chars in text is the identifier of the search source
+				id := s[:8]
+				// log.Println("search received...", id)
+				if id[6] == '1' {
+					rawStrTraining += s[8:]
+				}
+				if id[7] == '1' {
+					rawStrTesting += s[8:]
 				}
 				count--
 				if count == 0 {
@@ -176,7 +200,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	negreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能同充分对称足够具断停止得太值敢锈]")
+	nonegreg := regexp.MustCompile("不[能会同充分超过应该对称足够太具断停止值得敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || negreg.MatchString(quiz)) {
@@ -198,71 +222,27 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	testingStr = re.ReplaceAllString(testingStr, "")
 	training := []rune(trainingStr)
 	testing := []rune(testingStr)
+	log.Printf("\t\t\t\tTraining: %d\tTesting: %d", len(training), len(testing))
 	qz := re.ReplaceAllString(quiz, "")
 
-	keywords, quoted := preProcessQuiz(quiz, true)
+	keywords, _ := preProcessQuiz(quiz, true)
+	shortOptions := preProcessOptions(options)
 
-	var qkeywords []string
-	// Only match the important part of quiz, in neighbors of options
-	if quoted != "" {
-		qkeywords = JB.Cut(quoted, true)
-	}
+	// var qkeywords []string
+	// if quoted != "" {
+	// 	qkeywords = JB.Cut(quoted, true)
+	// }
 
-	// Evaluate the match points of each keywords for each option
-	kwMap := make(map[string][]int)
-	for _, kw := range keywords {
-		kwMap[kw] = make([]int, 4)
-	}
-
-	width := 40 //sliding window size
-
-	for k, option := range options {
-		opti, optLen := preProcessOption(options, k)
-		for i, r := range training {
-			if r == ' ' {
-				continue
-			}
-			if string(training[i:i+optLen]) == opti {
-				windowR := training[i+optLen : i+optLen+width]
-				windowL := training[i-width : i]
-				wordsL := JB.Cut(string(windowL), true)
-				wordsR := JB.Cut(string(windowR), true)
-				for _, w := range append(wordsL, wordsR...) {
-					for _, word := range keywords {
-						if w == word {
-							kwMap[w][k]++
-							//kwMap[w][k] += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
-						}
-					}
-				}
-			}
-		}
-	}
 	// Calculate RSD of keywords of options, give each keyword a weight
-	kwWeight := make(map[string]float64)
-	for kw, vect := range kwMap {
-		sum := 0
-		recpSum := 0.0
-		sqSum := 0
-		for _, v := range vect {
-			sum += v
-			sqSum += v * v
-			recpSum += 1.0 / float64(v+1)
-		}
-		mean := float64(sum) / 4.0
-		variance := float64(sqSum)/4.0 - mean*mean
-		hamonicMean := 4.0 / recpSum
-		rsd := math.Sqrt(variance) / hamonicMean
-		kwWeight[kw] = rsd
-		fmt.Printf("W~\t%4.2f%%\t%.10s\t%v\n", rsd*100, kw, vect)
-	}
+	kwWeight := trainKeyWords(training, keywords, shortOptions)
 
 	var optCounts [4]int
 	plainQuizCount := 0
 
+	width := 50
 	for k, option := range options {
-		opti, optLen := preProcessOptions(options, k)
-		optCount := 1
+		opti := string(shortOptions[k])
+		optLen := len(shortOptions[k])
 		var optMatches []int
 		optMatches = append(optMatches, 0)
 
@@ -273,7 +253,6 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 			}
 			// find the index of option in the search text
 			if string(testing[i:i+optLen]) == opti {
-				optCount += 2
 				optMatch := 0
 				windowR := testing[i+optLen : i+optLen+width]
 				windowL := testing[i-width : i]
@@ -289,27 +268,26 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 					}
 					plainQuizCount += quizMark
 					if quizMark > 1 {
-						optCount--
+						optMatch = 0
+						continue
 					}
 					for j, w := range wordsL {
-						if w == "答案" {
-							plainQuizCount -= quizMark
-							// if the option comes after "答案", gives very high match
-							optMatch += int(1000 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.025))
+						if w == "不是" && j == len(wordsL)-1 {
+							optMatch = 0
+							break
 						}
-
 						for _, word := range keywords {
 							if w == word {
-								optMatch += int(100 * kwWeight[w] * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
+								optMatch += int(100 * kwWeight[w] * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
 							}
 						}
-						if quoted != "" {
-							for _, word := range qkeywords {
-								if w == word {
-									optMatch += int(200 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
-								}
-							}
-						}
+						// if quoted != "" {
+						// 	for _, word := range qkeywords {
+						// 		if w == word {
+						// 			optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
+						// 		}
+						// 	}
+						// }
 					}
 				}
 				if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
@@ -321,7 +299,8 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 					}
 					plainQuizCount += quizMark
 					if quizMark > 1 {
-						optCount--
+						optMatch = 0
+						continue
 					}
 					for j, w := range wordsR {
 						if w == "答案" {
@@ -330,27 +309,28 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 
 						for _, word := range keywords {
 							if w == word {
-								optMatch += int(50 * kwWeight[w] * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.15)) //e^(-x^2), sigma=0.1, factor=100
+								optMatch += int(50 * kwWeight[w] * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
 							}
 						}
-						if quoted != "" {
-							for _, word := range qkeywords {
-								if w == word {
-									optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
-								}
-							}
-						}
+						// if quoted != "" {
+						// 	for _, word := range qkeywords {
+						// 		if w == word {
+						// 			optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
+						// 		}
+						// 	}
+						// }
 					}
 				}
 				res[option] += optMatch
 				optMatches = append(optMatches, optMatch)
-				// fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
+				fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
 			}
 		}
-		optCounts[k] = optCount
+		optCounts[k] = len(optMatches)
 		sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
 		//only take first lg(len) number of top matches, sum up as the result of the option
-		optMatches = optMatches[0:int(math.Log2(float64(len(optMatches))))]
+		logCount := int(math.Log2(float64(len(optMatches))))
+		optMatches = optMatches[0:logCount]
 		matches := 0
 		for _, m := range optMatches {
 			matches += m
@@ -358,7 +338,6 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 		res[option] = matches
 	}
 
-	// if majority matches are plain quiz, simplely set matches as the count of each option
 	sumCounts := 0
 	for i := range optCounts {
 		sumCounts += optCounts[i]
@@ -366,11 +345,12 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	log.Println("Sum Count: ", sumCounts)
 	log.Println("PlainQuiz: ", plainQuizCount)
 	log.Printf("Key words: %v", keywords)
-	// if plainQuizCount > sumCounts {
-	// 	for i, option := range options {
-	// 		res[option] = optCounts[i]
-	// 	}
-	// }
+	// if majority matches are plain quiz, simplely set matches as the count of each option
+	if sumCounts < 6 || 2*sumCounts < plainQuizCount {
+		for i, option := range options {
+			res[option] = optCounts[i]
+		}
+	}
 
 	total := 1
 	for _, option := range options {
@@ -378,70 +358,251 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 	for i, option := range options {
 		odd := float32(res[option]) / float32(total-res[option])
-		fmt.Printf("%4d|%8.2f|%s\n", optCounts[i]/2, odd, option)
+		fmt.Printf("%4d|%8.3f| %s\n", optCounts[i]-1, odd, option)
 	}
-
 }
 
-func searchBaidu(quiz string, quoted string, options []string, c chan string) {
+func trainKeyWords(training []rune, keywords []string, shortOptions [4][]rune) (kwWeight map[string]float64) {
+	// Evaluate the match points of each keywords for each option
+	kwMap := make(map[string][]int)
+	for _, kw := range keywords {
+		kwMap[kw] = make([]int, 4)
+	}
+
+	width := 30 //sliding window size
+
+	for k := range shortOptions {
+		opti := string(shortOptions[k])
+		optLen := len(shortOptions[k])
+		for i, r := range training {
+			if r == ' ' {
+				continue
+			}
+			if string(training[i:i+optLen]) == opti {
+				windowR := training[i+optLen : i+optLen+width]
+				windowL := training[i-width : i]
+				wordsL := JB.Cut(string(windowL), true)
+				wordsR := JB.Cut(string(windowR), true)
+				words := append(wordsL, wordsR...)
+				for _, w := range words {
+					for _, word := range keywords {
+						if w == word {
+							kwMap[w][k]++
+							//kwMap[w][k] += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.1)) //e^(-x^2), sigma=0.1, factor=100
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// kwWeight := make(map[string]float64)
+	for kw, vect := range kwMap {
+		sum := 0
+		recpSum := 0.0
+		sqSum := 0
+		for _, v := range vect {
+			sum += v
+			sqSum += v * v
+			recpSum += 1.0 / float64(v+1)
+		}
+		mean := float64(sum) / 4.0
+		variance := float64(sqSum)/4.0 - mean*mean
+		hamonicMean := 4.0 / recpSum
+		rsd := math.Sqrt(variance) / hamonicMean
+		kwWeight[kw] = rsd
+		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", rsd*100, kw, vect)
+	}
+	return
+}
+
+func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isTest bool, c chan string) {
 	values := url.Values{}
-	query := fmt.Sprintf("%q %s", quoted, quiz)
+	query := fmt.Sprintf("%q %s site:baidu.com", quoted, quiz)
 	values.Add("wd", query)
 	req, _ := http.NewRequest("GET", baidu_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
-	text := "baidu 1"
+	text := "baidu "
+	if isTrain {
+		text += "1"
+	} else {
+		text += "0"
+	}
+	if isTest {
+		text += "1"
+	} else {
+		text += "0"
+	}
 	if resp != nil {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text() + doc.Find("#content_left .m").Text() //.m ~zhidao
+		// text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text() + doc.Find("#content_left .m").Text() //.m ~zhidao
+
+		var buf bytes.Buffer
+		// Slightly optimized vs calling Each: no single selection object created
+		var f func(*html.Node)
+		f = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				// Keep newlines and spaces, like jQuery
+				buf.WriteString(n.Data)
+			}
+			if n.FirstChild != nil {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					f(c)
+				}
+			}
+		}
+		for _, n := range doc.Find("#content_left .c-abstract").Nodes {
+			f(n)
+			text += buf.String() + "                                                  "
+			buf.Reset()
+		}
+
 	}
-	c <- text + "                                            "
+	c <- text + "                                                  "
 }
 
-func searchBaiduWithOptions(quiz string, quoted string, options []string, c chan string) {
+func searchBaiduWithOptions(quiz string, options []string, isTrain bool, isTest bool, c chan string) {
 	values := url.Values{}
-	query := fmt.Sprintf("%q %s %s", quoted, quiz, strings.Join(options, " "))
+	query := fmt.Sprintf("%s %s", quiz, strings.Join(options, " "))
 	values.Add("wd", query)
 	req, _ := http.NewRequest("GET", baidu_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
-	text := "baidu 0"
+	text := "baiOp "
+	if isTrain {
+		text += "1"
+	} else {
+		text += "0"
+	}
+	if isTest {
+		text += "1"
+	} else {
+		text += "0"
+	}
 	if resp != nil {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text()
+		// text += doc.Find("#content_left .t").Text() + doc.Find("#content_left .c-abstract").Text()
+		var buf bytes.Buffer
+		// Slightly optimized vs calling Each: no single selection object created
+		var f func(*html.Node)
+		f = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				// Keep newlines and spaces, like jQuery
+				buf.WriteString(n.Data)
+			}
+			if n.FirstChild != nil {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					f(c)
+				}
+			}
+		}
+		for _, n := range doc.Find("#content_left .c-abstract").Nodes {
+			f(n)
+			text += buf.String() + "                                                  "
+			buf.Reset()
+		}
 	}
-	c <- text + "                                            "
+	c <- text + "                                                  "
 }
 
-func searchGoogle(quiz string, options []string, c chan string) {
+func searchGoogle(quiz string, options []string, isTrain bool, isTest bool, c chan string) {
 	values := url.Values{}
 	values.Add("q", quiz)
+	values.Add("lr", "lang_zh-CN")
+	values.Add("ie", "utf8")
+	values.Add("oe", "utf8")
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
-	text := "googl 1"
+	text := "googl "
+	if isTrain {
+		text += "1"
+	} else {
+		text += "0"
+	}
+	if isTest {
+		text += "1"
+	} else {
+		text += "0"
+	}
 	if resp != nil {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
+		// text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
+		var buf bytes.Buffer
+		// Slightly optimized vs calling Each: no single selection object created
+		var f func(*html.Node)
+		f = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				// Keep newlines and spaces, like jQuery
+				buf.WriteString(n.Data)
+			}
+			if n.FirstChild != nil {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					f(c)
+				}
+			}
+		}
+		titleNodes := doc.Find(".r").Nodes
+		for i, n := range doc.Find(".st").Nodes {
+			f(titleNodes[i])
+			f(n)
+			text += buf.String() + "                                                  "
+			buf.Reset()
+		}
 	}
-	c <- text + "                                            "
+	c <- text + "                                                  "
 }
 
-func searchGoogleWithOptions(quiz string, options []string, c chan string) {
+func searchGoogleWithOptions(quiz string, options []string, isTrain bool, isTest bool, c chan string) {
 	values := url.Values{}
 	values.Add("q", quiz+" \""+strings.Join(options, "\" OR \"")+"\"")
+	values.Add("lr", "lang_zh-CN")
+	values.Add("ie", "utf8")
+	values.Add("oe", "utf8")
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
-	text := "googl 0"
+	text := "gooOp "
+	if isTrain {
+		text += "1"
+	} else {
+		text += "0"
+	}
+	if isTest {
+		text += "1"
+	} else {
+		text += "0"
+	}
 	if resp != nil {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
+		// text += doc.Find(".r").Text() + doc.Find(".st").Text() + doc.Find(".P1usbc").Text() //.P1usbc ~wiki
+		var buf bytes.Buffer
+		// Slightly optimized vs calling Each: no single selection object created
+		var f func(*html.Node)
+		f = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				// Keep newlines and spaces, like jQuery
+				buf.WriteString(n.Data)
+			}
+			if n.FirstChild != nil {
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					f(c)
+				}
+			}
+		}
+		titleNodes := doc.Find(".r").Nodes
+		for i, n := range doc.Find(".st").Nodes {
+			f(titleNodes[i])
+			f(n)
+			text += buf.String() + "                                                  "
+			buf.Reset()
+		}
 	}
-	c <- text + "                                            " // 2x weight
+	c <- text + "                                                  " // 2x weight
 }
 
-func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
+func searchFeelingLucky(quiz string, options []string, id int, isTrain bool, isTest bool, c chan string) {
 	values := url.Values{}
 	if id == 0 {
 		values.Add("q", quiz)
@@ -449,13 +610,23 @@ func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
 	} else {
 		values.Add("q", options[id-1])
 	}
+	values.Add("lr", "lang_zh-CN")
 	values.Add("btnI", "") //click I'm feeling lucky! button
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 
-	log.Println("------------------------- lucky url:  " + resp.Request.URL.Host + resp.Request.URL.Path + " /// " + resp.Request.Host)
-	text := ""
+	log.Println("                   luck" + strconv.Itoa(id) + " url:  " + resp.Request.URL.Host + resp.Request.URL.Path + " /// " + resp.Request.Host)
+	text := "Luck" + strconv.Itoa(id) + " "
+	if isTrain {
+		text += "1"
+	} else {
+		text += "0"
+	}
+	if isTest {
+		text += "1"
+	} else {
+		text += "0"
+	}
 	if resp == nil || resp.Request.Host == "www.google.com" {
 
 	} else if resp.Request.URL.Host == "zh.wikipedia.org" {
@@ -467,31 +638,19 @@ func searchFeelingLucky(quiz string, options []string, id int, c chan string) {
 	} else if resp.Request.URL.Host == "wiki.mbalib.com" {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		text += doc.Find("#bodyContent").Text()
+	} else if resp.Request.URL.Host == "www.zhihu.com" {
+		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		text += doc.Find(".QuestionHeader-title").Text()
 	} else {
 		//doc, _ := goquery.NewDocumentFromReader(resp.Body)
 		//text += doc.Find("body").Text()
 		// log.Println(text)
 	}
 
-	// For options wiki, if no significant occurence of quiz in text, drop it
-	// if id > 0 {
-	// 	text := re.ReplaceAllString(text, "")
-	// 	numQzMatch := 0
-	// 	for _, w := range keywords {
-	// 		if strings.Contains(text, w) {
-	// 			numQzMatch++
-	// 		}
-	// 	}
-	// 	if float32(numQzMatch)/float32(len(keywords)) < 0.6 {
-	// 		text = ""
-	// 		log.Printf("Dropped search result of wiki %d : %s\n", id, options[id-1])
-	// 	}
-	// }
-
 	if len(text) > 10000 {
 		text = text[:10000]
 	}
-	c <- fmt.Sprintf("Lucky 1%d", id) + text + "                                            "
+	c <- text + "                                                  "
 }
 
 //GetFromAPISearchNum search key word of quiz and each option, compare the google results number
@@ -555,7 +714,7 @@ func GetFromAPISearchNum(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	re = regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能同充分对称足够断停止得太值敢锈]")
+	nonegreg := regexp.MustCompile("不[能同充分对称足够超过停止断得太值敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || re.MatchString(quiz)) {

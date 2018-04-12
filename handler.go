@@ -26,7 +26,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	// question.CalData.Answer = answer
 	go SetQuestion(question)
 
-	ansPos = 1
+	ansPos = 0
 	answerItem := "不知道"
 	var odds [4]float32
 
@@ -36,14 +36,15 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 				// question.Data.Options[i] = option + "[.]"
 				ansPos = i + 1
 				answerItem = option
-				odds[i] = 999
+				odds[i] = 888
 				break
 			}
 		}
 	}
 	storedAnsPos := ansPos
 
-	if true || answerItem == "不知道" {
+	// Put true here to force searching, even if found answer in db
+	if storedAnsPos == 0 {
 		var ret map[string]int
 		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
@@ -54,9 +55,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 		}
 		max := math.MinInt32
 		for i, option := range question.Data.Options {
-			odd := float32(ret[option]) / float32(total-ret[option])
-			odds[i] = odd
-
+			odds[i] = float32(ret[option]) / float32(total-ret[option])
 			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
 			if ret[option] > max && ret[option] != 0 {
 				max = ret[option]
@@ -67,17 +66,25 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 		// verify the stored answer
 		if answer == answerItem {
 			//good
-			odds[ansPos-1] = 888
-		} else if answer != answerItem {
-			if answer != "" && odds[ansPos-1] < 1 {
+			odds[ansPos-1] += 600
+		} else {
+			if answer != "" {
 				// searched result could be wrong
-				log.Println("searched answer could be wrong...")
-				answerItem = answer
-				ansPos = storedAnsPos
-				odds[ansPos-1] = 99
-			} else if answer != "" {
-				// stored answer may be corrupted
-				log.Println("stored answer may be corrupted...")
+				if storedAnsPos != 0 {
+					if odds[ansPos-1] < 3 {
+						log.Println("searched answer could be wrong...")
+						answerItem = answer
+						ansPos = storedAnsPos
+						odds[ansPos-1] = 333
+					} else {
+						// stored answer may be corrupted
+						log.Println("stored answer may be corrupted...")
+						odds[ansPos-1] = 444
+					}
+				} else {
+					// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
+					log.Println("the previous option words changed by the game...")
+				}
 			} else {
 				log.Println("new question got!")
 			}

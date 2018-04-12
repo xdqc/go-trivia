@@ -63,12 +63,17 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.odds = this.q.caldata.Odds;
             for (let i = 0; i < 4; i++) {
               let n = parseFloat(this.odds[i])
-              this.odds[i] = n >= 999 ? "999" : n >= 100 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+              this.odds[i] = n >= 999 ? "999" : n >=888? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
             }
             if (this.speakOn && this.quiz !== this.q.data.quiz) {
               // speak out new question answer
-              let utterance = this.odds.some(n => parseFloat(n) > 5) ? '选' : '可能';
-              let msg = new SpeechSynthesisUtterance(utterance + this.q.caldata.AnswerPos + '。 ');//+ this.q.data.quiz + this.q.caldata.Answer
+              let higestOdd = 0
+              this.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
+              let utterance = higestOdd == 444 ? '谷歌' : higestOdd == 333 ? '记录' : higestOdd > 5 ? '选' : '可能';
+              if (this.q.data.school == '理科' && higestOdd < 5) {
+                utterance = '注意' + utterance
+              }
+              let msg = new SpeechSynthesisUtterance(utterance + this.q.caldata.AnswerPos + '。 '+ this.q.caldata.Answer);//+ this.q.data.quiz 
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
