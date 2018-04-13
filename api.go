@@ -33,7 +33,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "没有", "未曾", "称为", "不", "在", "上", "和", "与", "为", "于", "被", "中", "其", "及", "将", "会", "指"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "没有", "未曾", "称为", "不", "在", "上", "和", "或", "与", "为", "于", "被", "中", "其", "及", "将", "会", "指", "省"}
 	for _, w := range words {
 		if !(strings.ContainsAny(w, " 的哪是了几而谁")) {
 			stop := false
@@ -477,22 +477,22 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 	optMatrix := make([][]float64, 4)
 	for i, option := range options {
 		optMatrix[i] = make([]float64, len(kwMap))
-		vNorm := 0.0
+		vNorm := 1.0
 		for j, kw := range kwKeys {
 			val := float64(kwMap[kw][i])
 			optMatrix[i][j] = val * kwWeight[kw]
 			vNorm += val * val
 		}
 		vNorm = math.Sqrt(vNorm)
-		vM := 0.0
+		dotProd := 0.0
 		for j := range kwKeys {
-			val := optMatrix[i][j] / (vNorm + 1)
+			val := optMatrix[i][j] / vNorm
 			optMatrix[i][j] = val
-			vM += val * val
+			dotProd += val
 		}
 		// vM = math.Sqrt(vM)
-		res[option] = int(vM * 10000)
-		fmt.Printf("%10s %8.4f\t%1.2f\n", option, vM, optMatrix[i])
+		res[option] = int(dotProd * 10000)
+		fmt.Printf("%10s %8.4f\t%1.2f\n", option, dotProd, optMatrix[i])
 	}
 
 	return optCounts, plainQuizCount
