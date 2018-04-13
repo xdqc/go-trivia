@@ -77,7 +77,7 @@ export class BrainComponent implements OnInit, OnDestroy {
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
-              msg.volume = 0.50
+              msg.volume = 0.20
               // console.log(msg);
               speechSynthesis.speak(msg)
             }
