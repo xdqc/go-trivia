@@ -33,7 +33,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "没有", "未曾", "称为", "不", "在", "上", "和", "或", "与", "为", "于", "被", "中", "其", "及", "将", "会", "指", "省"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "没有", "未曾", "称为", "不", "在", "上", "和", "或", "与", "为", "于", "被", "中", "其", "及", "至", "将", "会", "指", "省"}
 	for _, w := range words {
 		if !(strings.ContainsAny(w, " 的哪是了几而谁")) {
 			stop := false
@@ -468,8 +468,8 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 		 * let the keywords that has one significant count for a option to gain a very
 		 * prominent weight, rather than some limited weight < 1
 		 */
-		geoMean := math.Sqrt(math.Sqrt(float64(prod)))
-		rsd := math.Sqrt(variance) / geoMean
+		// geoMean := math.Sqrt(math.Sqrt(float64(prod)))
+		rsd := math.Sqrt(variance) / mean
 		kwWeight[kw] = rsd
 		fmt.Printf("W~\t%4.2f\t%6s\t%v\n", rsd*100, kw, kwMap[kw])
 	}
@@ -484,15 +484,15 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 			vNorm += val * val
 		}
 		vNorm = math.Sqrt(vNorm)
-		dotProd := 0.0
+		vM := 0.0
 		for j := range kwKeys {
 			val := optMatrix[i][j] / vNorm
 			optMatrix[i][j] = val
-			dotProd += val
+			vM += val * val
 		}
-		// vM = math.Sqrt(vM)
-		res[option] = int(dotProd * 10000)
-		fmt.Printf("%10s %8.4f\t%1.2f\n", option, dotProd, optMatrix[i])
+		vM = math.Sqrt(vM)
+		res[option] = int(math.Exp(vM) * math.Log(float64(optCounts[i])) * 10000)
+		fmt.Printf("%10s %8.4f\t%1.2f\n", option, vM, optMatrix[i])
 	}
 
 	return optCounts, plainQuizCount
