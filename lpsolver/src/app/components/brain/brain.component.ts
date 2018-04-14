@@ -24,6 +24,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   odds: qInfo.Caldata['Odds']
 
   speakOn: boolean;
+  volume: number;
 
   fetch
 
@@ -77,7 +78,7 @@ export class BrainComponent implements OnInit, OnDestroy {
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
-              msg.volume = 0.20
+              msg.volume = this.volume/100
               // console.log(msg);
               speechSynthesis.speak(msg)
             }

@@ -1,6 +1,9 @@
 <!-- Main page -->
 <label for="speaker">Speaker</label>
 <input type="checkbox" [(ngModel)]="speakOn" id="speaker">
+<div *ngIf="speakOn" style="display: inline-block;">
+  <input type="range" value="100" min="0" max="200" [(ngModel)]="volume" class="volume-slider">
+</div>
 <div class="main form-area">
   <!-- Number of Question  -->
   <div class="wrapper" id="pages">

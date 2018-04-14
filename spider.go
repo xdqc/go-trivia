@@ -64,8 +64,8 @@ func (s *spider) Init() {
 		if resp == nil {
 			return resp
 		}
-		// println(ctx.Req.URL.Host)
-		// println(ctx.Req.URL.Path)
+		println(ctx.Req.URL.Host)
+		println(ctx.Req.URL.Path)
 
 		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" {
 			//send letterpress match data to webserver
@@ -81,19 +81,21 @@ func (s *spider) Init() {
 				go deleteWordDb(inValidWord)
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/fight/findQuiz" {
+		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
+			println("\nquiz\n" + string(bs))
 			go handleQuestionResp(bs) //no need of autoclick
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Path == "/question/bat/choose" || ctx.Req.URL.Path == "/question/fight/choose" {
+		} else if ctx.Req.URL.Path == "/question/bat/choose" || ctx.Req.URL.Path == "/question/dailyChallenge/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
+			println("\nchoose:\n" + string(bs))
 			go handleChooseResponse(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Host == "scwca-uploads-admin.cdn.itwlw.com:443" {
+		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
-			go setIdiom(bs)
+
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {
 			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
