@@ -22,6 +22,7 @@ var (
 	google_URL = "http://www.google.com/search?"
 	baidu_URL  = "http://www.baidu.com/s?"
 	JB         *gojieba.Jieba
+	N_opt      = 4
 )
 
 func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted string) {
@@ -57,9 +58,9 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	return
 }
 
-func preProcessOptions(options []string) [4][]rune {
+func preProcessOptions(options []string) [][]rune {
 	re := regexp.MustCompile("[\\p{N}\\p{Ll}\\p{Lu}\\p{Lt}]+")
-	var newOptions [4][]rune
+	newOptions := make([][]rune, N_opt)
 	for i, option := range options {
 		newOptions[i] = []rune(option)
 	}
@@ -117,31 +118,28 @@ func preProcessOptions(options []string) [4][]rune {
 
 //GetFromAPI searh the quiz via popular search engins
 func GetFromAPI(quiz string, options []string) map[string]int {
+	N_opt = len(options)
 
-	res := make(map[string]int, len(options))
+	res := make(map[string]int, N_opt)
 	for _, option := range options {
 		res[option] = 0
 	}
 
-	search := make(chan string, 13)
+	search := make(chan string, 5+2*N_opt)
 	done := make(chan bool, 1)
 	tx := time.Now()
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)         // testing
-	go searchGoogle(quiz, options, true, true, search)                                         // testing
-	go searchGoogleWithOptions(quiz, options, false, true, search)                             // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[0:1], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[1:2], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[2:3], false, true, search) // testing
-	go searchGoogleWithOptions(strings.Join(keywords, " "), options[3:4], false, true, search) // testing
-	go searchBaidu(quiz, quote, options, true, true, search)                                   // training
-	go searchBaiduWithOptions(quiz, options, false, true, search)                              // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[0:1], false, true, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[1:2], false, true, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[2:3], false, true, search)  // training
-	go searchBaiduWithOptions(strings.Join(keywords, " "), options[3:4], false, true, search)  // training
+	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search) // testing
+	go searchGoogle(quiz, options, true, true, search)                                 // testing
+	go searchGoogleWithOptions(quiz, options, false, true, search)                     // testing
+	go searchBaidu(quiz, quote, options, true, true, search)                           // training
+	go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
+	for i := range options {
+		go searchGoogleWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search) // testing
+		go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
+	}
 
 	println("\n.......................searching..............................\n")
 	rawStrTraining := "                                                  "
@@ -151,7 +149,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 		for {
 			s, more := <-search
 			if more {
-				// First 8 chars in text is the identifier of the search source
+				// The first 8 chars in text is the identifier of the search source
 				id := s[:8]
 				// log.Println("search received...", id)
 				if id[6] == '1' {
@@ -359,12 +357,12 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 }
 
-func trainKeyWords(training []rune, quiz string, options []string, res map[string]int) ([4]int, int) {
+func trainKeyWords(training []rune, quiz string, options []string, res map[string]int) ([]int, int) {
 	keywords, quoted := preProcessQuiz(quiz, false)
 	// Evaluate the match points of each keywords for each option
 	kwMap := make(map[string][]int)
 	for _, kw := range keywords {
-		kwMap[kw] = make([]int, 4)
+		kwMap[kw] = make([]int, N_opt)
 	}
 	var quotedKeywords []string
 	if quoted != "" {
@@ -372,7 +370,7 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 	}
 	shortOptions := preProcessOptions(options)
 
-	var optCounts [4]int
+	optCounts := make([]int, N_opt)
 	plainQuizCount := 0
 
 	width := 50 //sliding window size
@@ -455,6 +453,7 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 	}
 	sort.Strings(kwKeys)
 
+	// Calculate the weight of each keyword, by the RSD of the kw score on options
 	kwWeight := make(map[string]float64)
 	for _, kw := range kwKeys {
 		sum := 0
@@ -464,8 +463,8 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 			sum += v
 			sqSum += v * v
 		}
-		mean := float64(sum) / 4.0
-		variance := float64(sqSum)/4.0 - mean*mean
+		mean := float64(sum) / float64(N_opt)
+		variance := float64(sqSum)/float64(N_opt) - mean*mean
 		rsd := 0.0
 		if mean > 0 {
 			rsd = math.Sqrt(variance) / mean
@@ -474,7 +473,7 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 		fmt.Printf("W~\t%4.2f\t%6s\t%v\n", rsd*100, kw, kwMap[kw])
 	}
 
-	optMatrix := make([][]float64, 4)
+	optMatrix := make([][]float64, N_opt)
 	for i, option := range options {
 		optMatrix[i] = make([]float64, len(kwMap))
 		vNorm := 1.0

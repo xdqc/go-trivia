@@ -11,22 +11,26 @@ var (
 	roomID string
 )
 
-//根据题目返回,进行答案搜索
-func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
-	bsNew = bs
+func handleQuestionResp(bs []byte) {
 	question := &Question{}
-	json.Unmarshal(bs, question)
+	if len(bs) > 0 {
+		// Get quiz from MITM
+		json.Unmarshal(bs, question)
+	} else {
+		// Get quiz from OCR
+		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
+	}
 	question.CalData.RoomID = roomID
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
 
-	//Get the answer from the db
+	//Get the answer from the db if question fetched by MITM
 	answer := FetchQuestion(question)
+	ansPos := 0
 
 	// question.CalData.TrueAnswer = answer
 	// question.CalData.Answer = answer
 	go SetQuestion(question)
 
-	ansPos = 0
 	answerItem := "不知道"
 	var odds [4]float32
 
@@ -97,9 +101,6 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 	// println(string(questionInfo))
-
-	//返回答案
-	return bs, ansPos
 }
 
 func handleChooseResponse(bs []byte) {
@@ -112,6 +113,7 @@ func handleChooseResponse(bs []byte) {
 		log.Println("error getting question", chooseResp.Data.RoomID, chooseResp.Data.Num)
 		return
 	}
+	//If the question fetched by MITM, save it; elif fetched by OCR(no roomID or Num), don't save
 	question.CalData.TrueAnswer = question.Data.Options[chooseResp.Data.Answer-1]
 	if chooseResp.Data.Yes {
 		question.CalData.TrueAnswer = question.Data.Options[chooseResp.Data.Option-1]
