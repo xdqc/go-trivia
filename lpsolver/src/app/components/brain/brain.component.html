@@ -2,7 +2,7 @@
 <label for="speaker">Speaker</label>
 <input type="checkbox" [(ngModel)]="speakOn" id="speaker">
 <div *ngIf="speakOn" style="display: inline-block;">
-  <input type="range" value="100" min="0" max="200" [(ngModel)]="volume" class="volume-slider">
+  <input type="range" value="10" min="0" max="200" [(ngModel)]="volume" class="volume-slider">
 </div>
 <div class="main form-area">
   <!-- Number of Question  -->
@@ -21,9 +21,14 @@
       </li>
     </ul>
   </div>
+  <div>
+    <button class="btn btn-orange" (click)="fetchOCR()"><span>Fetch OCR</span></button>
+  </div>
 </div>
 
-<!-- Idioms -->
+
+
+<!-- Idioms
 <div>
   <textarea [(ngModel)]="rawIdioms" id="rawIdioms"></textarea>
   <button (click)="showIdioms()">Show Idioms</button>
@@ -39,4 +44,4 @@
     <h4>{{idiom['idiom']}}</h4>
     <br>
   </div>
-</div>
+</div> -->

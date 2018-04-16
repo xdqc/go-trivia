@@ -5,6 +5,7 @@ import 'rxjs/add/operator/map';
 import { Observable } from 'rxjs/Rx';
 import * as qInfo from 'questionInfo';
 import * as idiomInfo from 'IdiomInfo';
+import { ClassGetter } from '@angular/compiler/src/output/output_ast';
 
 
 @Component({
@@ -62,7 +63,7 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.ans = this.q.caldata.Answer;
             this.ansPos = this.q.caldata.AnswerPos;
             this.odds = this.q.caldata.Odds;
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < this.odds.length; i++) {
               let n = parseFloat(this.odds[i])
               this.odds[i] = n >= 999 ? "999" : n >=888? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
             }
@@ -78,7 +79,7 @@ export class BrainComponent implements OnInit, OnDestroy {
               msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
               msg.rate = 1.2
               msg.pitch = 0.96
-              msg.volume = this.volume/100
+              msg.volume = (this.volume || 100)/100
               // console.log(msg);
               speechSynthesis.speak(msg)
             }
@@ -101,6 +102,11 @@ export class BrainComponent implements OnInit, OnDestroy {
           this.idiom = data['data'];
         }
       });
+  }
+
+  fetchOCR() {
+    console.log("fetch from ocr")
+    this.http.put("http://localhost:8080/brain-ocr",null).subscribe();
   }
 
   showIdioms() {

@@ -7,7 +7,9 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -140,6 +142,8 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 		go searchGoogleWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search) // testing
 		go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
 	}
+
+	// startBrowser(keywords)
 
 	println("\n.......................searching..............................\n")
 	rawStrTraining := "                                                  "
@@ -734,4 +738,21 @@ func searchFeelingLucky(quiz string, options []string, id int, isTrain bool, isT
 		text = text[:10000]
 	}
 	c <- text + "                                                  "
+}
+
+func startBrowser(keywords []string) {
+	var args []string
+	switch runtime.GOOS {
+	case "darwin":
+		args = []string{"open"}
+	case "windows":
+		args = []string{"cmd", "/c", "start"}
+	default:
+		args = []string{"xdg-open"}
+	}
+	cmd := exec.Command(args[0], append(args[1:], baidu_URL+"wd="+strings.Join(keywords, ""))...)
+	err := cmd.Start()
+	if err != nil {
+		println("Failed to start chrome:", err)
+	}
 }

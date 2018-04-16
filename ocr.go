@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/henson/Answer"
-	"github.com/henson/Answer/ocr"
 	"github.com/henson/Answer/util"
 )
 
@@ -16,29 +15,28 @@ func getQuizFromOCR() (quiz string, options []string) {
 	tx1 := time.Now()
 
 	cfg := util.GetConfig()
-	OCR := ocr.NewBaidu(cfg)
+	OCR := Answer.NewOcr(cfg)
 
-	imgChan1 := make(chan string, 1)
-	imgChan2 := make(chan string, 1)
+	imgQuiz := make(chan string, 1)
+	imgOptions := make(chan string, 1)
 
 	var wig sync.WaitGroup
-	wig.Add(3)
+	wig.Add(2)
+
 	go func() {
 		defer wig.Done()
-		//qText, err := tesseractOCR().GetText(util.QuestionImage)
-		quizText, err := OCR.GetText(<-imgChan1)
+		quizText, err := OCR.GetText(<-imgQuiz)
 		if err != nil {
-			log.Panicf("识别题目失败，%v\n", err.Error())
+			log.Println(err.Error())
 			return
 		}
 		quiz = processQuiz(quizText)
 	}()
 	go func() {
 		defer wig.Done()
-		//answerText, err := baiduOCR().GetText(util.AnswerImage)
-		optionsText, err := OCR.GetText(<-imgChan2)
+		optionsText, err := OCR.GetText(<-imgOptions)
 		if err != nil {
-			log.Panicf("识别答案失败，%v\n", err.Error())
+			log.Println(err.Error())
 			return
 		}
 		options = processOptions(optionsText)
@@ -47,12 +45,16 @@ func getQuizFromOCR() (quiz string, options []string) {
 		screenshot := Answer.NewScreenshot(cfg)
 		png, err := screenshot.GetImage()
 		if err != nil {
-			log.Panicf("获取截图失败，%v\n", err.Error())
+			log.Println(err.Error())
+			imgQuiz <- util.QuestionImage
+			imgOptions <- util.AnswerImage
 			return
 		}
-		err = Answer.SaveImage(png, cfg, imgChan1, imgChan2)
+		err = Answer.SaveImage(png, cfg, imgQuiz, imgOptions)
 		if err != nil {
-			log.Panicf("保存图片失败，%v\n", err.Error())
+			log.Println(err.Error())
+			imgQuiz <- util.QuestionImage
+			imgOptions <- util.AnswerImage
 			return
 		}
 	}()
@@ -63,7 +65,9 @@ func getQuizFromOCR() (quiz string, options []string) {
 }
 
 func processQuiz(text string) string {
-	return strings.TrimSpace(text)
+	text = strings.Replace(text, " ", "", -1)
+	text = strings.Replace(text, "\n", "", -1)
+	return text
 }
 
 func processOptions(text string) []string {

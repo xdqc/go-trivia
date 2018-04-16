@@ -77,6 +77,7 @@ func RunWeb(port string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(matchInfo)
 	}).Methods("GET")
+
 	r.HandleFunc("/words", findWords).Methods("GET")
 	r.HandleFunc("/word", deleteWord).Methods("DELETE")
 
@@ -89,6 +90,10 @@ func RunWeb(port string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(idiomInfo)
 	}).Methods("GET")
+
+	r.HandleFunc("/brain-ocr", func(w http.ResponseWriter, r *http.Request) {
+		handleQuestionResp([]byte{})
+	}).Methods("PUT")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 

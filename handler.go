@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -19,6 +20,20 @@ func handleQuestionResp(bs []byte) {
 	} else {
 		// Get quiz from OCR
 		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
+		if len(question.Data.Options) == 0 || question.Data.Quiz == "" {
+			log.Println("No quiz or options found in screenshot...")
+			return
+		} else {
+			quiz := question.Data.Quiz
+			quiz = strings.Replace(quiz, "?", "？", -1)
+			quiz = strings.Replace(quiz, ",", "，", -1)
+			quiz = strings.Replace(quiz, "(", "（", -1)
+			quiz = strings.Replace(quiz, ")", "）", -1)
+			quiz = strings.Replace(quiz, "\"", "“", -1)
+			quiz = strings.Replace(quiz, "'", "‘", -1)
+			quiz = strings.Replace(quiz, "!", "！", -1)
+			question.Data.Quiz = quiz
+		}
 	}
 	question.CalData.RoomID = roomID
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
@@ -32,7 +47,7 @@ func handleQuestionResp(bs []byte) {
 	go SetQuestion(question)
 
 	answerItem := "不知道"
-	var odds [4]float32
+	odds := make([]float32, len(question.Data.Options))
 
 	if answer != "" {
 		for i, option := range question.Data.Options {
@@ -140,7 +155,7 @@ type Question struct {
 		Answer     string
 		AnswerPos  int
 		TrueAnswer string
-		Odds       [4]float32
+		Odds       []float32
 	} `json:"caldata"`
 	Errcode int `json:"errcode"`
 }
