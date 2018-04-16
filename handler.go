@@ -44,7 +44,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 	storedAnsPos := ansPos
 
 	// Put true here to force searching, even if found answer in db
-	if true || storedAnsPos == 0 {
+	if storedAnsPos == 0 {
 		var ret map[string]int
 		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
 		log.Printf("Google predict => %v\n", ret)
@@ -71,7 +71,7 @@ func handleQuestionResp(bs []byte) (bsNew []byte, ansPos int) {
 			if answer != "" {
 				// searched result could be wrong
 				if storedAnsPos != 0 {
-					if odds[ansPos-1] < 3 {
+					if odds[ansPos-1] < 1 {
 						log.Println("searched answer could be wrong...")
 						answerItem = answer
 						ansPos = storedAnsPos
