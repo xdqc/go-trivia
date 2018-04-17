@@ -1,9 +1,13 @@
 <!-- Main page -->
-<label for="speaker">Speaker</label>
-<input type="checkbox" [(ngModel)]="speakOn" id="speaker">
-<div *ngIf="speakOn" style="display: inline-block;">
-  <input type="range" value="10" min="0" max="200" [(ngModel)]="volume" class="volume-slider">
+<div class="slideThree">
+  <input type="checkbox" [(ngModel)]="speakOn" (click)="voiceOn()" id="slideThree" />
+  <label for="slideThree"></label>
 </div>
+<div *ngIf="speakOn" style="display: inline;">
+  <label for="volume-slider">Volume</label>
+  <input type="range" value="10" min="0" max="200" [(ngModel)]="volume" id="volume-slider">
+</div>
+
 <div class="main form-area">
   <!-- Number of Question  -->
   <div class="wrapper" id="pages">
@@ -22,7 +26,9 @@
     </ul>
   </div>
   <div>
-    <button class="btn btn-orange" (click)="fetchOCR()"><span>Fetch OCR</span></button>
+    <button class="btn btn-orange" (click)="fetchOCR()">
+      <span>Fetch OCR</span>
+    </button>
   </div>
 </div>
 

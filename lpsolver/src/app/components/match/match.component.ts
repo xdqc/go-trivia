@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Http, Headers } from '@angular/http';
-import { environment } from '../../../environments/environment';
+import { env } from '../../../environments/environment';
 import * as matchInfo from 'matchInfo';
 import 'rxjs/add/operator/map';
 
@@ -23,7 +23,7 @@ export class MatchComponent implements OnInit {
   choosingWord: string[];
 
   constructor(private http: Http) {
-    this.playersId = environment.player.map(p => p.id);
+    this.playersId = env.player.map(p => p.id);
   }
 
   ngOnInit() {
@@ -31,7 +31,7 @@ export class MatchComponent implements OnInit {
   }
 
   fetchGames() {
-    this.http.get('http://localhost:8080/match')
+    this.http.get('http://'+env.host+':'+env.port+'/match')
       .map((resp) => resp.text() !== '' ? resp.json() : '')
       .subscribe(
         (data) => {
@@ -120,7 +120,7 @@ export class MatchComponent implements OnInit {
     }
     console.log(letters);
     console.log(selected.join(''));
-    this.http.get('http://localhost:8080/words?selected=' + selected.join('') + '&letters=' + letters)
+    this.http.get('http://'+env.host+':'+env.port+'/words?selected=' + selected.join('') + '&letters=' + letters)
       .map(resp => resp.json())
       .subscribe(data => {
         this.foundWords[i] = data;
@@ -144,7 +144,7 @@ export class MatchComponent implements OnInit {
   }
 
   deleteWord(i: number) {
-    this.http.delete('http://localhost:8080/word?delete=' + this.choosingWord[i])
+    this.http.delete('http://'+env.host+':'+env.port+'/word?delete=' + this.choosingWord[i])
     .subscribe()
     console.log(this.choosingWord, 'deleted');
   }

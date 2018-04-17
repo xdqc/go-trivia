@@ -1,8 +1,11 @@
 <h1>
   Welcome to {{ title }}!
 </h1>
-<label for="showBrain">Show Brain</label>
-<input type="checkbox" [(ngModel)]="showBrain" id="showBrain">
+<div class="slideTwo">
+  <input type="checkbox" [(ngModel)]="showBrain" id="showBrain" checked />
+  <label for="showBrain"></label>
+</div>
+
 <div *ngIf="showBrain">
   <app-brain id="brain"></app-brain>
 </div>

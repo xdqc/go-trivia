@@ -1,11 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Http, Headers } from '@angular/http';
-import { environment } from '../../../environments/environment';
+import { env } from '../../../environments/environment';
 import 'rxjs/add/operator/map';
 import { Observable } from 'rxjs/Rx';
 import * as qInfo from 'questionInfo';
 import * as idiomInfo from 'IdiomInfo';
-import { ClassGetter } from '@angular/compiler/src/output/output_ast';
 
 
 @Component({
@@ -14,9 +13,6 @@ import { ClassGetter } from '@angular/compiler/src/output/output_ast';
   styleUrls: ['./brain.component.scss']
 })
 export class BrainComponent implements OnInit, OnDestroy {
-
-  host:string;
-  port:string;
 
   total: number;
   q: qInfo.QuestionInfo;
@@ -39,9 +35,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   constructor(private http: Http) {
     this.total = 5;
-    this.host = "localhost"
-    this.host = "192.168.1.69"
-    this.port = ":8080"
+    this.speakOn = false;
   }
 
   ngOnInit() {
@@ -59,7 +53,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   //periodically fetch new question data
   fetchQuestion() {
-    this.http.get('http://'+this.host+this.port+'/answer')
+    this.http.get('http://' + env.host + ':' + env.port + '/answer')
       .map((resp) => resp.text() !== '' ? resp.json() : '')
       .subscribe(
         data => {
@@ -71,25 +65,9 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.odds = this.q.caldata.Odds;
             for (let i = 0; i < this.odds.length; i++) {
               let n = parseFloat(this.odds[i])
-              this.odds[i] = n >= 999 ? "999" : n >=888? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+              this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
             }
-            if (this.speakOn && this.quiz !== this.q.data.quiz) {
-              // speak out new question answer
-              let higestOdd = 0
-              this.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-              let utterance = higestOdd == 444 ? '谷歌' : higestOdd == 333 ? '记录' : higestOdd > 5 ? '选' : '可能';
-              if (this.q.data.school == '理科' && higestOdd < 5) {
-                utterance = '注意' + utterance
-              }
-              let msg = new SpeechSynthesisUtterance(utterance + this.q.caldata.AnswerPos + '。 '+ this.q.caldata.Answer);//+ this.q.data.quiz 
-              msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
-              msg.rate = 1.2
-              msg.pitch = 0.96
-              msg.volume = (this.volume || 100)/100
-              // console.log(msg);
-              speechSynthesis.speak(msg)
-            }
-
+            this.speech_text(this)
             this.quiz = this.q.data.quiz;
             this.qNum = this.q.data.num;
 
@@ -98,9 +76,41 @@ export class BrainComponent implements OnInit, OnDestroy {
       );
   }
 
+  fetchOCR() {
+    this.http.put('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
+  }
+
+  voiceOn(){
+    if (this.speakOn){
+      speechSynthesis.speak(new SpeechSynthesisUtterance("Voice on"))
+    } else (
+      speechSynthesis.speak(new SpeechSynthesisUtterance("Voice off"))
+    )
+  }
+
+  speech_text(that) {
+    if (that.speakOn && that.quiz !== that.q.data.quiz) {
+      // speak out new question answer
+      let higestOdd = 0
+      that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
+      let utterance = higestOdd == 444 ? '谷歌' : higestOdd == 333 ? '记录' : higestOdd > 5 ? '选' : '可能';
+      if (that.q.data.school == '理科' && higestOdd < 5) {
+        utterance = '注意' + utterance
+      }
+      let msg = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '。 ' + that.q.caldata.Answer);//+ that.q.data.quiz 
+      msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
+      msg.rate = 1.2
+      msg.pitch = 0.96
+      msg.volume = (that.volume || 100) / 100
+      // console.log(msg);
+      speechSynthesis.speak(msg)
+    }
+  }
+
+
   //process idioms json
   fetchIdiom() {
-    this.http.get('http://'+this.host+this.port+'/idiom')
+    this.http.get('http://' + env.host + ':' + env.port + '/idiom')
       .map((resp) => resp.text() !== '' ? resp.json() : '')
       .subscribe(data => {
         console.log('ddd' + data['data']);
@@ -109,12 +119,6 @@ export class BrainComponent implements OnInit, OnDestroy {
         }
       });
   }
-
-  fetchOCR() {
-    console.log("fetch from ocr")
-    this.http.put('http://'+this.host+this.port+'/brain-ocr',null).subscribe();
-  }
-
   showIdioms() {
     let data = JSON.parse(this.rawIdioms);
     this.idioms = data;
