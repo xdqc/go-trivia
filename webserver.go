@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -108,7 +107,7 @@ func setIdiom(jsonBytes []byte) {
 	idiomInfo = jsonBytes
 }
 
-func fetchAnswerImageURL(ans string, quiz []string, qNum int) {
+func fetchAnswerImageURL(ans string, quiz []string) {
 	values := url.Values{}
 	values.Add("q", ans+" "+strings.Join(quiz, " "))
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
@@ -120,26 +119,28 @@ func fetchAnswerImageURL(ans string, quiz []string, qNum int) {
 		images := &AnwserImage{}
 		err := json.Unmarshal([]byte(imgJSON), images)
 		if err == nil {
-			url := images.List[0].Thumb
-			// don't worry about errors
-			response, e := http.Get(url)
-			if e != nil {
-				log.Println(e)
-			}
-			defer response.Body.Close()
+			if len(images.List) > 0 {
+				url := images.List[0].Thumb
+				// don't worry about errors
+				response, e := http.Get(url)
+				if e != nil {
+					log.Println(e)
+				}
+				defer response.Body.Close()
 
-			//open a file for writing
-			file, err := os.Create("./lpsolver/dist/assets/quiz-" + strconv.Itoa(qNum) + ".jpg")
-			if err != nil {
-				log.Println(err)
+				//open a file for writing
+				file, err := os.Create("./lpsolver/dist/assets/quiz.jpg")
+				if err != nil {
+					log.Println(err)
+				}
+				// Use io.Copy to just dump the response body to the file. This supports huge files
+				_, err = io.Copy(file, response.Body)
+				if err != nil {
+					log.Println(err)
+				}
+				file.Close()
+				fmt.Println(url + " Saved!")
 			}
-			// Use io.Copy to just dump the response body to the file. This supports huge files
-			_, err = io.Copy(file, response.Body)
-			if err != nil {
-				log.Println(err)
-			}
-			file.Close()
-			fmt.Println(url + " Saved!")
 		}
 	}
 }

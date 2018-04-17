@@ -43,7 +43,9 @@ export class BrainComponent implements OnInit, OnDestroy {
   volume: number;
   language: string;
   state: string = 'hide';
-  imgPath:string = 'assets/quiz-'+this.qNum+'.jpg'
+  showImage: boolean = true;
+  imgPath:string = 'assets/quiz.jpg?'+Date.now().valueOf()
+
   fetch
 
   //Idioms
@@ -136,11 +138,14 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   getAnswerImg(ans: string) {
     if (this.quiz !== this.q.data.quiz) {
-      this.state = 'emerge'
-      let that = this
+      let that = this;
+      setTimeout(()=>{
+        document.getElementById("answer-image").setAttribute("src", that.imgPath)
+      }, 2000);
+      this.state = 'emerge';
       setTimeout(function () {
-        that.state = 'hide'
-      }, 6000)
+        that.state = 'hide';
+      }, 6000);
     }
   }
 
