@@ -6,6 +6,7 @@ import { FormsModule } from "@angular/forms";
 import { AppComponent } from './app.component';
 import { MatchComponent } from './components/match/match.component';
 import { BrainComponent } from './components/brain/brain.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { BrainComponent } from './components/brain/brain.component';
   imports: [
     BrowserModule,
     HttpModule,
-    FormsModule
+    FormsModule,
+    BrowserAnimationsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

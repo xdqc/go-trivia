@@ -345,7 +345,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	// if majority matches are plain quiz, simplely set matches as the count of each option
 	// || 3*sumCounts < plainQuizCount
 	// if all counts of options in text less than 2, choose the 1 or nothing
-	if sumCounts < 6 {
+	if sumCounts < 6 || sumCounts*3 < plainQuizCount {
 		for i, option := range options {
 			res[option] = optCounts[i]
 		}

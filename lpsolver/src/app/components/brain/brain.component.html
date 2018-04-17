@@ -6,6 +6,7 @@
 <div *ngIf="speakOn" style="display: inline;">
   <label for="volume-slider">Volume</label>
   <input type="range" value="10" min="0" max="200" [(ngModel)]="volume" id="volume-slider">
+  <span [@langAnimation]="state" class="fade-text">{{language}}</span>
 </div>
 
 <div class="main form-area">

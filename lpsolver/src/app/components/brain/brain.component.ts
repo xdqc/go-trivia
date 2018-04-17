@@ -1,17 +1,33 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, state, style, trigger, transition, animate } from '@angular/core';
 import { Http, Headers } from '@angular/http';
 import { env } from '../../../environments/environment';
 import 'rxjs/add/operator/map';
 import { Observable } from 'rxjs/Rx';
 import * as qInfo from 'questionInfo';
 import * as idiomInfo from 'IdiomInfo';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { timeout } from 'rxjs/operator/timeout';
+
 
 
 @Component({
   selector: 'app-brain',
   templateUrl: './brain.component.html',
-  styleUrls: ['./brain.component.scss']
+  styleUrls: ['./brain.component.scss'],
+  animations:[
+    trigger('langAnimation', [
+        state('hide', style({
+          opacity: 0,
+        })),
+        state('emerge', style({
+          opacity: 1,
+        })),
+        transition('hide <=> emerge', animate('3000ms ease-in-out')),
+    ]),
+  ]
+  
 })
+
 export class BrainComponent implements OnInit, OnDestroy {
 
   total: number;
@@ -25,6 +41,8 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   speakOn: boolean;
   volume: number;
+  language: string;
+  state: string = 'hide';
 
   fetch
 
@@ -93,17 +111,26 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? '谷歌' : higestOdd == 333 ? '记录' : higestOdd > 5 ? '选' : '可能';
+      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'record ' : higestOdd > 5 ? 'choose ' : 'could be ';
       if (that.q.data.school == '理科' && higestOdd < 5) {
-        utterance = '注意' + utterance
+        utterance = 'Attention, ' + utterance
       }
-      let msg = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '。 ' + that.q.caldata.Answer);//+ that.q.data.quiz 
-      msg.voice = speechSynthesis.getVoices().filter(v => v.lang === 'zh-CN')[0]
-      msg.rate = 1.2
-      msg.pitch = 0.96
-      msg.volume = (that.volume || 100) / 100
+      let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ')
+      let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer + '。'+ that.q.data.quiz);//+ that.q.data.quiz 
+      let chinesesNum = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh')>=0).length
+      sayChoice.voice = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh')>=0)[Math.floor(Math.random()*chinesesNum)]
+      sayChoice.rate = 1.05
+      sayChoice.pitch = 1
+      sayChoice.volume = (that.volume || 100) / 100
       // console.log(msg);
-      speechSynthesis.speak(msg)
+      sayNumber.voice = speechSynthesis.getVoices()[Math.floor(Math.random()*speechSynthesis.getVoices().length)]
+      that.language = sayNumber.voice.lang +' '+ sayNumber.voice.name
+      that.state = 'emerge'
+      setTimeout(function() {
+        that.state = 'hide'
+      },5000)
+      speechSynthesis.speak(sayNumber)
+      speechSynthesis.speak(sayChoice)
     }
   }
 
@@ -125,5 +152,4 @@ export class BrainComponent implements OnInit, OnDestroy {
     this.idioms.forEach(i => i['words'] = i['words'].split(''))
     console.log(data);
   }
-
 }

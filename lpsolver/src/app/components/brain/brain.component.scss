@@ -144,6 +144,33 @@
 }
 
 /* end .slideThree */
+// @keyframes fadeInOut {
+//   0% {
+//     opacity: 0;
+//   }
+
+//   45% {
+//     opacity: 1;
+//   }
+
+//   100% {
+//     opacity: 0;
+//   }
+// }
+
+.fade-text {
+  font-size: 2rem;
+  position: relative;
+  top: 1rem;
+  left: 10%;
+  opacity: 0;
+  color: #F0A3BE;
+  // animation-name: fadeInOut;
+  // animation-delay: 0.5s;
+  // animation-duration: 6s;
+}
+
+
   /*********Volume Slider end***********/
 
 
