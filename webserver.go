@@ -2,8 +2,16 @@ package solver
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -14,56 +22,6 @@ var (
 	questionInfo []byte
 	idiomInfo    []byte
 )
-
-//MatchInfo ...
-type MatchInfo struct {
-	Success bool `json:"success"`
-	Matches []struct {
-		MatchID            string `json:"matchId"`
-		MatchIDNumber      int    `json:"matchIdNumber"`
-		MatchURL           string `json:"matchURL"`
-		CreateDate         string `json:"createDate"`
-		UpdateDate         string `json:"updateDate"`
-		MatchStatus        int    `json:"matchStatus"`
-		CurrentPlayerIndex int    `json:"currentPlayerIndex"`
-		Letters            string `json:"letters"`
-		RowCount           int    `json:"rowCount"`
-		ColumnCount        int    `json:"columnCount"`
-		TurnCount          int    `json:"turnCount"`
-		MatchData          string `json:"matchData"`
-		ServerData         struct {
-			Language  int   `json:"language"`
-			UsedTiles []int `json:"usedTiles"`
-			Tiles     []struct {
-				T string `json:"t"`
-				O int    `json:"o"`
-			} `json:"tiles"`
-			UsedWords  []string `json:"usedWords"`
-			MinVersion int      `json:"minVersion"`
-		} `json:"serverData"`
-		Participants []struct {
-			UserID                string      `json:"userId"`
-			UserName              string      `json:"userName"`
-			PlayerIndex           int         `json:"playerIndex"`
-			PlayerStatus          string      `json:"playerStatus"`
-			LastTurnStatus        string      `json:"lastTurnStatus"`
-			MatchOutcome          string      `json:"matchOutcome"`
-			TurnDate              string      `json:"turnDate"`
-			TimeoutDate           interface{} `json:"timeoutDate"`
-			AvatarURL             string      `json:"avatarURL"`
-			IsFavorite            bool        `json:"isFavorite"`
-			UseBadWords           bool        `json:"useBadWords"`
-			BlockChat             bool        `json:"blockChat"`
-			DeletedFromPlayerList bool        `json:"deletedFromPlayerList"`
-			Online                bool        `json:"online"`
-			ChatsUnread           int         `json:"chatsUnread"`
-			MuteChat              bool        `json:"muteChat"`
-			AbandonedMatch        bool        `json:"abandonedMatch"`
-			IsBot                 bool        `json:"isBot"`
-			BannedChat            bool        `json:"bannedChat"`
-		} `json:"participants"`
-	} `json:"matches"`
-}
 
 type Words []struct {
 	Word string `json:"word"`
@@ -86,10 +44,10 @@ func RunWeb(port string) {
 		w.Write(questionInfo)
 	}).Methods("GET")
 
-	r.HandleFunc("/idiom", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(idiomInfo)
-	}).Methods("GET")
+	// r.HandleFunc("/idiom", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Header().Set("Content-Type", "application/json")
+	// 	w.Write(idiomInfo)
+	// }).Methods("GET")
 
 	r.HandleFunc("/brain-ocr", func(w http.ResponseWriter, r *http.Request) {
 		handleQuestionResp([]byte{})
@@ -148,4 +106,137 @@ func setMatch(jsonBytes []byte) {
 
 func setIdiom(jsonBytes []byte) {
 	idiomInfo = jsonBytes
+}
+
+func fetchAnswerImageURL(ans string, quiz []string, qNum int) {
+	values := url.Values{}
+	values.Add("q", ans+" "+strings.Join(quiz, " "))
+	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
+	resp, _ := http.DefaultClient.Do(req)
+	defer resp.Body.Close()
+	if resp != nil {
+		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		imgJSON := doc.Find("#initData").Text()
+		images := &AnwserImage{}
+		err := json.Unmarshal([]byte(imgJSON), images)
+		if err == nil {
+			url := images.List[0].Thumb
+			// don't worry about errors
+			response, e := http.Get(url)
+			if e != nil {
+				log.Println(e)
+			}
+			defer response.Body.Close()
+
+			//open a file for writing
+			file, err := os.Create("./lpsolver/dist/assets/quiz-" + strconv.Itoa(qNum) + ".jpg")
+			if err != nil {
+				log.Println(err)
+			}
+			// Use io.Copy to just dump the response body to the file. This supports huge files
+			_, err = io.Copy(file, response.Body)
+			if err != nil {
+				log.Println(err)
+			}
+			file.Close()
+			fmt.Println(url + " Saved!")
+		}
+	}
+}
+
+//MatchInfo ...
+type MatchInfo struct {
+	Success bool `json:"success"`
+	Matches []struct {
+		MatchID            string `json:"matchId"`
+		MatchIDNumber      int    `json:"matchIdNumber"`
+		MatchURL           string `json:"matchURL"`
+		CreateDate         string `json:"createDate"`
+		UpdateDate         string `json:"updateDate"`
+		MatchStatus        int    `json:"matchStatus"`
+		CurrentPlayerIndex int    `json:"currentPlayerIndex"`
+		Letters            string `json:"letters"`
+		RowCount           int    `json:"rowCount"`
+		ColumnCount        int    `json:"columnCount"`
+		TurnCount          int    `json:"turnCount"`
+		MatchData          string `json:"matchData"`
+		ServerData         struct {
+			Language  int   `json:"language"`
+			UsedTiles []int `json:"usedTiles"`
+			Tiles     []struct {
+				T string `json:"t"`
+				O int    `json:"o"`
+			} `json:"tiles"`
+			UsedWords  []string `json:"usedWords"`
+			MinVersion int      `json:"minVersion"`
+		} `json:"serverData"`
+		Participants []struct {
+			UserID                string      `json:"userId"`
+			UserName              string      `json:"userName"`
+			PlayerIndex           int         `json:"playerIndex"`
+			PlayerStatus          string      `json:"playerStatus"`
+			LastTurnStatus        string      `json:"lastTurnStatus"`
+			MatchOutcome          string      `json:"matchOutcome"`
+			TurnDate              string      `json:"turnDate"`
+			TimeoutDate           interface{} `json:"timeoutDate"`
+			AvatarURL             string      `json:"avatarURL"`
+			IsFavorite            bool        `json:"isFavorite"`
+			UseBadWords           bool        `json:"useBadWords"`
+			BlockChat             bool        `json:"blockChat"`
+			DeletedFromPlayerList bool        `json:"deletedFromPlayerList"`
+			Online                bool        `json:"online"`
+			ChatsUnread           int         `json:"chatsUnread"`
+			MuteChat              bool        `json:"muteChat"`
+			AbandonedMatch        bool        `json:"abandonedMatch"`
+			IsBot                 bool        `json:"isBot"`
+			BannedChat            bool        `json:"bannedChat"`
+		} `json:"participants"`
+	} `json:"matches"`
+}
+
+// Image result from image.so.com
+type AnwserImage struct {
+	Total     int    `json:"total"`
+	End       bool   `json:"end"`
+	Sid       string `json:"sid"`
+	Ran       int    `json:"ran"`
+	Ras       int    `json:"ras"`
+	Kn        int    `json:"kn"`
+	Cn        int    `json:"cn"`
+	Gn        int    `json:"gn"`
+	Lastindex int    `json:"lastindex"`
+	Ceg       string `json:"ceg"`
+	List      []struct {
+		ID            string `json:"id"`
+		QqfaceDownURL bool   `json:"qqface_down_url"`
+		Downurl       bool   `json:"downurl"`
+		Grpmd5        bool   `json:"grpmd5"`
+		Type          int    `json:"type"`
+		Src           string `json:"src"`
+		Color         int    `json:"color"`
+		Index         int    `json:"index"`
+		Title         string `json:"title"`
+		Litetitle     string `json:"litetitle"`
+		Width         string `json:"width"`
+		Height        string `json:"height"`
+		Imgsize       string `json:"imgsize"`
+		Imgtype       string `json:"imgtype"`
+		Key           string `json:"key"`
+		Dspurl        string `json:"dspurl"`
+		Link          string `json:"link"`
+		Source        int    `json:"source"`
+		Img           string `json:"img"`
+		ThumbBak      string `json:"thumb_bak"`
+		Thumb         string `json:"thumb"`
+		ThumbBak_     string `json:"_thumb_bak"`
+		Thumb_        string `json:"_thumb"`
+		Imgkey        string `json:"imgkey"`
+		ThumbWidth    int    `json:"thumbWidth"`
+		Dsptime       string `json:"dsptime"`
+		ThumbHeight   int    `json:"thumbHeight"`
+		Grpcnt        string `json:"grpcnt"`
+		FixedSize     bool   `json:"fixedSize"`
+	} `json:"list"`
+	Boxresult bool   `json:"boxresult"`
+	Wordguess string `json:"wordguess"`
 }

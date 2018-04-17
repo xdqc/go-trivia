@@ -5,8 +5,11 @@
 </div>
 <div *ngIf="speakOn" style="display: inline;">
   <label for="volume-slider">Volume</label>
-  <input type="range" value="10" min="0" max="200" [(ngModel)]="volume" id="volume-slider">
-  <span [@langAnimation]="state" class="fade-text">{{language}}</span>
+  <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
+  <span class="fade-text">{{language}}</span>
+</div>
+<div [@imgAnimation]="state" class="ansImg">
+  <img [src]="imgPath" alt="{{ans}}" height="190" width="250">
 </div>
 
 <div class="main form-area">

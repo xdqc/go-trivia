@@ -14,18 +14,18 @@ import { timeout } from 'rxjs/operator/timeout';
   selector: 'app-brain',
   templateUrl: './brain.component.html',
   styleUrls: ['./brain.component.scss'],
-  animations:[
-    trigger('langAnimation', [
-        state('hide', style({
-          opacity: 0,
-        })),
-        state('emerge', style({
-          opacity: 1,
-        })),
-        transition('hide <=> emerge', animate('3000ms ease-in-out')),
+  animations: [
+    trigger('imgAnimation', [
+      state('hide', style({
+        opacity: 0,
+      })),
+      state('emerge', style({
+        opacity: 1,
+      })),
+      transition('hide <=> emerge', animate('2000ms ease-in-out')),
     ]),
   ]
-  
+
 })
 
 export class BrainComponent implements OnInit, OnDestroy {
@@ -43,7 +43,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   volume: number;
   language: string;
   state: string = 'hide';
-
+  imgPath:string = 'assets/quiz-'+this.qNum+'.jpg'
   fetch
 
   //Idioms
@@ -85,6 +85,7 @@ export class BrainComponent implements OnInit, OnDestroy {
               let n = parseFloat(this.odds[i])
               this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
             }
+            this.getAnswerImg(this.ans)
             this.speech_text(this)
             this.quiz = this.q.data.quiz;
             this.qNum = this.q.data.num;
@@ -98,8 +99,8 @@ export class BrainComponent implements OnInit, OnDestroy {
     this.http.put('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
   }
 
-  voiceOn(){
-    if (this.speakOn){
+  voiceOn() {
+    if (this.speakOn) {
       speechSynthesis.speak(new SpeechSynthesisUtterance("Voice on"))
     } else (
       speechSynthesis.speak(new SpeechSynthesisUtterance("Voice off"))
@@ -115,25 +116,33 @@ export class BrainComponent implements OnInit, OnDestroy {
       if (that.q.data.school == '理科' && higestOdd < 5) {
         utterance = 'Attention, ' + utterance
       }
-      let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ')
-      let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer + '。'+ that.q.data.quiz);//+ that.q.data.quiz 
-      let chinesesNum = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh')>=0).length
-      sayChoice.voice = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh')>=0)[Math.floor(Math.random()*chinesesNum)]
-      sayChoice.rate = 1.05
-      sayChoice.pitch = 1
-      sayChoice.volume = (that.volume || 100) / 100
+      let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ');
+      let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
+
       // console.log(msg);
-      sayNumber.voice = speechSynthesis.getVoices()[Math.floor(Math.random()*speechSynthesis.getVoices().length)]
-      that.language = sayNumber.voice.lang +' '+ sayNumber.voice.name
-      that.state = 'emerge'
-      setTimeout(function() {
-        that.state = 'hide'
-      },5000)
+      sayNumber.voice = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0)[Math.floor(Math.random() * 13)];
+      sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+        ? speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0)[Math.floor(Math.random() * 6)]
+        : sayNumber.voice;
+      sayChoice.rate = 1.05;
+      sayChoice.pitch = 1;
+      sayChoice.volume = (that.volume || 100) / 100;
+      sayNumber.volume = (that.volume || 100) / 80;
+      that.language = sayNumber.voice.lang
       speechSynthesis.speak(sayNumber)
       speechSynthesis.speak(sayChoice)
     }
   }
 
+  getAnswerImg(ans: string) {
+    if (this.quiz !== this.q.data.quiz) {
+      this.state = 'emerge'
+      let that = this
+      setTimeout(function () {
+        that.state = 'hide'
+      }, 6000)
+    }
+  }
 
   //process idioms json
   fetchIdiom() {

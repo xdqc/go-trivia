@@ -116,6 +116,8 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 	// println(string(questionInfo))
+	keywords, _ := preProcessQuiz(question.Data.Quiz, false)
+	go fetchAnswerImageURL(answerItem, keywords, question.Data.Num)
 }
 
 func handleChooseResponse(bs []byte) {
