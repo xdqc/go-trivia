@@ -15,6 +15,9 @@ import { ClassGetter } from '@angular/compiler/src/output/output_ast';
 })
 export class BrainComponent implements OnInit, OnDestroy {
 
+  host:string;
+  port:string;
+
   total: number;
   q: qInfo.QuestionInfo;
   quiz: qInfo.QuestionInfo['data']['quiz'];
@@ -36,6 +39,9 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   constructor(private http: Http) {
     this.total = 5;
+    this.host = "localhost"
+    this.host = "192.168.1.69"
+    this.port = ":8080"
   }
 
   ngOnInit() {
@@ -53,7 +59,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   //periodically fetch new question data
   fetchQuestion() {
-    this.http.get('http://localhost:8080/answer')
+    this.http.get('http://'+this.host+this.port+'/answer')
       .map((resp) => resp.text() !== '' ? resp.json() : '')
       .subscribe(
         data => {
@@ -94,7 +100,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   //process idioms json
   fetchIdiom() {
-    this.http.get("http://localhost:8080/idiom")
+    this.http.get('http://'+this.host+this.port+'/idiom')
       .map((resp) => resp.text() !== '' ? resp.json() : '')
       .subscribe(data => {
         console.log('ddd' + data['data']);
@@ -106,7 +112,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   fetchOCR() {
     console.log("fetch from ocr")
-    this.http.put("http://localhost:8080/brain-ocr",null).subscribe();
+    this.http.put('http://'+this.host+this.port+'/brain-ocr',null).subscribe();
   }
 
   showIdioms() {
