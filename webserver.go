@@ -114,8 +114,12 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 	searchStr := ans + " " + quoted
 	re := regexp.MustCompile("[^\\p{Han}]+")
 	hanRunes := re.ReplaceAllString(searchStr, "")
-	if len([]rune(hanRunes)) < 2 && len(quiz) > 2 {
-		searchStr += " " + strings.Join(quiz[:3], " ")
+	if len([]rune(hanRunes)) < 2 {
+		if len(quiz) > 6 {
+			searchStr += " " + strings.Join(quiz[:7], " ")
+		} else {
+			searchStr += " " + strings.Join(quiz, " ")
+		}
 	}
 	values.Add("q", searchStr)
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
@@ -165,6 +169,8 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 				// close(rawImgReader)
 				file.Close()
 				log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+			} else {
+				log.Println("not enought image result.")
 			}
 		}
 	}

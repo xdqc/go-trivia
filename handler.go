@@ -35,6 +35,11 @@ func handleQuestionResp(bs []byte) {
 			question.Data.Quiz = quiz
 		}
 	}
+
+	// fetch image of the quiz
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	go fetchAnswerImage("", keywords, quoted)
+
 	question.CalData.RoomID = roomID
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
 
@@ -116,8 +121,6 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 	// println(string(questionInfo))
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	go fetchAnswerImage(answerItem, keywords, quoted)
 }
 
 func handleChooseResponse(bs []byte) {

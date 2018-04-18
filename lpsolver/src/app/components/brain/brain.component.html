@@ -1,49 +1,51 @@
 <!-- Main page -->
-<div *ngIf="showImage" [@imgAnimation]="state" ></div>
+<div *ngIf="showImage" [@imgAnimation]="state"></div>
 <div class="bg bg-img" id="background">
-<div class="widgit-area">
-  <div class="toggelSwitch toggelSwitch-img">
-    <input type="checkbox" [(ngModel)]="showImage" id="imgSwitch" />
-    <label for="imgSwitch"></label>
-  </div>
-  <div class="toggelSwitch toggelSwitch-vol">
-    <input type="checkbox" [(ngModel)]="speakOn" (click)="voiceOn()" id="speakSwitch" />
-    <label for="speakSwitch"></label>
-  </div>
+  <div class="widgit-area">
+    <div class="toggelSwitch toggelSwitch-img">
+      <input type="checkbox" [(ngModel)]="showImage" id="imgSwitch" />
+      <label for="imgSwitch"></label>
+    </div>
+    <div class="toggelSwitch toggelSwitch-vol">
+      <input type="checkbox" [(ngModel)]="speakOn" (click)="voiceOn()" id="speakSwitch" />
+      <label for="speakSwitch"></label>
+    </div>
 
-  <div *ngIf="speakOn" style="display: inline;">
-    <!-- <label for="volume-slider">Volume</label> -->
-    <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
-    <span class="fade-text">{{language}}</span>
-  </div>
-  <!-- <div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
+    <div *ngIf="speakOn" style="display: inline;">
+      <!-- <label for="volume-slider">Volume</label> -->
+      <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
+      <span class="fade-text">{{language}}</span>
+    </div>
+    <!-- <div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
     <img [src]="imgPath" alt="{{ans}}" height="300" width="500" id="answer-image">
   </div> -->
-</div>
-
-<div class="main form-area">
-  <!-- Number of Question  -->
-  <div class="wrapper" id="pages">
-    <span id="quizNumber">{{qNum}}</span>
-    <span>/{{total}}</span>
   </div>
 
-  <!-- Quiz Question -->
-  <div class="quiz-questions" id="display-area">
-    <p id="question">{{quiz}}</p>
-    <ul id="answer">
-      <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">
-        {{option}}
-        <span class="odds">{{odds[i]}}</span>
-      </li>
-    </ul>
+  <div class="main">
+    <div class="form-area">
+      <!-- Number of Question  -->
+      <div class="wrapper" id="pages">
+        <span id="quizNumber">{{qNum}}</span>
+        <span>/{{total}}</span>
+      </div>
+
+      <!-- Quiz Question -->
+      <div class="quiz-questions" id="display-area">
+        <p id="question">{{quiz}}</p>
+        <ul id="answer">
+          <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">
+            {{option}}
+            <span class="odds">{{odds[i]}}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-orange" (click)="fetchOCR()">
+        <span>Fetch OCR</span>
+      </button>
+    </div>
   </div>
-  <div>
-    <button class="btn btn-orange" (click)="fetchOCR()">
-      <span>Fetch OCR</span>
-    </button>
-  </div>
-</div>
 </div>
 
 <!-- Idioms
