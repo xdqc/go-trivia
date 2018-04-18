@@ -2,12 +2,9 @@ import { Component, OnInit, OnDestroy, state, style, trigger, transition, animat
 import { Http, Headers } from '@angular/http';
 import { env } from '../../../environments/environment';
 import 'rxjs/add/operator/map';
-import { Observable } from 'rxjs/Rx';
+import 'web-animations-js/web-animations.min';
 import * as qInfo from 'questionInfo';
 import * as idiomInfo from 'IdiomInfo';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { timeout } from 'rxjs/operator/timeout';
-
 
 
 @Component({
@@ -20,9 +17,9 @@ import { timeout } from 'rxjs/operator/timeout';
         opacity: 0,
       })),
       state('emerge', style({
-        opacity: 1,
+        opacity: .9,
       })),
-      transition('hide <=> emerge', animate('2000ms ease-in-out')),
+      transition('hide <=> emerge', animate('3000ms ease-in-out')),
     ]),
   ]
 
@@ -140,12 +137,12 @@ export class BrainComponent implements OnInit, OnDestroy {
     if (this.quiz !== this.q.data.quiz) {
       let that = this;
       setTimeout(()=>{
-        document.getElementById("answer-image").setAttribute("src", that.imgPath)
+        document.getElementById("answer-image").setAttribute("src", that.imgPath);
+        that.state = 'emerge';
       }, 2000);
-      this.state = 'emerge';
       setTimeout(function () {
         that.state = 'hide';
-      }, 6000);
+      }, 8000);
     }
   }
 

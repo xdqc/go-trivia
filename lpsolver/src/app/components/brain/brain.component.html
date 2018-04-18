@@ -1,15 +1,22 @@
 <!-- Main page -->
-<div class="slideThree">
-  <input type="checkbox" [(ngModel)]="speakOn" (click)="voiceOn()" id="slideThree" />
-  <label for="slideThree"></label>
-</div>
-<div *ngIf="speakOn" style="display: inline;">
-  <label for="volume-slider">Volume</label>
-  <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
-  <span class="fade-text">{{language}}</span>
-</div>
-<div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
-  <img [src]="imgPath" alt="{{ans}}" height="190" width="250" id="answer-image">
+<div class="widgit-area">
+  <div class="toggelSwitch toggelSwitch-img">
+    <input type="checkbox" [(ngModel)]="showImage" id="imgSwitch" />
+    <label for="imgSwitch"></label>
+  </div>
+  <div class="toggelSwitch toggelSwitch-vol">
+    <input type="checkbox" [(ngModel)]="speakOn" (click)="voiceOn()" id="speakSwitch" />
+    <label for="speakSwitch"></label>
+  </div>
+
+  <div *ngIf="speakOn" style="display: inline;">
+    <!-- <label for="volume-slider">Volume</label> -->
+    <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
+    <span class="fade-text">{{language}}</span>
+  </div>
+  <div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
+    <img [src]="imgPath" alt="{{ans}}" height="300" width="500" id="answer-image">
+  </div>
 </div>
 
 <div class="main form-area">

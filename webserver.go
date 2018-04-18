@@ -2,13 +2,12 @@ package solver
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -107,9 +106,10 @@ func setIdiom(jsonBytes []byte) {
 	idiomInfo = jsonBytes
 }
 
-func fetchAnswerImageURL(ans string, quiz []string) {
+func fetchAnswerImage(ans string, quiz []string, quoted string) {
+	tx1 := time.Now()
 	values := url.Values{}
-	values.Add("q", ans+" "+strings.Join(quiz, " "))
+	values.Add("q", ans+" "+quoted)
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
@@ -118,28 +118,45 @@ func fetchAnswerImageURL(ans string, quiz []string) {
 		imgJSON := doc.Find("#initData").Text()
 		images := &AnwserImage{}
 		err := json.Unmarshal([]byte(imgJSON), images)
+		tx2 := time.Now()
+		log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
 		if err == nil {
-			if len(images.List) > 0 {
-				url := images.List[0].Thumb
-				// don't worry about errors
-				response, e := http.Get(url)
-				if e != nil {
-					log.Println(e)
+			if len(images.List) > 10 {
+				// set timeout for http GET
+				timeout := time.Duration(2 * time.Second)
+				client := http.Client{
+					Timeout: timeout,
 				}
-				defer response.Body.Close()
+				rawImgReader := make(chan io.ReadCloser)
+				for _, img := range images.List[0:10] {
+					url := img.Thumb_
+					go func(c chan io.ReadCloser) {
+						response, e := client.Get(url)
+						if e != nil {
+							log.Println(e.Error())
+							return
+						}
+						if response != nil && response.StatusCode >= 200 && response.StatusCode < 299 {
+							c <- response.Body
+						}
+						return
+					}(rawImgReader)
+				}
 
 				//open a file for writing
 				file, err := os.Create("./lpsolver/dist/assets/quiz.jpg")
 				if err != nil {
-					log.Println(err)
+					log.Println(err.Error())
 				}
 				// Use io.Copy to just dump the response body to the file. This supports huge files
-				_, err = io.Copy(file, response.Body)
+				_, err = io.Copy(file, <-rawImgReader)
 				if err != nil {
-					log.Println(err)
+					log.Println(err.Error())
+					return
 				}
+				// close(rawImgReader)
 				file.Close()
-				fmt.Println(url + " Saved!")
+				log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 			}
 		}
 	}

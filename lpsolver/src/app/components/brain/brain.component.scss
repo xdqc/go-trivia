@@ -89,13 +89,17 @@
     font-size: 70%;
   }
   
-  /*********Volume Slider begin***********/
+  /*********toggelSwitch begin***********/
 
+  .widgit-area{
+    position: relative;
+    z-index: 1;
+  }
   #volume-slider{
     display: inline;
   }
-/* .slideThree */
-.slideThree {
+/* .toggelSwitch */
+.toggelSwitch {
   width: 80px;
   height: 26px;
   background: #333;
@@ -105,7 +109,10 @@
   border-radius: 50px;
   box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 0px rgba(255, 255, 255, 0.2);
 }
-.slideThree:after {
+.toggelSwitch-img{
+  display: block;
+}
+.toggelSwitch:after {
   content: 'OFF';
   color: #000;
   position: absolute;
@@ -115,8 +122,8 @@
   font-weight: bold;
   text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.15);
 }
-.slideThree:before {
-  content: 'ON';
+.toggelSwitch:before {
+  content: 'VOL';
   color: #27ae60;
   position: absolute;
   left: 10px;
@@ -124,7 +131,13 @@
   font: 12px/26px Arial, sans-serif;
   font-weight: bold;
 }
-.slideThree label {
+.toggelSwitch-vol:before {
+  content: 'VOL';
+}
+.toggelSwitch-img:before {
+  content: 'IMG';
+}
+.toggelSwitch label {
   display: inline;
   width: 34px;
   height: 20px;
@@ -133,16 +146,17 @@
   top: 3px;
   left: 3px;
   z-index: 1;
+  opacity: .999;
   background: #fcfff4;
   background: linear-gradient(to bottom, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
   border-radius: 50px;
   transition: all 0.4s ease;
   box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.3);
 }
-.slideThree input[type=checkbox] {
+.toggelSwitch input[type=checkbox] {
   visibility: hidden;
 }
-.slideThree input[type=checkbox]:checked + label {
+.toggelSwitch input[type=checkbox]:checked + label {
   left: 43px;
 }
 
@@ -157,19 +171,25 @@
 }
 
 
-  /*********Volume Slider end***********/
+  /*********toggelSwitch end***********/
 
 
   /*.................Answer image begin.................*/
 .ansImg {
   position: absolute;
-  top: 50px;
-  right: 20px;
-  z-index: 2;
+  top: -120px;
+  left: 0;
+  right: 0;
+  width: 40%;
+  min-width: 500px;
+  margin: 0 auto;
   opacity: 0;
+  z-index: 2;
 }
 .ansImg img{
+  position: relative;
   object-fit: cover;
+  z-index: 3;
   border-radius: 20px;
   box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
 }
