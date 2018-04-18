@@ -17,7 +17,7 @@ import * as idiomInfo from 'IdiomInfo';
         opacity: 0,
       })),
       state('emerge', style({
-        opacity: .9,
+        opacity: .95,
       })),
       transition('hide <=> emerge', animate('3000ms ease-in-out')),
     ]),
@@ -41,7 +41,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   language: string;
   state: string = 'hide';
   showImage: boolean = true;
-  imgPath:string = 'assets/quiz.jpg?'+Date.now().valueOf()
+  imgPath: string = 'assets/quiz.jpg?';
 
   fetch
 
@@ -136,15 +136,25 @@ export class BrainComponent implements OnInit, OnDestroy {
   getAnswerImg(ans: string) {
     if (this.quiz !== this.q.data.quiz) {
       let that = this;
-      setTimeout(()=>{
-        document.getElementById("answer-image").setAttribute("src", that.imgPath);
+      let handle;
+      setTimeout(() => {
+        handle = setTimeout(() => {
+          let sheet = document.styleSheets[document.styleSheets.length-1] as CSSStyleSheet
+          sheet.deleteRule(0)
+          sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("'+that.imgPath+Date.now()+'")', 0);
+          console.log(sheet.cssRules[0])
+        }, 500)
         that.state = 'emerge';
-      }, 2000);
+      }, 1000);
       setTimeout(function () {
+        clearInterval(handle)
         that.state = 'hide';
       }, 8000);
     }
   }
+
+
+
 
   //process idioms json
   fetchIdiom() {

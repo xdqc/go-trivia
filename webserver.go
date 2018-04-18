@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -109,7 +111,13 @@ func setIdiom(jsonBytes []byte) {
 func fetchAnswerImage(ans string, quiz []string, quoted string) {
 	tx1 := time.Now()
 	values := url.Values{}
-	values.Add("q", ans+" "+quoted)
+	searchStr := ans + " " + quoted
+	re := regexp.MustCompile("[^\\p{Han}]+")
+	hanRunes := re.ReplaceAllString(searchStr, "")
+	if len([]rune(hanRunes)) < 2 && len(quiz) > 2 {
+		searchStr += " " + strings.Join(quiz[:3], " ")
+	}
+	values.Add("q", searchStr)
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
@@ -129,7 +137,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 				}
 				rawImgReader := make(chan io.ReadCloser)
 				for _, img := range images.List[0:10] {
-					url := img.Thumb_
+					url := img.Thumb
 					go func(c chan io.ReadCloser) {
 						response, e := client.Get(url)
 						if e != nil {

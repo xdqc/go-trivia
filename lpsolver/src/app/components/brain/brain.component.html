@@ -1,4 +1,6 @@
 <!-- Main page -->
+<div *ngIf="showImage" [@imgAnimation]="state" ></div>
+<div class="bg bg-img" id="background">
 <div class="widgit-area">
   <div class="toggelSwitch toggelSwitch-img">
     <input type="checkbox" [(ngModel)]="showImage" id="imgSwitch" />
@@ -14,9 +16,9 @@
     <input type="range" value="50" min="0" max="100" [(ngModel)]="volume" id="volume-slider">
     <span class="fade-text">{{language}}</span>
   </div>
-  <div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
+  <!-- <div *ngIf="showImage" [@imgAnimation]="state" class="ansImg">
     <img [src]="imgPath" alt="{{ans}}" height="300" width="500" id="answer-image">
-  </div>
+  </div> -->
 </div>
 
 <div class="main form-area">
@@ -42,8 +44,7 @@
     </button>
   </div>
 </div>
-
-
+</div>
 
 <!-- Idioms
 <div>
