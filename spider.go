@@ -64,7 +64,7 @@ func (s *spider) Init() {
 		if resp == nil {
 			return resp
 		}
-		log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
+		// log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
 
 		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
 			//send letterpress match data to webserver

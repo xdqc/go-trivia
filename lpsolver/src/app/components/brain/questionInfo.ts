@@ -17,6 +17,7 @@ declare module QuestionInfo {
         AnswerPos: number;
         TrueAnswer: string;
         Odds: string[];
+        ImageTime: number;
     }
 
     export interface QuestionInfo {

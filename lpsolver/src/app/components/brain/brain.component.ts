@@ -20,9 +20,10 @@ export class BrainComponent implements OnInit, OnDestroy {
   quiz: qInfo.QuestionInfo['data']['quiz'];
   options: qInfo.QuestionInfo['data']['options'];
   qNum: qInfo.QuestionInfo['data']['num'];
-  ans: qInfo.Caldata['Answer']
-  ansPos: qInfo.Caldata['AnswerPos']
-  odds: qInfo.Caldata['Odds']
+  ans: qInfo.Caldata['Answer'];
+  ansPos: qInfo.Caldata['AnswerPos'];
+  odds: qInfo.Caldata['Odds'];
+  imgTime: qInfo.Caldata['ImageTime'] = 0;
 
   speakOn: boolean;
   volume: number;
@@ -71,11 +72,10 @@ export class BrainComponent implements OnInit, OnDestroy {
               let n = parseFloat(this.odds[i])
               this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
             }
-            this.getAnswerImg(this.ans)
-            this.speech_text(this)
+            this.changeQuizAnsBackground(this.q.caldata.ImageTime)
+            this.speechText(this)
             this.quiz = this.q.data.quiz;
             this.qNum = this.q.data.num;
-
           }
         }
       );
@@ -93,7 +93,7 @@ export class BrainComponent implements OnInit, OnDestroy {
     )
   }
 
-  speech_text(that) {
+  speechText(that) {
     if (that.speakOn && that.quiz !== that.q.data.quiz) {
       // speak out new question answer
       let higestOdd = 0
@@ -120,16 +120,12 @@ export class BrainComponent implements OnInit, OnDestroy {
     }
   }
 
-  getAnswerImg(ans: string) {
-    if (this.quiz !== this.q.data.quiz) {
-      let that = this;
-      let handle;
-      setTimeout(() => {
-          let sheet = document.styleSheets[document.styleSheets.length-1] as CSSStyleSheet
-          sheet.deleteRule(0)
-          sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("'+that.imgPath+Date.now()+'")', 0);
-          console.log(sheet.cssRules[0])
-      }, 2500);
+  changeQuizAnsBackground(newImgTime:number) {
+    if (newImgTime > this.imgTime) {
+      this.imgTime = newImgTime;
+      let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
+      sheet.deleteRule(0)
+      sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("' + this.imgPath + this.imgTime + '")', 0);
     }
   }
 

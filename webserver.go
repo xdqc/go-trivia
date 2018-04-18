@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -108,13 +109,13 @@ func setIdiom(jsonBytes []byte) {
 	idiomInfo = jsonBytes
 }
 
-func fetchAnswerImage(ans string, quiz []string, quoted string) {
+func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan int64) {
 	tx1 := time.Now()
 	values := url.Values{}
 	searchStr := ans + " " + quoted
 	re := regexp.MustCompile("[^\\p{Han}]+")
 	hanRunes := re.ReplaceAllString(searchStr, "")
-	if len([]rune(hanRunes)) < 2 {
+	if len([]rune(hanRunes)) < 5 {
 		if len(quiz) > 8 {
 			searchStr += " " + strings.Join(quiz[:9], " ")
 		} else {
@@ -125,60 +126,83 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
-	if resp != nil {
-		doc, _ := goquery.NewDocumentFromReader(resp.Body)
-		imgJSON := doc.Find("#initData").Text()
-		images := &AnwserImage{}
-		err := json.Unmarshal([]byte(imgJSON), images)
-		tx2 := time.Now()
-		log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
-		if err == nil {
-			if len(images.List) > 5 {
-				// set timeout for http GET
-				timeout := time.Duration(2 * time.Second)
-				client := http.Client{
-					Timeout: timeout,
-				}
-				rawImgReader := make(chan io.ReadCloser)
-				done := false
-				for _, img := range images.List[0:5] {
-					url := img.Thumb
-					go func(c chan io.ReadCloser) {
-						response, e := client.Get(url)
-						if e != nil {
-							log.Println(e.Error())
-							return
-						} else if response != nil && response.StatusCode >= 200 && response.StatusCode < 299 {
-							if done {
-								return
-							}
-							c <- response.Body
-							done = true
-						}
-					}(rawImgReader)
-				}
+	if resp == nil {
+		imgTimeChan <- 0
+		return
+	}
+	doc, _ := goquery.NewDocumentFromReader(resp.Body)
+	imgJSON := doc.Find("#initData").Text()
+	resultImages := &AnwserImage{}
+	err := json.Unmarshal([]byte(imgJSON), resultImages)
+	if err != nil {
+		log.Println("json error: " + err.Error())
+		imgTimeChan <- 0
+		return
+	}
+	tx2 := time.Now()
+	log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
 
-				//open a file for writing
-				file, err := os.Create("./lpsolver/dist/assets/quiz.jpg")
-				if err != nil {
-					log.Println(err.Error())
-				}
-				// Use io.Copy to just dump the response body to the file. This supports huge files
-				_, err = io.Copy(file, <-rawImgReader)
-				close(rawImgReader)
-				log.Println("First img is copied   !!!!!")
-				if err != nil {
-					log.Println(err.Error())
-					return
-				}
-				// close(rawImgReader)
-				file.Close()
-				log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
-			} else {
-				log.Println("not enought image result.")
+	//filter portrait images
+	images := make([]Image, 0)
+	for _, img := range resultImages.List {
+		width, _ := strconv.Atoi(img.Width)
+		height, _ := strconv.Atoi(img.Height)
+		if width >= height && width > 300 {
+			images = append(images, img)
+			if len(images) >= 5 {
+				break
 			}
 		}
 	}
+	if len(images) < 5 {
+		log.Println("..... not enough image result.")
+		imgTimeChan <- 0
+		return
+	}
+	// set timeout for http GET
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+	rawImgReader := make(chan io.ReadCloser)
+	done := false
+	for _, img := range images {
+		url := img.Thumb
+		go func(c chan io.ReadCloser) {
+			response, e := client.Get(url)
+			if e != nil {
+				return
+			} else if response != nil && response.StatusCode >= 200 && response.StatusCode < 299 {
+				if done {
+					return
+				}
+				c <- response.Body
+				done = true
+			} else {
+				log.Println("Something wrong with the http request: " + strconv.Itoa(response.StatusCode))
+			}
+		}(rawImgReader)
+	}
+
+	//open a file for writing
+	file, err := os.Create("./lpsolver/dist/assets/quiz.jpg")
+	if err != nil {
+		log.Println("Create file error: " + err.Error())
+		imgTimeChan <- 0
+		return
+	}
+	// Use io.Copy to just dump the response body to the file. This supports huge files
+	_, err = io.Copy(file, <-rawImgReader)
+	close(rawImgReader)
+	if err != nil {
+		log.Println("Copy img error: " + err.Error())
+		imgTimeChan <- 0
+		return
+	}
+	// close(rawImgReader)
+	file.Close()
+	log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+	imgTimeChan <- time.Now().UTC().Unix()
 }
 
 //MatchInfo ...
@@ -231,49 +255,52 @@ type MatchInfo struct {
 	} `json:"matches"`
 }
 
-// Image result from image.so.com
+//AnwserImage result from image.so.com
 type AnwserImage struct {
-	Total     int    `json:"total"`
-	End       bool   `json:"end"`
-	Sid       string `json:"sid"`
-	Ran       int    `json:"ran"`
-	Ras       int    `json:"ras"`
-	Kn        int    `json:"kn"`
-	Cn        int    `json:"cn"`
-	Gn        int    `json:"gn"`
-	Lastindex int    `json:"lastindex"`
-	Ceg       string `json:"ceg"`
-	List      []struct {
-		ID            string `json:"id"`
-		QqfaceDownURL bool   `json:"qqface_down_url"`
-		Downurl       bool   `json:"downurl"`
-		Grpmd5        bool   `json:"grpmd5"`
-		Type          int    `json:"type"`
-		Src           string `json:"src"`
-		Color         int    `json:"color"`
-		Index         int    `json:"index"`
-		Title         string `json:"title"`
-		Litetitle     string `json:"litetitle"`
-		Width         string `json:"width"`
-		Height        string `json:"height"`
-		Imgsize       string `json:"imgsize"`
-		Imgtype       string `json:"imgtype"`
-		Key           string `json:"key"`
-		Dspurl        string `json:"dspurl"`
-		Link          string `json:"link"`
-		Source        int    `json:"source"`
-		Img           string `json:"img"`
-		ThumbBak      string `json:"thumb_bak"`
-		Thumb         string `json:"thumb"`
-		ThumbBak_     string `json:"_thumb_bak"`
-		Thumb_        string `json:"_thumb"`
-		Imgkey        string `json:"imgkey"`
-		ThumbWidth    int    `json:"thumbWidth"`
-		Dsptime       string `json:"dsptime"`
-		ThumbHeight   int    `json:"thumbHeight"`
-		Grpcnt        string `json:"grpcnt"`
-		FixedSize     bool   `json:"fixedSize"`
-	} `json:"list"`
-	Boxresult bool   `json:"boxresult"`
-	Wordguess string `json:"wordguess"`
+	Total int `json:"total"`
+	// End       bool   `json:"end"`
+	// Sid       string `json:"sid"`
+	// Ran       int    `json:"ran"`
+	// Ras       int    `json:"ras"`
+	// Kn        int    `json:"kn"`
+	// Cn        int    `json:"cn"`
+	// Gn        int    `json:"gn"`
+	// Lastindex int    `json:"lastindex"`
+	// Ceg       string `json:"ceg"`
+	List []Image `json:"list"`
+	// Boxresult bool `json:"boxresult"`
+	// Wordguess string `json:"wordguess"`
+}
+
+//Image instance from image.so.com result
+type Image struct {
+	// ID            string `json:"id"`
+	// QqfaceDownURL bool   `json:"qqface_down_url"`
+	// Downurl       bool   `json:"downurl"`
+	// Grpmd5        bool   `json:"grpmd5"`
+	// Type          int    `json:"type"`
+	// Src           string `json:"src"`
+	// Color         int    `json:"color"`
+	// Index         int    `json:"index"`
+	// Title         string `json:"title"`
+	// Litetitle     string `json:"litetitle"`
+	Width   string `json:"width"`
+	Height  string `json:"height"`
+	Imgsize string `json:"imgsize"`
+	// Imgtype       string `json:"imgtype"`
+	// Key           string `json:"key"`
+	// Dspurl        string `json:"dspurl"`
+	// Link          string `json:"link"`
+	// Source        int    `json:"source"`
+	Img       string `json:"img"`
+	ThumbBak  string `json:"thumb_bak"`
+	Thumb     string `json:"thumb"`
+	ThumbBak_ string `json:"_thumb_bak"`
+	Thumb_    string `json:"_thumb"`
+	// Imgkey        string `json:"imgkey"`
+	ThumbWidth int `json:"thumbWidth"`
+	// Dsptime       string `json:"dsptime"`
+	ThumbHeight int `json:"thumbHeight"`
+	// Grpcnt        string `json:"grpcnt"`
+	// FixedSize     bool   `json:"fixedSize"`
 }

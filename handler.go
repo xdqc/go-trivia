@@ -38,7 +38,8 @@ func handleQuestionResp(bs []byte) {
 
 	// fetch image of the quiz
 	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	go fetchAnswerImage("", keywords, quoted)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage("", keywords, quoted, imgTimeChan)
 
 	question.CalData.RoomID = roomID
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
@@ -120,7 +121,11 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.AnswerPos = ansPos
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
-	// println(string(questionInfo))
+
+	// Image time and question core information may not be sent in one http GET response to client
+	question.CalData.ImageTime = <-imgTimeChan
+	questionInfo, _ = json.Marshal(question)
+
 }
 
 func handleChooseResponse(bs []byte) {
@@ -161,6 +166,7 @@ type Question struct {
 		AnswerPos  int
 		TrueAnswer string
 		Odds       []float32
+		ImageTime  int64
 	} `json:"caldata"`
 	Errcode int `json:"errcode"`
 }

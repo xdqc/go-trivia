@@ -47,7 +47,7 @@
     left: 0;
     top: 0;
     width: 100%;
-    height: 200%;
+    height: 400%;
     z-index: -1;
     opacity: 0.8;
 
@@ -59,8 +59,9 @@
   /*styling quiz area*/
   .main {
     background-color: #fcfcfc77;
-    margin: 200px auto;
+    margin: 1000px auto;
     width: 70%;
+    max-width: 650px;
     padding: 20px;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
   }
@@ -75,7 +76,7 @@
   /*Form area width*/
   .form-area, ul {
     margin: 20px auto;
-    max-width: 550px;
+    max-width: 500px;
     padding-left: 20px;
     font-size: 1.2em;
   }
