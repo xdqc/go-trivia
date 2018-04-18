@@ -115,8 +115,8 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 	re := regexp.MustCompile("[^\\p{Han}]+")
 	hanRunes := re.ReplaceAllString(searchStr, "")
 	if len([]rune(hanRunes)) < 2 {
-		if len(quiz) > 6 {
-			searchStr += " " + strings.Join(quiz[:7], " ")
+		if len(quiz) > 8 {
+			searchStr += " " + strings.Join(quiz[:9], " ")
 		} else {
 			searchStr += " " + strings.Join(quiz, " ")
 		}
@@ -133,25 +133,28 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 		tx2 := time.Now()
 		log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
 		if err == nil {
-			if len(images.List) > 10 {
+			if len(images.List) > 5 {
 				// set timeout for http GET
 				timeout := time.Duration(2 * time.Second)
 				client := http.Client{
 					Timeout: timeout,
 				}
 				rawImgReader := make(chan io.ReadCloser)
-				for _, img := range images.List[0:10] {
+				done := false
+				for _, img := range images.List[0:5] {
 					url := img.Thumb
 					go func(c chan io.ReadCloser) {
 						response, e := client.Get(url)
 						if e != nil {
 							log.Println(e.Error())
 							return
-						}
-						if response != nil && response.StatusCode >= 200 && response.StatusCode < 299 {
+						} else if response != nil && response.StatusCode >= 200 && response.StatusCode < 299 {
+							if done {
+								return
+							}
 							c <- response.Body
+							done = true
 						}
-						return
 					}(rawImgReader)
 				}
 
@@ -162,6 +165,8 @@ func fetchAnswerImage(ans string, quiz []string, quoted string) {
 				}
 				// Use io.Copy to just dump the response body to the file. This supports huge files
 				_, err = io.Copy(file, <-rawImgReader)
+				close(rawImgReader)
+				log.Println("First img is copied   !!!!!")
 				if err != nil {
 					log.Println(err.Error())
 					return
