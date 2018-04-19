@@ -493,7 +493,7 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * optMatrix[i][j] / vNorm * math.Log(math.Log(optMatrix[i][j]+1)+1)
+			vM += val * val * math.Log(math.Log(optMatrix[i][j]+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)

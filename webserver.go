@@ -193,7 +193,6 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	}
 	// Use io.Copy to just dump the response body to the file. This supports huge files
 	_, err = io.Copy(file, <-rawImgReader)
-	close(rawImgReader)
 	if err != nil {
 		log.Println("Copy img error: " + err.Error())
 		imgTimeChan <- 0
