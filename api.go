@@ -349,15 +349,21 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 		sumCounts += optCounts[i]
 	}
 	log.Printf("Sum Count: %d\tPlain quiz: %d\n", sumCounts, plainQuizCount)
-	// if majority matches are plain quiz, simplely set matches as the count of each option
-	// || 3*sumCounts < plainQuizCount
-	// if all counts of options in text less than 2, choose the 1 or nothing
-	if sumCounts < 6 || sumCounts*3 < plainQuizCount {
+
+	// If majority matches are plain quiz, find the option closely following answer indicator: "答案"
+	numAnsIndicator := 0
+	if sumCounts < plainQuizCount {
+		numAnsIndicator = findPlainQuizAnswer(append(testing, training...), options, res)
+	}
+
+	// If all counts of options in text less than 2, choose the 1 or nothing
+	if sumCounts < 6 && numAnsIndicator == 0 {
 		for i, option := range options {
 			res[option] = optCounts[i]
 		}
 	}
 
+	// Calculte probability odd for each option
 	total := 1
 	for _, option := range options {
 		total += res[option]
@@ -368,7 +374,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 }
 
-func trainKeyWords(training []rune, quiz string, options []string, res map[string]int) ([]int, int) {
+func trainKeyWords(text []rune, quiz string, options []string, res map[string]int) ([]int, int) {
 	keywords, quoted := preProcessQuiz(quiz, false)
 	// Evaluate the match points of each keywords for each option
 	kwMap := make(map[string][]int)
@@ -390,14 +396,14 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 		opti := string(shortOptions[k])
 		optLen := len(shortOptions[k])
 		optCount := 1
-		for i, r := range training {
+		for i, r := range text {
 			if r == ' ' {
 				continue
 			}
-			if string(training[i:i+optLen]) == opti {
+			if string(text[i:i+optLen]) == opti {
 				optCount++
-				windowR := training[i+optLen : i+optLen+width]
-				windowL := training[i-width : i]
+				windowR := text[i+optLen : i+optLen+width]
+				windowL := text[i-width : i]
 				wordsL := JB.Cut(string(windowL), true)
 				wordsR := JB.Cut(string(windowR), true)
 				wordsLR := append(wordsL, wordsR...)
@@ -513,6 +519,54 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 	}
 
 	return optCounts, plainQuizCount
+}
+
+func findPlainQuizAnswer(text []rune, options []string, res map[string]int) (numAnsIndicator int) {
+	// Clear the result, to be recalculated..
+	for option := range res {
+		res[option] = 0
+	}
+
+	optionKeywords := make(map[string][]string)
+	for _, option := range options {
+		optionKeywords[option] = JB.Cut(option, true)
+	}
+
+	width := 30 //sliding window size
+
+	for i, r := range text {
+		if r == ' ' {
+			continue
+		}
+		if string(text[i:i+2]) == "答案" {
+			numAnsIndicator++
+			windowR := text[i+2 : i+2+width]
+			wordsR := JB.Cut(string(windowR), true)
+			/**
+			 * According to <i>Advances In Chinese Document And Text Processing</i>, P.142, Figure.7,
+			 * GP-TSM (Exponential) Kernal function gives highest accuracy rate for chinese text process.
+			 */
+			for j, w := range wordsR {
+				for _, option := range options {
+					for _, kw := range optionKeywords[option] {
+						if w == kw {
+							// kwMap[w][k]++
+							// Gaussian Kernel
+							res[option] += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// mean result by number of keywords per option
+	for _, option := range options {
+		if len(optionKeywords[option]) > 1 {
+			res[option] = res[option] * 4 / (3 * len(optionKeywords[option]))
+		}
+	}
+	return
 }
 
 func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isTest bool, c chan string) {

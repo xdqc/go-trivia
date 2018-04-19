@@ -112,6 +112,7 @@ func setIdiom(jsonBytes []byte) {
 func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan int64) {
 	tx1 := time.Now()
 	values := url.Values{}
+	// create search string
 	searchStr := ans + " " + quoted
 	re := regexp.MustCompile("[^\\p{Han}]+")
 	hanRunes := re.ReplaceAllString(searchStr, "")
@@ -123,6 +124,13 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		}
 	}
 	values.Add("q", searchStr)
+
+	// HTTP request for img url
+	// set timeout for http GET
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
 	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
 	resp, _ := http.DefaultClient.Do(req)
 	defer resp.Body.Close()
@@ -159,11 +167,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		imgTimeChan <- 0
 		return
 	}
-	// set timeout for http GET
-	timeout := time.Duration(6 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
+
 	rawImgReader := make(chan io.ReadCloser)
 	done := false
 	for _, img := range images {
