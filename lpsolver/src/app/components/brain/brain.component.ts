@@ -98,31 +98,34 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'record ' : higestOdd > 5 ? 'choose ' : 'could be ';
+      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'record ' : higestOdd > 5 ? 'choose ' : higestOdd > 1 ? 'should be' : 'may be ';
       if (that.q.data.school == '理科' && higestOdd < 5) {
         utterance = 'Attention, ' + utterance
       }
-      let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ');
-      let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
 
-      // console.log(msg);
+      let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ');
       const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
-      const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
+      
       sayNumber.voice = en[Math.floor(Math.random() * en.length)];
-      sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
-        ? zh[Math.floor(Math.random() * zh.length)]
-        : sayNumber.voice;
-      sayChoice.rate = 1.05;
-      sayChoice.pitch = 1;
-      sayChoice.volume = (that.volume || 100) / 100;
       sayNumber.volume = (that.volume || 100) / 80;
-      that.language = sayNumber.voice.lang
       speechSynthesis.speak(sayNumber)
-      speechSynthesis.speak(sayChoice)
+
+      if (higestOdd >= 1) {
+        const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
+        let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
+        sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+          ? zh[Math.floor(Math.random() * zh.length)]
+          : sayNumber.voice;
+        sayChoice.rate = 1.05;
+        sayChoice.pitch = 1;
+        sayChoice.volume = (that.volume || 100) / 100;
+        that.language = sayNumber.voice.lang
+        speechSynthesis.speak(sayChoice)
+      }
     }
   }
 
-  changeQuizAnsBackground(newImgTime:number) {
+  changeQuizAnsBackground(newImgTime: number) {
     if (newImgTime > this.imgTime && this.showImage) {
       this.imgTime = newImgTime;
       let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet

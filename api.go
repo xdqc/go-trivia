@@ -51,7 +51,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 			}
 		}
 	}
-	hasQuote := strings.ContainsRune(quiz, '「')
+	hasQuote := strings.ContainsRune(quiz, '「') && strings.ContainsRune(quiz, '」')
 	quoted = ""
 	if hasQuote {
 		quoted = quiz[strings.IndexRune(quiz, '「'):strings.IndexRune(quiz, '」')]
@@ -206,7 +206,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能会同充分超过应该对称足够适合太具断停止值得敢锈]")
+	nonegreg := regexp.MustCompile("不[能会同变充分超过应该对称足够适合太具断停止值得敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || qtnegreg.MatchString(quiz)) {
