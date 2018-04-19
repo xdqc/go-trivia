@@ -38,7 +38,7 @@
     background-size: cover;
     background-attachment:fixed;
     background-repeat: no-repeat;
-    transition: background-image 8s cubic-bezier(.2,.5,0,1);
+    transition: background-image 4s ease-out; //cubic-bezier(.2,.5,0,1);
     content: ' ';
     display: block;
     position: absolute;

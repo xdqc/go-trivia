@@ -5,7 +5,8 @@
 
 export const env = {
   production: false,
-  host:"192.168.1.69",
+  // host:"192.168.1.69",
+  host:"localhost",
   port:"8080",
   player: [
     {

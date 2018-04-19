@@ -2,7 +2,6 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Http, Headers } from '@angular/http';
 import { env } from '../../../environments/environment';
 import 'rxjs/add/operator/map';
-import 'web-animations-js/web-animations.min';
 import * as qInfo from 'questionInfo';
 import * as idiomInfo from 'IdiomInfo';
 
@@ -28,8 +27,9 @@ export class BrainComponent implements OnInit, OnDestroy {
   speakOn: boolean;
   volume: number;
   language: string;
+
   showImage: boolean = true;
-  imgPath: string = 'assets/quiz.jpg?';
+  imgPath: string = 'solver/assets/quiz.jpg?';
 
   fetch
 
@@ -106,9 +106,11 @@ export class BrainComponent implements OnInit, OnDestroy {
       let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
 
       // console.log(msg);
-      sayNumber.voice = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0)[Math.floor(Math.random() * 13)];
+      const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
+      const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
+      sayNumber.voice = en[Math.floor(Math.random() * en.length)];
       sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
-        ? speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0)[Math.floor(Math.random() * 6)]
+        ? zh[Math.floor(Math.random() * zh.length)]
         : sayNumber.voice;
       sayChoice.rate = 1.05;
       sayChoice.pitch = 1;
@@ -121,7 +123,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   changeQuizAnsBackground(newImgTime:number) {
-    if (newImgTime > this.imgTime) {
+    if (newImgTime > this.imgTime || this.showImage) {
       this.imgTime = newImgTime;
       let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
       sheet.deleteRule(0)
