@@ -1,11 +1,16 @@
 package solver
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/coreos/goproxy"
@@ -37,8 +42,28 @@ func newSpider() *spider {
 	sp := &spider{}
 	sp.proxy = goproxy.NewProxyHttpServer()
 	sp.proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
-	//Initialze jieba segmentor
+	//Initialize jieba segmentor
 	JB = gojieba.NewJieba()
+
+	//Initialize corpus
+	csvFile, _ := os.Open("CorpusWordPOSlist.csv")
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+	CorpusWord = make(map[string]Cihui)
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		count, _ := strconv.Atoi(line[3])
+		freq, _ := strconv.ParseFloat(line[4], 32)
+		CorpusWord[line[0]] = Cihui{
+			Category: line[1],
+			Count:    count,
+			Frequncy: float32(freq),
+		}
+	}
 	return sp
 }
 
@@ -57,6 +82,8 @@ func (s *spider) Init() {
 			resp.Header.Add("Content-Disposition", "attachment; filename=ca.crt")
 			resp.Header.Add("Content-Type", "application/octet-stream")
 			resp.Body = ioutil.NopCloser(bytes.NewReader(goproxy.CA_CERT))
+		} else if ctx.Req.URL.Host == "www.aihanyu.org" {
+			fmt.Println(formatRequest(req))
 		}
 		return
 	}

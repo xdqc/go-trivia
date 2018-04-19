@@ -98,8 +98,8 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'record ' : higestOdd > 5 ? 'choose ' : higestOdd > 1 ? 'should be' : 'may be ';
-      if (that.q.data.school == '理科' && higestOdd < 5) {
+      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'record ' : higestOdd == 888 ? 'choose ' :higestOdd > 3? 'absolutely ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
+      if (that.q.data.school == '理科' && higestOdd < 1) {
         utterance = 'Attention, ' + utterance
       }
 

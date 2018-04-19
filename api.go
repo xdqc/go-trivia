@@ -23,8 +23,12 @@ import (
 var (
 	google_URL = "http://www.google.com/search?"
 	baidu_URL  = "http://www.baidu.com/s?"
-	JB         *gojieba.Jieba
-	N_opt      = 4
+	//JB jieba chinese words segregation
+	JB *gojieba.Jieba
+	//CorpusWord the chiese vocabulary
+	CorpusWord map[string]Cihui
+	//N_opt number of question options
+	N_opt = 4
 )
 
 func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted string) {
@@ -476,8 +480,15 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 		if mean > 0 {
 			rsd = math.Sqrt(variance) / mean
 		}
-		kwWeight[kw] = rsd
-		fmt.Printf("W~\t%4.2f\t%6s\t%v\n", rsd*100, kw, kwMap[kw])
+		if c, ok := CorpusWord[kw]; ok {
+			count := c.Count
+			kwWeight[kw] = rsd / math.Log(float64(count)) * 10
+		} else {
+			// the min count in corpus is 50, use 10 for non-exist rare word
+			kwWeight[kw] = rsd / math.Log(30) * 10
+		}
+
+		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", kwWeight[kw]*100, kw, kwMap[kw])
 	}
 
 	optMatrix := make([][]float64, N_opt)
@@ -497,8 +508,8 @@ func trainKeyWords(training []rune, quiz string, options []string, res map[strin
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)
-		res[option] = int(math.Exp(vM) * 1000)
-		fmt.Printf("%10s %4.3f\t%1.2f\n", option, math.Exp(vM), optMatrix[i])
+		res[option] = int(vM * 1000)
+		fmt.Printf("%10s %4.3f\t%1.2f\n", option, vM, optMatrix[i])
 	}
 
 	return optCounts, plainQuizCount
@@ -758,4 +769,12 @@ func startBrowser(keywords []string) {
 	if err != nil {
 		println("Failed to start chrome:", err)
 	}
+}
+
+//Cihui chinese word
+type Cihui struct {
+	Word     string  `json:"word"`
+	Category string  `json:"category"`
+	Count    int     `json:"count"`
+	Frequncy float32 `json:"frequncy"`
 }
