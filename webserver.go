@@ -142,12 +142,12 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	tx2 := time.Now()
 	log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
 
-	//filter portrait images
+	//filter portrait/no-small images
 	images := make([]Image, 0)
 	for _, img := range resultImages.List {
 		width, _ := strconv.Atoi(img.Width)
 		height, _ := strconv.Atoi(img.Height)
-		if width >= height && width > 300 {
+		if width > height && height > 200 {
 			images = append(images, img)
 			if len(images) >= 5 {
 				break
@@ -160,7 +160,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		return
 	}
 	// set timeout for http GET
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(6 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
