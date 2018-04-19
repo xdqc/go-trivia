@@ -123,11 +123,11 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   changeQuizAnsBackground(newImgTime:number) {
-    if (newImgTime > this.imgTime || this.showImage) {
+    if (newImgTime > this.imgTime && this.showImage) {
       this.imgTime = newImgTime;
       let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
-      sheet.deleteRule(0)
       sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("' + this.imgPath + this.imgTime + '")', 0);
+      sheet.deleteRule(1)
     }
   }
 
