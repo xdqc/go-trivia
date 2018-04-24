@@ -351,13 +351,13 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	log.Printf("Sum Count: %d\tPlain quiz: %d\n", sumCounts, plainQuizCount)
 
 	// If majority matches are plain quiz, find the option closely following answer indicator: "答案"
-	numAnsIndicator := 0
-	if sumCounts < plainQuizCount {
-		numAnsIndicator = findPlainQuizAnswer(append(testing, training...), options, res)
-	}
+	// numAnsIndicator := 0
+	// if sumCounts < plainQuizCount {
+	// 	numAnsIndicator = findPlainQuizAnswer(append(testing, training...), options, res)
+	// }
 
 	// If all counts of options in text less than 2, choose the 1 or nothing
-	if sumCounts < 6 && numAnsIndicator == 0 {
+	if sumCounts < 6 && sumCounts*3 < plainQuizCount {
 		for i, option := range options {
 			res[option] = optCounts[i]
 		}
@@ -510,7 +510,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * val * math.Log(math.Log(optMatrix[i][j]+1)+1)
+			vM += val * optMatrix[i][j] * math.Log(math.Log(optMatrix[i][j]+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)

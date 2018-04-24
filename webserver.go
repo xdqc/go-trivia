@@ -127,13 +127,17 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 
 	// HTTP request for img url
 	// set timeout for http GET
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(6 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
-	req, _ := http.NewRequest("GET", "http://image.so.com/i?"+values.Encode(), nil) //www.bing.com/images/search?
-	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
+
+	resp, e := client.Get("http://image.so.com/i?" + values.Encode()) //www.bing.com/images/search?
+	if e != nil {
+		log.Println("Get img URL err: " + e.Error())
+		imgTimeChan <- 0
+		return
+	}
 	if resp == nil {
 		imgTimeChan <- 0
 		return
@@ -155,14 +159,14 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	for _, img := range resultImages.List {
 		width, _ := strconv.Atoi(img.Width)
 		height, _ := strconv.Atoi(img.Height)
-		if width > height && height > 200 {
+		if width < height && height > 200 {
 			images = append(images, img)
 			if len(images) >= 5 {
 				break
 			}
 		}
 	}
-	if len(images) < 5 {
+	if len(images) < 0 {
 		log.Println("..... not enough image result.")
 		imgTimeChan <- 0
 		return
