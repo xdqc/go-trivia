@@ -118,13 +118,11 @@ func (s *spider) Init() {
 			// println("\nchoose:\n" + string(bs))
 			go handleChooseResponse(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" || ctx.Req.URL.Host == "cash.hortor.net:443" || ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" || ctx.Req.URL.Path == "/question/dailyChallenge/choose" {
+		} else if strings.Contains(ctx.Req.URL.Host, "chongdingdahui") {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
 
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if strings.Contains(ctx.Req.URL.Path, "/ad") || strings.Contains(ctx.Req.URL.Host, "googlesyndication") {
-			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("")))
 		}
 		return resp
 	}

@@ -210,8 +210,8 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能会同变充分超过应该对称足够适合太具断停止值得敢锈]")
-	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") ||
+	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合太具断停止值得敢锈]")
+	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || qtnegreg.MatchString(quiz)) {
 		for _, option := range options {
@@ -233,116 +233,8 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	training := []rune(trainingStr)
 	testing := []rune(testingStr)
 	log.Printf("\t\t\t\tTraining: %d\tTesting: %d", len(training), len(testing))
-	// qz := re.ReplaceAllString(quiz, "")
 
-	// var qkeywords []string
-	// if quoted != "" {
-	// 	qkeywords = JB.Cut(quoted, true)
-	// }
-
-	// Calculate RSD of keywords of options, give each keyword a weight
-	// log.Println("\n each single results: ")
-	// optCounts, plainQuizCount := trainKeyWords(training, keywords, options, res)
-	// log.Println("\n combined results: ")
 	optCounts, plainQuizCount := trainKeyWords(append(testing, training...), quiz, options, res)
-	//width := 50
-	// for k, option := range options {
-	// 	opti := string(shortOptions[k])
-	// 	optLen := len(shortOptions[k])
-	// 	var optMatches []int
-	// 	optMatches = append(optMatches, 0)
-
-	// 	// calculate matching keywords in slinding window around each option
-	// 	for i, r := range testing {
-	// 		if r == ' ' {
-	// 			continue
-	// 		}
-	// 		// find the index of option in the search text
-	// 		if string(testing[i:i+optLen]) == opti {
-	// 			optMatch := 0
-	// 			windowR := testing[i+optLen : i+optLen+width]
-	// 			windowL := testing[i-width : i]
-	// 			wordsL := JB.Cut(string(windowL), true)
-	// 			wordsR := JB.Cut(string(windowR), true)
-	// 			// Evaluate match-points of each window. Quiz the closer to option, the high points (gaussian distribution)
-	// 			if !(strings.Contains(qz, "上一") || strings.Contains(qz, "之前")) {
-	// 				quizMark := 0
-	// 				for _, w := range wordsL {
-	// 					if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
-	// 						quizMark++
-	// 					}
-	// 				}
-	// 				plainQuizCount += quizMark
-	// 				if quizMark > 1 {
-	// 					optMatch = 0
-	// 					continue
-	// 				}
-	// 				for j, w := range wordsL {
-	// 					if w == "不是" && j == len(wordsL)-1 {
-	// 						optMatch = 0
-	// 						break
-	// 					}
-	// 					for _, word := range keywords {
-	// 						if w == word {
-	// 							optMatch += int(100 * kwWeight[w] * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
-	// 						}
-	// 					}
-	// 					// if quoted != "" {
-	// 					// 	for _, word := range qkeywords {
-	// 					// 		if w == word {
-	// 					// 			optMatch += int(100 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5))
-	// 					// 		}
-	// 					// 	}
-	// 					// }
-	// 				}
-	// 			}
-	// 			if !(strings.Contains(qz, "下一") || strings.Contains(qz, "之后")) {
-	// 				quizMark := 0
-	// 				for _, w := range wordsR {
-	// 					if strings.ContainsAny(w, "ABCDabcd") && len([]rune(w)) == 1 {
-	// 						quizMark++
-	// 					}
-	// 				}
-	// 				plainQuizCount += quizMark
-	// 				if quizMark > 1 {
-	// 					optMatch = 0
-	// 					continue
-	// 				}
-	// 				for j, w := range wordsR {
-	// 					if w == "答案" {
-	// 						plainQuizCount -= quizMark
-	// 					}
-
-	// 					for _, word := range keywords {
-	// 						if w == word {
-	// 							optMatch += int(50 * kwWeight[w] * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.2)) //e^(-x^2), sigma=0.1, factor=100
-	// 						}
-	// 					}
-	// 					// if quoted != "" {
-	// 					// 	for _, word := range qkeywords {
-	// 					// 		if w == word {
-	// 					// 			optMatch += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5))
-	// 					// 		}
-	// 					// 	}
-	// 					// }
-	// 				}
-	// 			}
-	// 			res[option] += optMatch
-	// 			optMatches = append(optMatches, optMatch)
-	// 			// fmt.Printf("%s%4d%6d\t%v\n\t\t\t%v\n", option, optMatch, res[option], wordsL, wordsR)
-	// 		}
-	// 	}
-	// 	optCounts[k] = len(optMatches)
-	// 	sort.Sort(sort.Reverse(sort.IntSlice(optMatches)))
-	// 	//only take first lg(len) number of top matches, sum up as the result of the option
-	// 	logCount := int(math.Log2(float64(len(optMatches))))
-	// 	optMatches = optMatches[0:logCount]
-	// 	matches := 0
-	// 	for _, m := range optMatches {
-	// 		matches += m
-	// 	}
-	// 	res[option] = matches
-	// }
 
 	sumCounts := 0
 	for i := range optCounts {
@@ -350,16 +242,18 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	}
 	log.Printf("Sum Count: %d\tPlain quiz: %d\n", sumCounts, plainQuizCount)
 
-	// If majority matches are plain quiz, find the option closely following answer indicator: "答案"
-	// numAnsIndicator := 0
-	// if sumCounts < plainQuizCount {
-	// 	numAnsIndicator = findPlainQuizAnswer(append(testing, training...), options, res)
-	// }
-
 	// If all counts of options in text less than 2, choose the 1 or nothing
-	if sumCounts < 6 && sumCounts*3 < plainQuizCount {
+	// Or If majority matches are plain quiz, just use count
+	if sumCounts < 6 || sumCounts*3 < plainQuizCount {
 		for i, option := range options {
 			res[option] = optCounts[i]
+		}
+	}
+
+	// If the option literally appeared in quiz, probably it won't be the answer, skip the option
+	for _, option := range options {
+		if strings.Contains(quiz, option) {
+			res[option] = 1
 		}
 	}
 
@@ -396,6 +290,11 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		opti := string(shortOptions[k])
 		optLen := len(shortOptions[k])
 		optCount := 1
+
+		if optLen == 0 {
+			continue
+		}
+
 		for i, r := range text {
 			if r == ' ' {
 				continue
@@ -432,7 +331,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								kernel := int(50 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 2
+										kernel *= 10
 									}
 								}
 								kwMap[w][k] += kernel
@@ -451,7 +350,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								kernel := int(40 * math.Exp(-math.Abs(float64(j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=8
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 2
+										kernel *= 10
 									}
 								}
 								kwMap[w][k] += kernel
@@ -519,54 +418,6 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	}
 
 	return optCounts, plainQuizCount
-}
-
-func findPlainQuizAnswer(text []rune, options []string, res map[string]int) (numAnsIndicator int) {
-	// Clear the result, to be recalculated..
-	for option := range res {
-		res[option] = 0
-	}
-
-	optionKeywords := make(map[string][]string)
-	for _, option := range options {
-		optionKeywords[option] = JB.Cut(option, true)
-	}
-
-	width := 30 //sliding window size
-
-	for i, r := range text {
-		if r == ' ' {
-			continue
-		}
-		if string(text[i:i+2]) == "答案" {
-			numAnsIndicator++
-			windowR := text[i+2 : i+2+width]
-			wordsR := JB.Cut(string(windowR), true)
-			/**
-			 * According to <i>Advances In Chinese Document And Text Processing</i>, P.142, Figure.7,
-			 * GP-TSM (Exponential) Kernal function gives highest accuracy rate for chinese text process.
-			 */
-			for j, w := range wordsR {
-				for _, option := range options {
-					for _, kw := range optionKeywords[option] {
-						if w == kw {
-							// kwMap[w][k]++
-							// Gaussian Kernel
-							res[option] += int(100 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// mean result by number of keywords per option
-	for _, option := range options {
-		if len(optionKeywords[option]) > 1 {
-			res[option] = res[option] * 4 / (3 * len(optionKeywords[option]))
-		}
-	}
-	return
 }
 
 func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isTest bool, c chan string) {

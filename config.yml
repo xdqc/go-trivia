@@ -1,6 +1,6 @@
 # 西瓜视频 夜神模拟器
 debug: false
-# 游戏名称, xigua 每日挑战 / cddh 大奖赛 / huajiao 花椒 / zscr 芝士超人
+# 游戏名称, xigua  每日挑战 / cddh 大奖赛 / huajiao 花椒 / zscr 芝士超人
 app: cddh
 # 是否模拟自动答题
 automatic: false

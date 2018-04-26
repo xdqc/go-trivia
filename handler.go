@@ -23,17 +23,16 @@ func handleQuestionResp(bs []byte) {
 		if len(question.Data.Options) == 0 || question.Data.Quiz == "" {
 			log.Println("No quiz or options found in screenshot...")
 			return
-		} else {
-			quiz := question.Data.Quiz
-			quiz = strings.Replace(quiz, "?", "？", -1)
-			quiz = strings.Replace(quiz, ",", "，", -1)
-			quiz = strings.Replace(quiz, "(", "（", -1)
-			quiz = strings.Replace(quiz, ")", "）", -1)
-			quiz = strings.Replace(quiz, "\"", "“", -1)
-			quiz = strings.Replace(quiz, "'", "‘", -1)
-			quiz = strings.Replace(quiz, "!", "！", -1)
-			question.Data.Quiz = quiz
 		}
+		quiz := question.Data.Quiz
+		quiz = strings.Replace(quiz, "?", "？", -1)
+		quiz = strings.Replace(quiz, ",", "，", -1)
+		quiz = strings.Replace(quiz, "(", "（", -1)
+		quiz = strings.Replace(quiz, ")", "）", -1)
+		quiz = strings.Replace(quiz, "\"", "“", -1)
+		quiz = strings.Replace(quiz, "'", "‘", -1)
+		quiz = strings.Replace(quiz, "!", "！", -1)
+		question.Data.Quiz = quiz
 	}
 
 	// fetch image of the quiz
@@ -125,7 +124,7 @@ func handleQuestionResp(bs []byte) {
 	// Image time and question core information may not be sent in one http GET response to client
 	question.CalData.ImageTime = <-imgTimeChan
 	questionInfo, _ = json.Marshal(question)
-
+	question = nil
 }
 
 func handleChooseResponse(bs []byte) {
