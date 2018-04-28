@@ -133,21 +133,24 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	for _, option := range options {
 		res[option] = 0
 	}
+	if N_opt == 0 {
+		return res
+	}
 
-	search := make(chan string, 5+2*N_opt)
+	search := make(chan string, 4+1*N_opt)
 	done := make(chan bool, 1)
 	tx := time.Now()
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search) // testing
-	go searchGoogle(quiz, options, true, true, search)                                 // testing
-	go searchGoogleWithOptions(quiz, options, false, true, search)                     // testing
-	go searchBaidu(quiz, quote, options, true, true, search)                           // training
-	go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
+	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)  // testing
+	go searchGoogle(quiz, options, true, true, search)                                  // testing
+	go searchGoogleWithOptions(strings.Join(keywords, ""), options, true, true, search) // testing
+	go searchBaidu(quiz, quote, options, false, true, search)                           // training
+	// go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
 	for i := range options {
 		go searchGoogleWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search) // testing
-		go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
+		// go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
 	}
 
 	// startBrowser(keywords)
@@ -210,7 +213,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合太具断停止值得敢锈]")
+	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合自主太具断停止值得敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || qtnegreg.MatchString(quiz)) {
@@ -250,10 +253,18 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 		}
 	}
 
-	// If the option literally appeared in quiz, probably it won't be the answer, skip the option
+	// If only one option literally appeared in quiz, probably it won't be the answer, skip the option
+	numLiteral := 0
 	for _, option := range options {
 		if strings.Contains(quiz, option) {
-			res[option] = 1
+			numLiteral++
+		}
+	}
+	if numLiteral == 1 {
+		for _, option := range options {
+			if strings.Contains(quiz, option) {
+				res[option] = 1
+			}
 		}
 	}
 
@@ -331,7 +342,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								kernel := int(50 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 10
+										kernel *= 5
 									}
 								}
 								kwMap[w][k] += kernel
@@ -347,10 +358,10 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(8 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel := int(40 * math.Exp(-math.Abs(float64(j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=8
+								kernel := int(40 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 10
+										kernel *= 5
 									}
 								}
 								kwMap[w][k] += kernel
@@ -409,7 +420,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * optMatrix[i][j] * math.Log(math.Log(optMatrix[i][j]+1)+1)
+			vM += val * optMatrix[i][j] * math.Log(math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)

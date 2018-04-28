@@ -118,7 +118,7 @@ func (s *spider) Init() {
 			// println("\nchoose:\n" + string(bs))
 			go handleChooseResponse(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if strings.Contains(ctx.Req.URL.Host, "chongdingdahui") {
+		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
 
