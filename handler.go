@@ -95,7 +95,7 @@ func handleQuestionResp(bs []byte) {
 			if answer != "" {
 				// searched result could be wrong
 				if storedAnsPos != 0 {
-					if odds[ansPos-1] < 3 {
+					if odds[ansPos-1] < 3 || len(answer) > 6 {
 						log.Println("searched answer could be wrong...")
 						answerItem = answer
 						ansPos = storedAnsPos

@@ -40,9 +40,9 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "属于", "没有", "未曾", "称为", "不", "在", "上", "以", "和", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "未曾", "称为", "英文单词", "缩写", "几", "不", "在", "上", "以", "和", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是了几而谁")) {
+		if !(strings.ContainsAny(w, " 的哪是了而谁")) {
 			stop := false
 			for _, sw := range stopwords {
 				if w == sw {
@@ -83,10 +83,10 @@ func preProcessOptions(options []string) [][]rune {
 			break
 		}
 		for _, option := range newOptions {
-			if option[0] != begin || len(option) < 2 {
+			if option[0] != begin || len(option) < 3 {
 				isSameBegin = false
 			}
-			if option[len(option)-1] != end || len(option) < 2 {
+			if option[len(option)-1] != end || len(option) < 3 {
 				isSameEnd = false
 			}
 		}
@@ -143,10 +143,10 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)  // testing
-	go searchGoogle(quiz, options, true, true, search)                                  // testing
-	go searchGoogleWithOptions(strings.Join(keywords, ""), options, true, true, search) // testing
-	go searchBaidu(quiz, quote, options, false, true, search)                           // training
+	go searchFeelingLucky(strings.Join(keywords, " "), options, 0, false, true, search)  // testing
+	go searchGoogle(quiz, options, true, true, search)                                   // testing
+	go searchGoogleWithOptions(strings.Join(keywords, " "), options, true, true, search) // testing
+	go searchBaidu(quiz, quote, options, false, true, search)                            // training
 	// go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
 	for i := range options {
 		go searchGoogleWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search) // testing
@@ -213,7 +213,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合自主太具断停止值得敢锈]")
+	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
 	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
 		!(nonegreg.MatchString(quiz) || qtnegreg.MatchString(quiz)) {
@@ -247,7 +247,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 
 	// If all counts of options in text less than 2, choose the 1 or nothing
 	// Or If majority matches are plain quiz, just use count
-	if sumCounts < 6 || sumCounts*3 < plainQuizCount {
+	if sumCounts < 6 { //|| sumCounts*3 < plainQuizCount
 		for i, option := range options {
 			res[option] = optCounts[i]
 		}
@@ -295,7 +295,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	optCounts := make([]int, N_opt)
 	plainQuizCount := 0
 
-	width := 50 //sliding window size
+	width := 40 //sliding window size
 
 	for k := range shortOptions {
 		opti := string(shortOptions[k])
@@ -339,10 +339,10 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(10 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel := int(50 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
+								kernel := int(100 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 5
+										kernel *= 3
 									}
 								}
 								kwMap[w][k] += kernel
@@ -358,10 +358,10 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(8 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel := int(40 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
+								kernel := int(20 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
-										kernel *= 5
+										kernel *= 3
 									}
 								}
 								kwMap[w][k] += kernel
@@ -380,6 +380,18 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	}
 	sort.Strings(kwKeys)
 
+	// Calculate the share of each option (logarithm) on keyword
+	kwShare := make(map[string][]float64)
+	for _, kw := range kwKeys {
+		total := 1.0
+		for _, pts := range kwMap[kw] {
+			total += float64(pts)
+		}
+		for _, pts := range kwMap[kw] {
+			kwShare[kw] = append(kwShare[kw], math.Log2(float64(pts+1))*float64(pts)/total)
+		}
+	}
+
 	// Calculate the weight of each keyword, by the RSD of the kw score on options
 	kwWeight := make(map[string]float64)
 	for _, kw := range kwKeys {
@@ -396,6 +408,8 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		if mean > 0 {
 			rsd = math.Sqrt(variance) / mean
 		}
+
+		// Use corpus frequency data to correct keyword weight
 		if c, ok := CorpusWord[kw]; ok {
 			count := c.Count
 			kwWeight[kw] = rsd / math.Log(float64(count)) * 10
@@ -404,15 +418,20 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 			kwWeight[kw] = rsd / math.Log(30) * 10
 		}
 
+		// 10 times important
+		if strings.Contains(kw, "第") {
+			kwWeight[kw] *= 10
+		}
+
 		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", kwWeight[kw]*100, kw, kwMap[kw])
 	}
 
 	optMatrix := make([][]float64, N_opt)
 	for i, option := range options {
-		optMatrix[i] = make([]float64, len(kwMap))
+		optMatrix[i] = make([]float64, len(kwShare))
 		vNorm := 1.0
 		for j, kw := range kwKeys {
-			val := float64(kwMap[kw][i])
+			val := kwShare[kw][i]
 			optMatrix[i][j] = val
 			vNorm += val * val
 		}
@@ -420,11 +439,11 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * optMatrix[i][j] * math.Log(math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)+1)
+			vM += val * optMatrix[i][j] //* math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)
-		res[option] = int(vM * 1000)
+		res[option] = int(vM * 10000)
 		fmt.Printf("%10s %4.3f\t%1.2f\n", option, vM, optMatrix[i])
 	}
 
