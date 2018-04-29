@@ -213,10 +213,10 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	nonegreg := regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
-	if (strings.Contains(quiz, "不") || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
+	negreg := regexp.MustCompile("不[是属在包]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
+	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
-		!(nonegreg.MatchString(quiz) || qtnegreg.MatchString(quiz)) {
+		!qtnegreg.MatchString(quiz) {
 		for _, option := range options {
 			res[option] = -res[option] - 1
 		}
