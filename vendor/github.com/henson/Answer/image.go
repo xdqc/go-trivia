@@ -31,8 +31,8 @@ func SaveImage(png image.Image, cfg *util.Config, c1 chan<- string, c2 chan<- st
 
 	go func() {
 		defer wg.Done()
-		// pic := thresholdingImage(questionImg)
-		err = util.SavePNG(util.QuestionImage, questionImg)
+		pic := thresholdingImage(questionImg)
+		err = util.SavePNG(util.QuestionImage, pic)
 		if err != nil {
 			log.Errorf("保存question截图失败，%v", err)
 		}
@@ -42,8 +42,8 @@ func SaveImage(png image.Image, cfg *util.Config, c1 chan<- string, c2 chan<- st
 
 	go func() {
 		defer wg.Done()
-		// pic := thresholdingImage(answerImg)
-		err = util.SavePNG(util.AnswerImage, answerImg)
+		pic := thresholdingImage(answerImg)
+		err = util.SavePNG(util.AnswerImage, pic)
 		if err != nil {
 			log.Errorf("保存answer截图失败，%v", err)
 		}

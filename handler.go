@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -95,7 +96,8 @@ func handleQuestionResp(bs []byte) {
 			if answer != "" {
 				// searched result could be wrong
 				if storedAnsPos != 0 {
-					if odds[ansPos-1] < 3 || len(answer) > 6 {
+					re := regexp.MustCompile("\\p{Han}+")
+					if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
 						log.Println("searched answer could be wrong...")
 						answerItem = answer
 						ansPos = storedAnsPos

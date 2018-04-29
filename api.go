@@ -40,7 +40,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "未曾", "称为", "英文单词", "缩写", "几", "不", "在", "上", "以", "和", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "其中", "未曾", "称为", "英文单词", "缩写", "几", "不", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
 	for _, w := range words {
 		if !(strings.ContainsAny(w, " 的哪是了而谁")) {
 			stop := false
@@ -213,9 +213,9 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	negreg := regexp.MustCompile("不[是属在包]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
+	negreg := regexp.MustCompile("不[是属在包含可]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
 	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
-		strings.Contains(quiz, "错字") || strings.Contains(quiz, "无关")) &&
+		strings.Contains(quiz, "错字") || strings.Contains(quiz, "很难") || strings.Contains(quiz, "无关")) &&
 		!qtnegreg.MatchString(quiz) {
 		for _, option := range options {
 			res[option] = -res[option] - 1
@@ -331,6 +331,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 				 * According to <i>Advances In Chinese Document And Text Processing</i>, P.142, Figure.7,
 				 * GP-TSM (Exponential) Kernal function gives highest accuracy rate for chinese text process.
 				 */
+				kernel := 0
 				if !(strings.Contains(quiz, "上一") || strings.Contains(quiz, "之前")) {
 					for j, w := range wordsL {
 						for _, word := range keywords {
@@ -339,7 +340,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(10 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel := int(100 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
+								kernel = int(100 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
 										kernel *= 3
@@ -358,7 +359,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(8 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel := int(20 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
+								kernel = int(60 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
 										kernel *= 3
@@ -369,6 +370,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 						}
 					}
 				}
+				// fmt.Printf("%8s\t%v\n%8d\t%v\n", opti, wordsL, kernel, wordsR)
 			}
 		}
 		optCounts[k] = optCount
@@ -408,7 +410,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		if mean > 0 {
 			rsd = math.Sqrt(variance) / mean
 		}
-
+		kwWeight[kw] = rsd
 		// Use corpus frequency data to correct keyword weight
 		if c, ok := CorpusWord[kw]; ok {
 			count := c.Count
@@ -663,7 +665,7 @@ func searchFeelingLucky(quiz string, options []string, id int, isTrain bool, isT
 	} else {
 		text += "0"
 	}
-	if resp == nil || resp.Request.Host == "www.google.com" {
+	if resp == nil {
 
 	} else if resp.Request.URL.Host == "zh.wikipedia.org" {
 		doc, _ := goquery.NewDocumentFromReader(resp.Body)
