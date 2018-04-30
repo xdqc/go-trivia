@@ -18,6 +18,7 @@ type Config struct {
 	WdaAddress     string `yaml:"wda_address"`
 	BaiduAPIKey    string `yaml:"Baidu_API_Key"`
 	BaiduSecretKey string `yaml:"Baidu_Secret_Key"`
+	BaiduToken     string `yaml:"Baidu_token"`
 
 	//西瓜视频截图题目位置
 	XgQx int `yaml:"xg_q_x"`

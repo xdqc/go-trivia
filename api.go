@@ -708,11 +708,6 @@ func startBrowser(keywords []string) {
 	}
 }
 
-//GetFromBaiduCloud -
-func GetFromBaiduCloud(quiz string, options []string) map[string]int {
-
-}
-
 //Cihui chinese word
 type Cihui struct {
 	Word     string  `json:"word"`
