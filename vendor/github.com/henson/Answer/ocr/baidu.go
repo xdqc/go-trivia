@@ -15,7 +15,7 @@ import (
 type Baidu struct {
 	apiKey    string
 	secretKey string
-
+	token     string
 	sync.RWMutex
 }
 
@@ -37,24 +37,26 @@ func NewBaidu(cfg *util.Config) *Baidu {
 	baidu := new(Baidu)
 	baidu.apiKey = cfg.BaiduAPIKey
 	baidu.secretKey = cfg.BaiduSecretKey
+	baidu.token = cfg.BaiduToken
 	return baidu
 }
 
 //GetText 识别图片中的文字
 func (baidu *Baidu) GetText(imgPath string) (string, error) {
-	accessToken, err := baidu.getAccessToken()
-	if err != nil {
-		return "", err
-	}
+	// accessToken, err := baidu.getAccessToken()
+	// if err != nil {
+	// 	return "", err
+	// }
+	accessToken := baidu.token
 	base64Data, err := util.OpenImageToBase64(imgPath)
 	if err != nil {
 		return "", err
 	}
-	uri := fmt.Sprintf("https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=%s", accessToken)
+	uri := fmt.Sprintf("https://aip.baidubce.com/rest/2.0/ocr/v1/webimage?access_token=%s", accessToken)
 
 	postData := url.Values{}
 	postData.Add("image", base64Data)
-	body, err := util.PostForm(uri, postData, 6)
+	body, err := util.PostForm(uri, postData, 10)
 	if err != nil {
 		return "", err
 	}

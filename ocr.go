@@ -1,11 +1,17 @@
 package solver
 
 import (
+	"bytes"
+	"context"
+	"fmt"
+	"io"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	vision "cloud.google.com/go/vision/apiv1"
 	"github.com/henson/Answer"
 	"github.com/henson/Answer/util"
 )
@@ -15,7 +21,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 	tx1 := time.Now()
 
 	cfg := util.GetConfig()
-	OCR := Answer.NewOcr(cfg)
+	// OCR := Answer.NewOcr(cfg)
 
 	imgQuiz := make(chan string, 1)
 	imgOptions := make(chan string, 1)
@@ -25,7 +31,11 @@ func getQuizFromOCR() (quiz string, options []string) {
 
 	go func() {
 		defer wig.Done()
-		quizText, err := OCR.GetText(<-imgQuiz)
+		// quizText, err := OCR.GetText(<-imgQuiz)
+		buf := new(bytes.Buffer)
+		err = detectText(buf, <-imgQuiz)
+		quizText := buf.String()
+
 		if err != nil {
 			log.Println(err.Error())
 			return
@@ -34,7 +44,11 @@ func getQuizFromOCR() (quiz string, options []string) {
 	}()
 	go func() {
 		defer wig.Done()
-		optionsText, err := OCR.GetText(<-imgOptions)
+		// optionsText, err := OCR.GetText(<-imgOptions)
+		buf := new(bytes.Buffer)
+		err = detectText(buf, <-imgOptions)
+		optionsText := buf.String()
+
 		if err != nil {
 			log.Println(err.Error())
 			return
@@ -66,12 +80,15 @@ func getQuizFromOCR() (quiz string, options []string) {
 
 func processQuiz(text string) string {
 	text = strings.Replace(text, " ", "", -1)
+	text = strings.Replace(text, "\"", "", -1)
+	text = strings.Replace(text, "\\n", "", -1)
 	text = strings.Replace(text, "\n", "", -1)
 	return text
 }
 
 func processOptions(text string) []string {
-	arr := strings.Split(text, "\n")
+	text = strings.Replace(text, "\"", "", -1)
+	arr := strings.Split(text, "\\n")
 	textArr := []string{}
 	for _, val := range arr {
 		if strings.TrimSpace(val) == "" {
@@ -80,4 +97,40 @@ func processOptions(text string) []string {
 		textArr = append(textArr, strings.TrimSpace(val))
 	}
 	return textArr
+}
+
+func detectText(w io.Writer, file string) error {
+	ctx := context.Background()
+
+	client, err := vision.NewImageAnnotatorClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	image, err := vision.NewImageFromReader(f)
+	if err != nil {
+		return err
+	}
+	annotations, err := client.DetectTexts(ctx, image, nil, 10)
+	if err != nil {
+		return err
+	}
+
+	if len(annotations) == 0 {
+		fmt.Fprintln(w, "No text found.")
+	} else {
+		// fmt.Fprintln(w)
+		// for _, annotation := range annotations {
+		// 	fmt.Fprintf(w, "%q ", annotation.Description)
+		// }
+		fmt.Fprintf(w, "%q ", annotations[0].Description)
+	}
+
+	return nil
 }
