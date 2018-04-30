@@ -441,7 +441,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * optMatrix[i][j] //* math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)
+			vM += val * float64(kwMap[kw][i]) //* math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)
@@ -706,6 +706,11 @@ func startBrowser(keywords []string) {
 	if err != nil {
 		println("Failed to start chrome:", err)
 	}
+}
+
+//GetFromBaiduCloud -
+func GetFromBaiduCloud(quiz string, options []string) map[string]int {
+
 }
 
 //Cihui chinese word

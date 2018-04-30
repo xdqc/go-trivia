@@ -98,5 +98,7 @@ func (baidu *Baidu) getAccessToken() (accessToken string, err error) {
 		c.Set(util.BaiduAccessTokenKey, accessToken, time.Second*time.Duration((res.ExpiresIn-100)))
 	}
 
+	println("Baidu token: ", accessToken)
+
 	return
 }
