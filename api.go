@@ -40,7 +40,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "其中", "未曾", "称为", "英文单词", "缩写", "几", "不", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "其中", "未曾", "称为", "英文单词", "缩写", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
 	for _, w := range words {
 		if !(strings.ContainsAny(w, " 的哪是了而谁")) {
 			stop := false
@@ -55,9 +55,9 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 			}
 		}
 	}
-	hasQuote := strings.ContainsRune(quiz, '「') && strings.ContainsRune(quiz, '」')
+
 	quoted = ""
-	if hasQuote {
+	if strings.IndexRune(quiz, '「') >= 0 && strings.IndexRune(quiz, '「') < strings.IndexRune(quiz, '」') {
 		quoted = quiz[strings.IndexRune(quiz, '「'):strings.IndexRune(quiz, '」')]
 	}
 	// else if strings.ContainsRune(quiz, '《') {

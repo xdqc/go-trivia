@@ -45,7 +45,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     console.log("brain start...");
-    this.fetch = setInterval(() => this.fetchQuestion(), 1000)
+    this.fetch = setInterval(() => this.fetchQuestion(), 500)
     // this.fetch = setInterval(() => this.fetchIdiom(), 3000)
   }
 
