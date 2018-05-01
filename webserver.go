@@ -143,7 +143,12 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		return
 	}
 	doc, _ := goquery.NewDocumentFromReader(resp.Body)
-	imgJSON := doc.Find("#initData").Text()
+	imgJSONode := doc.Find("#initData")
+	if imgJSONode == nil {
+		imgTimeChan <- 0
+		return
+	}
+	imgJSON := imgJSONode.Text()
 	resultImages := &AnwserImage{}
 	err := json.Unmarshal([]byte(imgJSON), resultImages)
 	if err != nil {

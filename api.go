@@ -295,7 +295,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	optCounts := make([]int, N_opt)
 	plainQuizCount := 0
 
-	width := 40 //sliding window size
+	width := 50 //sliding window size
 
 	for k := range shortOptions {
 		opti := string(shortOptions[k])
@@ -340,7 +340,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(10 * math.Exp(-math.Pow(float64(len(wordsL)-1-j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel = int(100 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
+								kernel = int(50 * math.Exp(-math.Abs(float64(len(wordsL)-1-j)/float64(width))/0.5)) //e^(-x^2), sigma=0.5, factor=10					}
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
 										kernel *= 3
@@ -359,7 +359,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 								// Gaussian Kernel
 								// kwMap[w][k] += int(8 * math.Exp(-math.Pow(float64(j)/float64(width), 2)/0.5)) //e^(-x^2), sigma=0.1, factor=100
 								// Exponential Kernel
-								kernel = int(60 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
+								kernel = int(40 * math.Exp(-math.Abs(float64(j)/float64(width))/0.2)) //e^(-x^2), sigma=0.5, factor=8
 								for _, qkw := range quotedKeywords {
 									if w == qkw {
 										kernel *= 3
