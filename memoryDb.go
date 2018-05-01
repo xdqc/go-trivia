@@ -1,8 +1,10 @@
 package solver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -82,12 +84,20 @@ func ShowAllQuestions() {
 	var kv = map[string]string{}
 	memoryDb.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
-		b := tx.Bucket([]byte(QuestionBucket))
+		b := tx.Bucket([]byte(WholeQuestionBucket))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			fmt.Printf("key=%s, value=%s\n", k, v)
+			// fmt.Printf("key=%s, value=%s\n", k, v)
 			kv[string(k)] = string(v)
 		}
+
+		bs := new(bytes.Buffer)
+		fmt.Fprintf(bs, "{")
+		for key, value := range kv {
+			fmt.Fprintf(bs, "\"%s\":%s,\n", key, value)
+		}
+		fmt.Fprintf(bs, "}")
+		ioutil.WriteFile("wq.json", bs.Bytes(), 0600)
 		return nil
 	})
 

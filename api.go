@@ -422,7 +422,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		}
 
 		// 10 times important
-		if strings.Contains(kw, "第") {
+		if strings.ContainsRune(kw, '第') || strings.ContainsRune(kw, '最') {
 			kwWeight[kw] *= 10
 		}
 

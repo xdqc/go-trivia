@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -84,7 +85,9 @@ func (s *spider) Init() {
 			resp.Header.Add("Content-Disposition", "attachment; filename=ca.crt")
 			resp.Header.Add("Content-Type", "application/octet-stream")
 			resp.Body = ioutil.NopCloser(bytes.NewReader(goproxy.CA_CERT))
-		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" && ctx.Req.URL.Path == "/question/bat/choose" {
+			ShowAllQuestions()
+
+		} else if false && ctx.Req.URL.Host == "question-zh.hortor.net:443" && ctx.Req.URL.Path == "/question/bat/choose" {
 			//fmt.Println(formatRequest(request))
 			bs, _ := ioutil.ReadAll(req.Body)
 
@@ -145,6 +148,16 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			// println("\nchoose:\n" + string(bs))
 			go handleChooseResponse(bs)
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if ctx.Req.URL.Path == "/question/bat/fightResult" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			question := &Question{}
+			if err := json.Unmarshal(bs, question); err != nil {
+				log.Println("spider fightResult ", err.Error())
+			} else {
+				question.Data.Quiz = "game over"
+				questionInfo, _ = json.Marshal(question)
+			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)

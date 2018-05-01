@@ -68,9 +68,11 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.ans = this.q.caldata.Answer;
             this.ansPos = this.q.caldata.AnswerPos;
             this.odds = this.q.caldata.Odds;
-            for (let i = 0; i < this.odds.length; i++) {
-              let n = parseFloat(this.odds[i])
-              this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+            if (this.odds != null) {              
+              for (let i = 0; i < this.odds.length; i++) {
+                let n = parseFloat(this.odds[i])
+                this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+              }
             }
             this.changeQuizAnsBackground(this.q.caldata.ImageTime)
             this.speechText(this)
@@ -95,6 +97,19 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   speechText(that) {
     if (that.speakOn && that.quiz !== that.q.data.quiz) {
+      const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
+      const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
+
+      // speak out game over
+      if (that.q.data.quiz == "game over") {
+        let sayGG = new SpeechSynthesisUtterance("good game");
+        sayGG.voice = en[Math.floor(Math.random() * en.length)];
+        sayGG.volume = (that.volume || 100) / 80;
+        speechSynthesis.speak(sayGG)
+        console.log(that.q.data.quiz)
+        return
+      }
+
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
@@ -104,14 +119,12 @@ export class BrainComponent implements OnInit, OnDestroy {
       }
 
       let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ');
-      const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
       
       sayNumber.voice = en[Math.floor(Math.random() * en.length)];
       sayNumber.volume = (that.volume || 100) / 80;
       speechSynthesis.speak(sayNumber)
 
       if (higestOdd >= 1) {
-        const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
         let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
         sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           ? zh[Math.floor(Math.random() * zh.length)]
