@@ -138,11 +138,16 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		imgTimeChan <- 0
 		return
 	}
-	if resp == nil {
+	if resp == nil || resp.Body == nil {
 		imgTimeChan <- 0
 		return
 	}
-	doc, _ := goquery.NewDocumentFromReader(resp.Body)
+	doc, e := goquery.NewDocumentFromReader(resp.Body)
+	if e != nil {
+		log.Println("Parse response body error: " + e.Error())
+		imgTimeChan <- 0
+		return
+	}
 	imgJSONode := doc.Find("#initData")
 	if imgJSONode == nil {
 		imgTimeChan <- 0

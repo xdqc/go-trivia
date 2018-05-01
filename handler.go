@@ -10,11 +10,13 @@ import (
 )
 
 var (
-	roomID string
+	roomID       string
+	storedAnsPos int
 )
 
 func handleQuestionResp(bs []byte) {
 	question := &Question{}
+	storedAnsPos = 0
 	if len(bs) > 0 {
 		// Get quiz from MITM
 		json.Unmarshal(bs, question)
@@ -66,7 +68,7 @@ func handleQuestionResp(bs []byte) {
 			}
 		}
 	}
-	storedAnsPos := ansPos
+	storedAnsPos = ansPos
 
 	// Put true here to force searching, even if found answer in db
 	if storedAnsPos == 0 {
@@ -78,14 +80,17 @@ func handleQuestionResp(bs []byte) {
 		for _, option := range question.Data.Options {
 			total += ret[option]
 		}
-		max := math.MinInt32
-		for i, option := range question.Data.Options {
-			odds[i] = float32(ret[option]) / float32(total-ret[option])
-			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-			if ret[option] > max && ret[option] != 0 {
-				max = ret[option]
-				ansPos = i + 1
-				answerItem = option
+		if total != 1 {
+			// total == 1 -> 0,0,0,0
+			max := math.MinInt32
+			for i, option := range question.Data.Options {
+				odds[i] = float32(ret[option]) / float32(total-ret[option])
+				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+				if ret[option] > max && ret[option] != 0 {
+					max = ret[option]
+					ansPos = i + 1
+					answerItem = option
+				}
 			}
 		}
 		// verify the stored answer
@@ -113,6 +118,9 @@ func handleQuestionResp(bs []byte) {
 				}
 			} else {
 				log.Println("new question got!")
+			}
+			if len(odds) == 4 {
+				storedAnsPos = ansPos
 			}
 		}
 	}

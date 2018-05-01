@@ -213,8 +213,9 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	negreg := regexp.MustCompile("不[是属在包含可]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
-	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "未在") || strings.Contains(quiz, "未曾") || strings.Contains(quiz, "并非") ||
+	negreg := regexp.MustCompile("[不未][是属在包含可曾参]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
+
+	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "很难") || strings.Contains(quiz, "无关")) &&
 		!qtnegreg.MatchString(quiz) {
 		for _, option := range options {
@@ -249,7 +250,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	// Or If majority matches are plain quiz, just use count
 	if sumCounts < 6 { //|| sumCounts*3 < plainQuizCount
 		for i, option := range options {
-			res[option] = optCounts[i]
+			res[option] = optCounts[i] - 1
 		}
 	}
 
@@ -441,7 +442,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		vM := 0.0
 		for j, kw := range kwKeys {
 			val := kwWeight[kw] * optMatrix[i][j] / vNorm
-			vM += val * float64(kwMap[kw][i]) //* math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)
+			vM += val * val * float64(kwMap[kw][i]) //* math.Log(math.Log(optMatrix[i][j]*optMatrix[i][j]+1)+1)
 			optMatrix[i][j] = val
 		}
 		// vM = math.Sqrt(vM)

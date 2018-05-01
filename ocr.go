@@ -33,7 +33,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 		defer wig.Done()
 		// quizText, err := OCR.GetText(<-imgQuiz)
 		buf := new(bytes.Buffer)
-		err = detectText(buf, <-imgQuiz)
+		err := detectText(buf, <-imgQuiz)
 		quizText := buf.String()
 
 		if err != nil {
@@ -46,7 +46,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 		defer wig.Done()
 		// optionsText, err := OCR.GetText(<-imgOptions)
 		buf := new(bytes.Buffer)
-		err = detectText(buf, <-imgOptions)
+		err := detectText(buf, <-imgOptions)
 		optionsText := buf.String()
 
 		if err != nil {
@@ -123,7 +123,7 @@ func detectText(w io.Writer, file string) error {
 	}
 
 	if len(annotations) == 0 {
-		fmt.Fprintln(w, "No text found.")
+		fmt.Fprintln(w, "")
 	} else {
 		// fmt.Fprintln(w)
 		// for _, annotation := range annotations {

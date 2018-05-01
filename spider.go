@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 var (
 	_spider = newSpider()
 	Mode    int
+	magic   = "string" // the identifier of a quiz
 )
 
 type spider struct {
@@ -82,8 +84,34 @@ func (s *spider) Init() {
 			resp.Header.Add("Content-Disposition", "attachment; filename=ca.crt")
 			resp.Header.Add("Content-Type", "application/octet-stream")
 			resp.Body = ioutil.NopCloser(bytes.NewReader(goproxy.CA_CERT))
-		} else if ctx.Req.URL.Host == "www.aihanyu.org" {
-			fmt.Println(formatRequest(req))
+		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" && ctx.Req.URL.Path == "/question/bat/choose" {
+			//fmt.Println(formatRequest(request))
+			bs, _ := ioutil.ReadAll(req.Body)
+
+			query := string(bs)
+			// Parse query string
+			values, keys, err := parseURLquery(query)
+			if err == nil {
+				// modify the selected option
+				selectedOpt := ""
+				if opt, ok := values["option"]; ok {
+					selectedOpt = opt[0]
+					if storedAnsPos > 0 && storedAnsPos <= 4 && values["magic"][0] != magic {
+						selectedOpt = strconv.Itoa(storedAnsPos)
+					}
+					log.Println("selected opt:", selectedOpt, request.URL)
+					values["option"][0] = selectedOpt
+
+					magic = values["magic"][0]
+				}
+				// encode the values
+				query = encodeURLquery(values, keys)
+				log.Println(query)
+			} else {
+				println("parse req url query error:", err.Error())
+			}
+			bs = []byte(query)
+			req.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		}
 		return
 	}
@@ -155,6 +183,61 @@ func formatRequest(r *http.Request) string {
 	}
 	// Return the request as a string
 	return strings.Join(request, "\n")
+}
+
+// Parse query string
+func parseURLquery(query string) (m map[string][]string, mk []string, err error) {
+	m = make(map[string][]string)
+	mk = make([]string, 0)
+	for query != "" {
+		key := query
+		if i := strings.IndexAny(key, "&;"); i >= 0 {
+			key, query = key[:i], key[i+1:]
+		} else {
+			query = ""
+		}
+		if key == "" {
+			continue
+		}
+		value := ""
+		if i := strings.Index(key, "="); i >= 0 {
+			key, value = key[:i], key[i+1:]
+		}
+		key, err1 := url.QueryUnescape(key)
+		if err1 != nil {
+			if err == nil {
+				err = err1
+			}
+			continue
+		}
+		value, err1 = url.QueryUnescape(value)
+		if err1 != nil {
+			if err == nil {
+				err = err1
+			}
+			continue
+		}
+		m[key] = append(m[key], value)
+		mk = append(mk, key)
+	}
+	return
+}
+
+// Encode the values
+func encodeURLquery(m map[string][]string, mk []string) string {
+	var buf bytes.Buffer
+	for _, k := range mk {
+		vs := m[k]
+		prefix := url.QueryEscape(k) + "="
+		for _, v := range vs {
+			if buf.Len() > 0 {
+				buf.WriteByte('&')
+			}
+			buf.WriteString(prefix)
+			buf.WriteString(url.QueryEscape(v))
+		}
+	}
+	return buf.String()
 }
 
 func orPanic(err error) {

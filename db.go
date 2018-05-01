@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	db  *sql.DB
-	err error
+	db *sql.DB
 )
 
 type Conf struct {
