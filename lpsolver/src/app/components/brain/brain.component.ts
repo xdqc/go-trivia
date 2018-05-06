@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Injectable } from '@angular/core';
 import { Http, Headers } from '@angular/http';
 import { env } from '../../../environments/environment';
 import 'rxjs/add/operator/map';
@@ -11,7 +11,7 @@ import * as idiomInfo from 'IdiomInfo';
   templateUrl: './brain.component.html',
   styleUrls: ['./brain.component.scss'],
 })
-
+@Injectable()
 export class BrainComponent implements OnInit, OnDestroy {
 
   total: number;
@@ -27,6 +27,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   speakOn: boolean;
   volume: number;
   language: string;
+  quotes:Quotes.Quote[];
 
   showImage: boolean = true;
   imgPath: string = 'solver/assets/quiz.jpg?';
@@ -41,12 +42,15 @@ export class BrainComponent implements OnInit, OnDestroy {
   constructor(private http: Http) {
     this.total = 5;
     this.speakOn = false;
+    this.getQuoteData().subscribe(data => {this.quotes=(data as Quotes.Quote[]);console.log(this.quotes)}, error => console.log(error));
   }
 
   ngOnInit() {
     console.log("brain start...");
-    this.fetch = setInterval(() => this.fetchQuestion(), 500)
+
+    this.fetch = setInterval(() => this.fetchQuestion(), 500);
     // this.fetch = setInterval(() => this.fetchIdiom(), 3000)
+
   }
 
 
@@ -102,9 +106,11 @@ export class BrainComponent implements OnInit, OnDestroy {
 
       // speak out game over
       if (that.q.data.quiz == "game over") {
-        let sayGG = new SpeechSynthesisUtterance("good game");
+        let quote = this.quotes[Math.floor(Math.random()*this.quotes.length)];
+        let sayGG = new SpeechSynthesisUtterance(quote.text+"... "+(quote.author=="Unknown"?"":quote.author));
         sayGG.voice = en[Math.floor(Math.random() * en.length)];
         sayGG.volume = (that.volume || 100) / 80;
+        sayGG.rate = 0.9;
         speechSynthesis.speak(sayGG)
         console.log(that.q.data.quiz)
         return
@@ -147,7 +153,11 @@ export class BrainComponent implements OnInit, OnDestroy {
     }
   }
 
-
+  getQuoteData(){
+    let apiUrl = 'solver/assets/quotes.json';
+    return this.http.get(apiUrl)
+    .map((res:any) => res.json());
+ }  
 
 
   //process idioms json

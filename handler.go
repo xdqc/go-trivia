@@ -38,17 +38,17 @@ func handleQuestionResp(bs []byte) {
 		question.Data.Quiz = quiz
 	}
 
-	// fetch image of the quiz
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	imgTimeChan := make(chan int64)
-	go fetchAnswerImage("", keywords, quoted, imgTimeChan)
-
 	question.CalData.RoomID = roomID
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
 
 	//Get the answer from the db if question fetched by MITM
 	answer := FetchQuestion(question)
 	ansPos := 0
+
+	// fetch image of the quiz
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	// question.CalData.TrueAnswer = answer
 	// question.CalData.Answer = answer

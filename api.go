@@ -32,8 +32,12 @@ var (
 )
 
 func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted string) {
+	// trim pre-adj clause
+	adjRegex := regexp.MustCompile("[^，]+中，")
+	qz := adjRegex.ReplaceAllString(quiz, "")
+
 	re := regexp.MustCompile("[^\\p{L}\\p{N}\\p{Han} ]+")
-	qz := re.ReplaceAllString(quiz, " ")
+	qz = re.ReplaceAllString(qz, " ")
 	var words []string
 	if isForSearch {
 		words = JB.CutForSearch(qz, true)
@@ -137,7 +141,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 		return res
 	}
 
-	search := make(chan string, 4+1*N_opt)
+	search := make(chan string, 4+2*N_opt)
 	done := make(chan bool, 1)
 	tx := time.Now()
 
@@ -147,10 +151,10 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	go searchGoogle(quiz, options, true, true, search)                                   // testing
 	go searchGoogleWithOptions(strings.Join(keywords, " "), options, true, true, search) // testing
 	go searchBaidu(quiz, quote, options, false, true, search)                            // training
-	// go searchBaiduWithOptions(quiz, options, false, true, search)                      // training
+	go searchBaiduWithOptions(quiz, options, false, true, search)                        // training
 	for i := range options {
 		go searchGoogleWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search) // testing
-		// go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
+		go searchBaiduWithOptions(strings.Join(keywords, " "), options[i:i+1], false, true, search)  // training
 	}
 
 	// startBrowser(keywords)
@@ -213,7 +217,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	// For negative quiz, flip the count to negative number (dont flip quoted negative word)
 	qtnegreg := regexp.MustCompile("「[^」]*[不][^」]*」")
-	negreg := regexp.MustCompile("[不未][是属在包含可曾参]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
+	negreg := regexp.MustCompile("[不未][是属在包含可会曾参]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
 
 	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "并非") ||
 		strings.Contains(quiz, "错字") || strings.Contains(quiz, "很难") || strings.Contains(quiz, "无关")) &&

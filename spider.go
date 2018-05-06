@@ -122,7 +122,7 @@ func (s *spider) Init() {
 		if resp == nil {
 			return resp
 		}
-		// log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
+		log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
 
 		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
 			//send letterpress match data to webserver
@@ -162,6 +162,11 @@ func (s *spider) Init() {
 		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println(string(bs))
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if ctx.Req.URL.Host == "mp.weixin.qq.com:443" && ctx.Req.URL.Path == "/s" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+
+			ioutil.WriteFile("lpsolver/dist/assets/wxmp.html", bs, 0600)
 
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		}
