@@ -110,7 +110,7 @@ func setIdiom(jsonBytes []byte) {
 }
 
 func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan int64) {
-	tx1 := time.Now()
+	// tx1 := time.Now()
 	values := url.Values{}
 	// create search string
 	searchStr := ans + " " + quoted
@@ -161,8 +161,8 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 		imgTimeChan <- 0
 		return
 	}
-	tx2 := time.Now()
-	log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
+	// tx2 := time.Now()
+	// log.Printf("Searching img time: %d ms\n", tx2.Sub(tx1).Nanoseconds()/1e6)
 
 	//filter portrait/no-small images
 	images := make([]Image, 0)
@@ -218,7 +218,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	}
 	// close(rawImgReader)
 	file.Close()
-	log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+	// log.Printf("Total img save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	imgTimeChan <- time.Now().UTC().Unix()
 }
 

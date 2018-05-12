@@ -26,7 +26,7 @@ var (
 	//JB jieba chinese words segregation
 	JB *gojieba.Jieba
 	//CorpusWord the chiese vocabulary
-	CorpusWord map[string]Cihui
+	CorpusWord map[string]CVocab
 	//N_opt number of question options
 	N_opt = 4
 )
@@ -44,7 +44,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "没有", "其中", "未曾", "称为", "英文单词", "缩写", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "省", "年"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "关于", "没有", "其中", "未曾", "称为", "位于", "英文单词", "缩写", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "所", "省", "年"}
 	for _, w := range words {
 		if !(strings.ContainsAny(w, " 的哪是了而谁")) {
 			stop := false
@@ -220,7 +220,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 	negreg := regexp.MustCompile("[不未][是属在包含可会曾参]") //regexp.MustCompile("不[能同变充分超过应该对称足够适合自主知靠太具断停止值得敢锈]")
 
 	if (negreg.MatchString(quiz) || strings.Contains(quiz, "没有") || strings.Contains(quiz, "并非") ||
-		strings.Contains(quiz, "错字") || strings.Contains(quiz, "很难") || strings.Contains(quiz, "无关")) &&
+		strings.Contains(quiz, "错字") || strings.Contains(quiz, "错误的是") || strings.Contains(quiz, "很难") || strings.Contains(quiz, "无关")) &&
 		!qtnegreg.MatchString(quiz) {
 		for _, option := range options {
 			res[option] = -res[option] - 1
@@ -240,7 +240,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	testingStr = re.ReplaceAllString(testingStr, "")
 	training := []rune(trainingStr)
 	testing := []rune(testingStr)
-	log.Printf("\t\t\t\tTraining: %d\tTesting: %d", len(training), len(testing))
+	log.Printf("\t\tTraining: %d\tTesting: %d", len(training), len(testing))
 
 	optCounts, plainQuizCount := trainKeyWords(append(testing, training...), quiz, options, res)
 
@@ -713,8 +713,8 @@ func startBrowser(keywords []string) {
 	}
 }
 
-//Cihui chinese word
-type Cihui struct {
+//CVocab chinese word
+type CVocab struct {
 	Word     string  `json:"word"`
 	Category string  `json:"category"`
 	Count    int     `json:"count"`

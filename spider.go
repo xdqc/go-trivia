@@ -51,7 +51,7 @@ func newSpider() *spider {
 	//Initialize corpus
 	csvFile, _ := os.Open("CorpusWordPOSlist.csv")
 	reader := csv.NewReader(bufio.NewReader(csvFile))
-	CorpusWord = make(map[string]Cihui)
+	CorpusWord = make(map[string]CVocab)
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
@@ -61,7 +61,7 @@ func newSpider() *spider {
 		}
 		count, _ := strconv.Atoi(line[3])
 		freq, _ := strconv.ParseFloat(line[4], 32)
-		CorpusWord[line[0]] = Cihui{
+		CorpusWord[line[0]] = CVocab{
 			Category: line[1],
 			Count:    count,
 			Frequncy: float32(freq),
@@ -122,7 +122,7 @@ func (s *spider) Init() {
 		if resp == nil {
 			return resp
 		}
-		log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
+		// log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
 
 		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
 			//send letterpress match data to webserver

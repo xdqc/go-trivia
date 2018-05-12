@@ -57,7 +57,8 @@ export class BrainComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     console.log("brain end");
-    clearInterval(this.fetch)
+    clearInterval(this.fetch);
+    speechSynthesis.cancel();
   }
 
   //periodically fetch new question data
@@ -119,7 +120,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'should be ' : higestOdd == 888 ? 'choose ' :higestOdd > 20? 'absolutely ':higestOdd > 7? 'definitely ':higestOdd > 3? 'exactly ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
+      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'should be ' : higestOdd == 888 ? 'choose ' :higestOdd > 100? 'absolutely ':higestOdd > 10? 'definitely ':higestOdd > 3? 'exactly ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
       if (that.q.data.school == '理科' && higestOdd < 1) {
         utterance = 'Attention, ' + utterance
       }
