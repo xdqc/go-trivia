@@ -144,7 +144,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	}
 	doc, e := goquery.NewDocumentFromReader(resp.Body)
 	if e != nil {
-		log.Println("Parse response body error: " + e.Error())
+		log.Println("Parse img url response body error: " + e.Error())
 		imgTimeChan <- 0
 		return
 	}

@@ -603,7 +603,6 @@ func searchGoogleWithOptions(quiz string, options []string, isTrain bool, isTest
 	values.Add("oe", "utf8")
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	text := "gooOp "
 	if isTrain {
 		text += "1"

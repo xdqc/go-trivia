@@ -43,7 +43,6 @@ func handleQuestionResp(bs []byte) {
 
 	//Get the answer from the db if question fetched by MITM
 	answer := FetchQuestion(question)
-	ansPos := 0
 
 	// fetch image of the quiz
 	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
@@ -55,74 +54,80 @@ func handleQuestionResp(bs []byte) {
 	go SetQuestion(question)
 
 	answerItem := "不知道"
+	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 
-	if answer != "" {
-		for i, option := range question.Data.Options {
-			if option == answer {
-				// question.Data.Options[i] = option + "[.]"
-				ansPos = i + 1
-				answerItem = option
-				odds[i] = 888
-				break
-			}
-		}
-	}
-	storedAnsPos = ansPos
+	if question.Data.School == "娱乐" && question.Data.Num != 5 {
 
-	// Put true here to force searching, even if found answer in db
-	if true || storedAnsPos == 0 {
-		var ret map[string]int
-		ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
-		log.Printf("Google predict => %v\n", ret)
-		total := 1
-
-		for _, option := range question.Data.Options {
-			total += ret[option]
-		}
-		if total != 1 {
-			// total == 1 -> 0,0,0,0
-			max := math.MinInt32
+	} else {
+		if answer != "" {
 			for i, option := range question.Data.Options {
-				odds[i] = float32(ret[option]) / float32(total-ret[option])
-				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-				if ret[option] > max && ret[option] != 0 {
-					max = ret[option]
+				if option == answer {
+					// question.Data.Options[i] = option + "[.]"
 					ansPos = i + 1
 					answerItem = option
+					odds[i] = 888
+					break
 				}
 			}
 		}
-		// verify the stored answer
-		if answer == answerItem {
-			//good
-			odds[ansPos-1] = 888
-		} else {
-			if answer != "" {
-				// searched result could be wrong
-				if storedAnsPos != 0 {
-					re := regexp.MustCompile("\\p{Han}+")
-					if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
-						log.Println("searched answer could be wrong...")
-						answerItem = answer
-						ansPos = storedAnsPos
-						odds[ansPos-1] = 333
+		storedAnsPos = ansPos
+
+		// Put true here to force searching, even if found answer in db
+		if true || storedAnsPos == 0 {
+			var ret map[string]int
+			ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
+			log.Printf("Google predict => %v\n", ret)
+			total := 1
+
+			for _, option := range question.Data.Options {
+				total += ret[option]
+			}
+			if total != 1 {
+				// total == 1 -> 0,0,0,0
+				max := math.MinInt32
+				for i, option := range question.Data.Options {
+					odds[i] = float32(ret[option]) / float32(total-ret[option])
+					// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+					if ret[option] > max && ret[option] != 0 {
+						max = ret[option]
+						ansPos = i + 1
+						answerItem = option
+					}
+				}
+			}
+			// verify the stored answer
+			if answer == answerItem {
+				//good
+				odds[ansPos-1] = 888
+			} else {
+				if answer != "" {
+					// searched result could be wrong
+					if storedAnsPos != 0 {
+						re := regexp.MustCompile("\\p{Han}+")
+						if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
+							log.Println("searched answer could be wrong...")
+							answerItem = answer
+							ansPos = storedAnsPos
+							odds[ansPos-1] = 333
+						} else {
+							// stored answer may be corrupted
+							log.Println("stored answer may be corrupted...")
+							odds[ansPos-1] = 444
+						}
 					} else {
-						// stored answer may be corrupted
-						log.Println("stored answer may be corrupted...")
-						odds[ansPos-1] = 444
+						// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
+						log.Println("the previous option words changed by the game...")
 					}
 				} else {
-					// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
-					log.Println("the previous option words changed by the game...")
+					log.Println("new question got!")
 				}
-			} else {
-				log.Println("new question got!")
-			}
-			if len(odds) == 4 {
-				storedAnsPos = ansPos
+				if len(odds) == 4 {
+					storedAnsPos = ansPos
+				}
 			}
 		}
+
 	}
 
 	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)

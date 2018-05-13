@@ -117,6 +117,13 @@ export class BrainComponent implements OnInit, OnDestroy {
         return
       }
 
+      // speak out quiz school
+      if (that.q.data.school != "") {        
+        let saySchool = new SpeechSynthesisUtterance(that.q.data.type + "题");
+        saySchool.voice = zh[0];
+        speechSynthesis.speak(saySchool);
+      }
+
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
