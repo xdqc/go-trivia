@@ -4,7 +4,7 @@ const (
 	DeviceiOS     = "ios"
 	DeviceAndroid = "android"
 
-	ImagePath     = "./images/"
+	ImagePath     = "../images/"
 	QuestionImage = ImagePath + "question.png"
 	AnswerImage   = ImagePath + "answer.png"
 

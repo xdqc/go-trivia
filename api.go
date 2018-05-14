@@ -46,7 +46,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	}
 	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "关于", "没有", "其中", "未曾", "称为", "位于", "英文单词", "缩写", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "所", "省", "年"}
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是了而谁")) {
+		if !(strings.ContainsAny(w, " 的哪是了而谁么")) {
 			stop := false
 			for _, sw := range stopwords {
 				if w == sw {
@@ -463,7 +463,6 @@ func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isT
 	values.Add("wd", query)
 	req, _ := http.NewRequest("GET", baidu_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	text := "baidu "
 	if isTrain {
 		text += "1"
@@ -509,7 +508,6 @@ func searchBaiduWithOptions(quiz string, options []string, isTrain bool, isTest 
 	values.Add("wd", query)
 	req, _ := http.NewRequest("GET", baidu_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	text := "baiOp "
 	if isTrain {
 		text += "1"
@@ -555,7 +553,6 @@ func searchGoogle(quiz string, options []string, isTrain bool, isTest bool, c ch
 	values.Add("oe", "utf8")
 	req, _ := http.NewRequest("GET", google_URL+values.Encode(), nil)
 	resp, _ := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	text := "googl "
 	if isTrain {
 		text += "1"

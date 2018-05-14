@@ -59,15 +59,15 @@ func getQuizFromOCR() (quiz string, options []string) {
 		png, err := screenshot.GetImage()
 		if err != nil {
 			log.Println(err.Error())
-			imgQuiz <- QuestionImage
-			imgOptions <- AnswerImage
+			imgQuiz <- device.QuestionImage
+			imgOptions <- device.AnswerImage
 			return
 		}
-		err = SaveImage(png, cfg, imgQuiz, imgOptions)
+		err = device.SaveImage(png, cfg, imgQuiz, imgOptions)
 		if err != nil {
 			log.Println(err.Error())
-			imgQuiz <- QuestionImage
-			imgOptions <- AnswerImage
+			imgQuiz <- device.QuestionImage
+			imgOptions <- device.AnswerImage
 			return
 		}
 	}()

@@ -157,6 +157,9 @@ func (s *spider) Init() {
 			} else {
 				question.Data.Quiz = "game over"
 				questionInfo, _ = json.Marshal(question)
+				if Mode == 1 {
+					go clickProcess(-1, question)
+				} // swipe back, start new game
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {

@@ -118,11 +118,11 @@ export class BrainComponent implements OnInit, OnDestroy {
       }
 
       // speak out quiz school
-      if (that.q.data.school != "") {        
-        let saySchool = new SpeechSynthesisUtterance(that.q.data.type + "题");
-        saySchool.voice = zh[0];
-        speechSynthesis.speak(saySchool);
-      }
+      // if (that.q.data.school != "") {        
+      //   let saySchool = new SpeechSynthesisUtterance(that.q.data.type + "题");
+      //   saySchool.voice = zh[0];
+      //   speechSynthesis.speak(saySchool);
+      // }
 
       // speak out new question answer
       let higestOdd = 0
@@ -139,10 +139,11 @@ export class BrainComponent implements OnInit, OnDestroy {
       speechSynthesis.speak(sayNumber)
 
       if (higestOdd >= 1) {
-        let sayChoice = new SpeechSynthesisUtterance(that.q.caldata.Answer);//+ that.q.data.quiz 
-        sayChoice.voice = /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
-          ? zh[Math.floor(Math.random() * zh.length)]
-          : sayNumber.voice;
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz + that.q.caldata.Answer);//
+        sayChoice.voice = zh[Math.floor(Math.random() * zh.length)];
+          // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+          // ? zh[Math.floor(Math.random() * zh.length)]
+          // : sayNumber.voice;
         sayChoice.rate = 1.05;
         sayChoice.pitch = 1;
         sayChoice.volume = (that.volume || 100) / 100;

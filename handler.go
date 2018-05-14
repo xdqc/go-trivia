@@ -15,6 +15,7 @@ import (
 var (
 	roomID       string
 	storedAnsPos int
+	randClicked  bool
 )
 
 func handleQuestionResp(bs []byte) {
@@ -134,7 +135,7 @@ func handleQuestionResp(bs []byte) {
 	}
 
 	if Mode == 1 {
-		go clickProcess(ansPos)
+		go clickProcess(ansPos, question)
 	} // click answer
 
 	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
@@ -169,24 +170,30 @@ func handleChooseResponse(bs []byte) {
 	StoreWholeQuestion(question)
 }
 
-func clickProcess(ansPos int) {
+func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1650 // 排位列表最后一项 y 坐标
+	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 {
+		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && question.Data.School == "娱乐") {
+			// click randomly, only do it once on first 4 quiz
 			ansPos = rand.Intn(4) + 1
+			randClicked = true
 		}
-		log.Printf("【点击】正在点击选项：%d", ansPos)
-		time.Sleep(time.Millisecond * 3800)                         //延迟
-		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // process click
+		time.Sleep(time.Millisecond * 1400)
+		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
+		time.Sleep(time.Millisecond * 600)
+		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
+		time.Sleep(time.Millisecond * 1000)
+		go clickAction(centerX, firstItemY+optionHeight*(4-1))
 	} else {
 		// go to next match
-		log.Printf("【点击】将点击继续挑战按钮...")
+		randClicked = false
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
-		log.Printf("【点击】将点击排位列表底部一项，进行比赛匹配...")
+		time.Sleep(time.Millisecond * 500)
+		go clickAction(centerX, nextMatchY) // start new game
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY)
 	}
@@ -195,14 +202,14 @@ func clickProcess(ansPos int) {
 func clickAction(posX int, posY int) {
 	var err error
 	touchX, touchY := strconv.Itoa(posX+rand.Intn(400)-200), strconv.Itoa(posY+rand.Intn(50)-25)
-	_, err = exec.Command("adb", "shell", "input", "swipe", touchX, touchY, touchX, touchY).Output()
+	_, err = exec.Command("adb", "shell", "input", "swipe", touchX, touchY, touchX, touchY, strconv.Itoa(rand.Intn(5))).Output()
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
 }
 func swipeAction() {
 	var err error
-	_, err = exec.Command("adb", "shell", "input", "swipe", "0", "500", "100", "500", "50").Output()
+	_, err = exec.Command("adb", "shell", "input", "swipe", "0", "500", "200", "500", "100").Output()
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
