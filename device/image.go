@@ -1,16 +1,18 @@
 package device
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
+	"image/png"
+	"os"
 	"sync"
 
-	"github.com/henson/Answer/util"
 	"github.com/ngaut/log"
 )
 
-func SaveImage(png image.Image, cfg *util.Config, c1 chan<- string, c2 chan<- string) error {
+func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string) error {
 	/* 	go func() {
 		screenshotPath := fmt.Sprintf("%sscreenshot.png", util.ImagePath)
 		err := util.SavePNG(screenshotPath, png)
@@ -32,22 +34,22 @@ func SaveImage(png image.Image, cfg *util.Config, c1 chan<- string, c2 chan<- st
 	go func() {
 		defer wg.Done()
 		// pic := thresholdingImage(questionImg)
-		err = util.SavePNG(util.QuestionImage, questionImg)
+		err = savePNG(QuestionImage, questionImg)
 		if err != nil {
 			log.Errorf("保存question截图失败，%v", err)
 		}
-		c1 <- util.QuestionImage
+		c1 <- QuestionImage
 		log.Debugf("保存question截图成功")
 	}()
 
 	go func() {
 		defer wg.Done()
 		// pic := thresholdingImage(answerImg)
-		err = util.SavePNG(util.AnswerImage, answerImg)
+		err = savePNG(AnswerImage, answerImg)
 		if err != nil {
 			log.Errorf("保存answer截图失败，%v", err)
 		}
-		c2 <- util.AnswerImage
+		c2 <- AnswerImage
 		log.Debugf("保存answer截图成功")
 	}()
 
@@ -55,8 +57,35 @@ func SaveImage(png image.Image, cfg *util.Config, c1 chan<- string, c2 chan<- st
 	return nil
 }
 
+//SavePNG 保存png图片
+func savePNG(filename string, pic image.Image) error {
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return png.Encode(f, pic)
+}
+
+//CutImage 裁剪图片
+func cutImage(src image.Image, x, y, w, h int) (image.Image, error) {
+	var subImg image.Image
+
+	if rgbImg, ok := src.(*image.YCbCr); ok {
+		subImg = rgbImg.SubImage(image.Rect(x, y, x+w, y+h)).(*image.YCbCr) //图片裁剪x0 y0 x1 y1
+	} else if rgbImg, ok := src.(*image.RGBA); ok {
+		subImg = rgbImg.SubImage(image.Rect(x, y, x+w, y+h)).(*image.RGBA) //图片裁剪x0 y0 x1 y1
+	} else if rgbImg, ok := src.(*image.NRGBA); ok {
+		subImg = rgbImg.SubImage(image.Rect(x, y, x+w, y+h)).(*image.NRGBA) //图片裁剪x0 y0 x1 y1
+	} else {
+		return subImg, errors.New("图片解码失败")
+	}
+
+	return subImg, nil
+}
+
 //裁剪图片
-func splitImage(src image.Image, cfg *util.Config) (questionImg image.Image, answerImg image.Image, err error) {
+func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerImg image.Image, err error) {
 	var qX, qY, qW, qH, aX, aY, aW, aH int
 	switch cfg.APP {
 	case "xigua":
@@ -73,12 +102,12 @@ func splitImage(src image.Image, cfg *util.Config) (questionImg image.Image, ans
 		aX, aY, aW, aH = cfg.ZsAx, cfg.ZsAy, cfg.ZsAw, cfg.ZsAh
 	}
 
-	questionImg, err = util.CutImage(src, qX, qY, qW, qH)
+	questionImg, err = cutImage(src, qX, qY, qW, qH)
 	if err != nil {
 		return
 	}
 
-	answerImg, err = util.CutImage(src, aX, aY, aW, aH)
+	answerImg, err = cutImage(src, aX, aY, aW, aH)
 	if err != nil {
 		return
 	}

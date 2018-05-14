@@ -6,15 +6,13 @@ import (
 	"image"
 	"image/png"
 	"os/exec"
-
-	"github.com/henson/Answer/util"
 )
 
 //Android android
 type Android struct{}
 
 //NewAndroid new
-func NewAndroid(cfg *util.Config) *Android {
+func NewAndroid(cfg *Config) *Android {
 	return new(Android)
 }
 

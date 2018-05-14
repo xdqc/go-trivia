@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-
-	"github.com/henson/Answer/util"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 //IOS 获取iOS截图
@@ -23,7 +24,7 @@ type screenshotRes struct {
 }
 
 //NewIOS new
-func NewIOS(cfg *util.Config) *IOS {
+func NewIOS(cfg *Config) *IOS {
 	ios := new(IOS)
 	ios.wdaAddress = cfg.WdaAddress
 	if ios.wdaAddress == "" {
@@ -34,11 +35,20 @@ func NewIOS(cfg *util.Config) *IOS {
 
 //GetImage 返回图片生成的路径
 func (ios *IOS) GetImage() (img image.Image, err error) {
-	body, e := util.HTTPGet(fmt.Sprintf("http://%s/screenshot", ios.wdaAddress), 3)
+
+	// set timeout for http GET
+	timeout := time.Duration(6 * time.Second)
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	resp, e := client.Get(fmt.Sprintf("http://%s/screenshot", ios.wdaAddress))
 	if e != nil {
 		err = fmt.Errorf("WebDriverAgentRunner 连接失败, err=%v", e)
 		return
 	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
 
 	res := new(screenshotRes)
 	e = json.Unmarshal(body, res)

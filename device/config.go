@@ -1,4 +1,4 @@
-package solver
+package device
 
 import (
 	"io/ioutil"
