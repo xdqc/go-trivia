@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	flag.IntVar(&mode, "m", 0, "run mode 0 : default mode, easy to be detected of cheating; 1 : invisible mode")
+	flag.IntVar(&automatic, "a", 0, "-a 1 adb for android")
 	flag.Parse()
 }
 
@@ -22,7 +22,7 @@ func main() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {
-		solver.Run("8998", mode)
+		solver.Run("8998", automatic)
 	}()
 	go func() {
 		solver.RunWeb("8080")

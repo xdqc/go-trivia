@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"log"
 	"math"
+	"math/rand"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -57,7 +60,7 @@ func handleQuestionResp(bs []byte) {
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 
-	if question.Data.School == "娱乐" && question.Data.Num != 5 {
+	if false && question.Data.School == "娱乐" && question.Data.Num != 5 {
 
 	} else {
 		if answer != "" {
@@ -130,6 +133,10 @@ func handleQuestionResp(bs []byte) {
 
 	}
 
+	if Mode == 1 {
+		go clickProcess(ansPos)
+	} // click answer
+
 	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
 	question.CalData.Answer = answerItem
 	question.CalData.AnswerPos = ansPos
@@ -160,6 +167,45 @@ func handleChooseResponse(bs []byte) {
 	log.Printf("[SaveData]  %s -> %s\n\n", question.Data.Quiz, question.CalData.TrueAnswer)
 	StoreQuestion(question)
 	StoreWholeQuestion(question)
+}
+
+func clickProcess(ansPos int) {
+	var centerX = 540    // center of screen
+	var firstItemY = 840 // center of first item (y)
+	var optionHeight = 200
+	var nextMatchY = 1650 // 排位列表最后一项 y 坐标
+	if ansPos >= 0 {
+		if ansPos == 0 {
+			ansPos = rand.Intn(4) + 1
+		}
+		log.Printf("【点击】正在点击选项：%d", ansPos)
+		time.Sleep(time.Millisecond * 3800)                         //延迟
+		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // process click
+	} else {
+		// go to next match
+		log.Printf("【点击】将点击继续挑战按钮...")
+		time.Sleep(time.Millisecond * 500)
+		go swipeAction() // go back to game selection menu
+		log.Printf("【点击】将点击排位列表底部一项，进行比赛匹配...")
+		time.Sleep(time.Millisecond * 1000)
+		go clickAction(centerX, nextMatchY)
+	}
+}
+
+func clickAction(posX int, posY int) {
+	var err error
+	touchX, touchY := strconv.Itoa(posX+rand.Intn(400)-200), strconv.Itoa(posY+rand.Intn(50)-25)
+	_, err = exec.Command("adb", "shell", "input", "swipe", touchX, touchY, touchX, touchY).Output()
+	if err != nil {
+		log.Println("error: check adb connection.", err)
+	}
+}
+func swipeAction() {
+	var err error
+	_, err = exec.Command("adb", "shell", "input", "swipe", "0", "500", "100", "500", "50").Output()
+	if err != nil {
+		log.Println("error: check adb connection.", err)
+	}
 }
 
 type Question struct {

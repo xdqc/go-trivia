@@ -14,13 +14,14 @@ import (
 	vision "cloud.google.com/go/vision/apiv1"
 	"github.com/henson/Answer"
 	"github.com/henson/Answer/util"
+	"github.com/xdqc/letterpress-solver/device"
 )
 
 func getQuizFromOCR() (quiz string, options []string) {
 	log.Println("Fetching quiz and options from screenshot OCR ...")
 	tx1 := time.Now()
 
-	cfg := util.GetConfig()
+	cfg := GetConfig()
 	// OCR := Answer.NewOcr(cfg)
 
 	imgQuiz := make(chan string, 1)
@@ -56,7 +57,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 		options = processOptions(optionsText)
 	}()
 	go func() {
-		screenshot := Answer.NewScreenshot(cfg)
+		screenshot := device.NewScreenshot(cfg)
 		png, err := screenshot.GetImage()
 		if err != nil {
 			log.Println(err.Error())

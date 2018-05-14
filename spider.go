@@ -142,7 +142,7 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
 			// println("\nquiz\n" + string(bs))
-			go handleQuestionResp(bs) //no need of autoclick
+			go handleQuestionResp(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
