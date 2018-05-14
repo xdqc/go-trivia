@@ -19,6 +19,8 @@ export class BrainComponent implements OnInit, OnDestroy {
   quiz: qInfo.QuestionInfo['data']['quiz'];
   options: qInfo.QuestionInfo['data']['options'];
   qNum: qInfo.QuestionInfo['data']['num'];
+  qSchool: qInfo.QuestionInfo['data']['school'];
+  qType: qInfo.QuestionInfo['data']['type'];
   ans: qInfo.Caldata['Answer'];
   ansPos: qInfo.Caldata['AnswerPos'];
   odds: qInfo.Caldata['Odds'];
@@ -71,6 +73,8 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.q = data;
             this.options = this.q.data.options;
             this.ans = this.q.caldata.Answer;
+            this.qSchool = this.q.data.school;
+            this.qType = this.q.data.type;
             this.ansPos = this.q.caldata.AnswerPos;
             this.odds = this.q.caldata.Odds;
             if (this.odds != null) {              
@@ -108,7 +112,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out game over
       if (that.q.data.quiz == "game over") {
         let quote = this.quotes[Math.floor(Math.random()*this.quotes.length)];
-        let sayGG = new SpeechSynthesisUtterance(quote.text+"... "+(quote.author=="Unknown"?"":quote.author));
+        let sayGG = new SpeechSynthesisUtterance(quote.text+" "+(quote.author=="Unknown"?"":quote.author));
         sayGG.voice = en[Math.floor(Math.random() * en.length)];
         sayGG.volume = (that.volume || 100) / 80;
         sayGG.rate = 0.9;
@@ -140,7 +144,7 @@ export class BrainComponent implements OnInit, OnDestroy {
 
       if (higestOdd >= 1) {
         let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz + that.q.caldata.Answer);//
-        sayChoice.voice = zh[Math.floor(Math.random() * zh.length)];
+        sayChoice.voice = zh[0];
           // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           // ? zh[Math.floor(Math.random() * zh.length)]
           // : sayNumber.voice;
