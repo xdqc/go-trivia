@@ -376,6 +376,8 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 					}
 				}
 				// fmt.Printf("%8s\t%v\n%8d\t%v\n", opti, wordsL, kernel, wordsR)
+				// Create stream around the context sliding window around option
+				go cacheQuizContext(quiz, string(text[i-width:i+optLen+width]))
 			}
 		}
 		optCounts[k] = optCount

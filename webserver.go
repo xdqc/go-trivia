@@ -32,27 +32,29 @@ type Words []struct {
 func RunWeb(port string) {
 
 	r := mux.NewRouter()
+	// 1. LP solver
 	r.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(matchInfo)
 	}).Methods("GET")
-
 	r.HandleFunc("/words", findWords).Methods("GET")
 	r.HandleFunc("/word", deleteWord).Methods("DELETE")
 
+	// 2. Brain solver
 	r.HandleFunc("/answer", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(questionInfo)
 	}).Methods("GET")
 
-	// r.HandleFunc("/idiom", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	w.Write(idiomInfo)
-	// }).Methods("GET")
-
 	r.HandleFunc("/brain-ocr", func(w http.ResponseWriter, r *http.Request) {
 		handleQuestionResp([]byte{})
 	}).Methods("PUT")
+
+	r.HandleFunc("/quizContextStream", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		quizContextInfo, _ = json.Marshal(getQuizContext())
+		w.Write(quizContextInfo)
+	}).Methods("GET")
 
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 
