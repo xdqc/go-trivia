@@ -16,11 +16,12 @@ def getCtxStream():
 
 
     if words is not None:
-        reader = csv.reader(open('ctx.csv'))
+        reader = csv.reader(open('ctx.csv', encoding='utf-8'))
         freq = {}
         for row in reader:
-            key = row[0]
-            freq[key] = int(row[1])
+            if len(row) > 0:
+                key = row[0]
+                freq[key] = int(row[1])
 
         counts = Counter(words)
         for key in counts.keys():
@@ -31,10 +32,9 @@ def getCtxStream():
 
         freq = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
 
-        with open('ctx.csv', 'w') as csv_file:
-            writer = csv.writer(csv_file)
+        with open('ctx.csv', 'w', encoding='utf-8') as w:
             for key, value in freq:
-                writer.writerow([key, value])
+                w.write(key+','+str(value)+'\n')
 
         
 
