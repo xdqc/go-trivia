@@ -7,22 +7,15 @@ import operator
 from collections import Counter
 
 
-def getCtxStream():
+def getCtxStream(freq, noCxtCounter):
     url = 'http://localhost:8080/quizContextStream'
 
     resp = requests.get(url=url)
     data = resp.json()
     words = data['words']
 
-
     if words is not None:
-        reader = csv.reader(open('ctx.csv', encoding='utf-8'))
-        freq = {}
-        for row in reader:
-            if len(row) > 0:
-                key = row[0]
-                freq[key] = int(row[1])
-
+        noCxtCounter = 0
         counts = Counter(words)
         for key in counts.keys():
             if key in freq.keys():
@@ -31,18 +24,28 @@ def getCtxStream():
                 freq[key] = int(counts[key])
 
         freq = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
-
-        with open('ctx.csv', 'w', encoding='utf-8') as w:
-            for key, value in freq:
-                w.write(key+','+str(value)+'\n')
-
-        
+    else:
+        noCxtCounter += 1
+        print('no more ctx found', noCxtCounter)
+    return noCxtCounter
 
 
 def main():
-    while True:
+    reader = csv.reader(open('ctx.csv', encoding='utf-8'))
+    freq = {}
+    for row in reader:
+        if len(row) > 0:
+            key = row[0]
+            freq[key] = int(row[1])
+
+    noCxtCounter = 0
+    while noCxtCounter < 5:
+        noCxtCounter = getCtxStream(freq, noCxtCounter)
         time.sleep(10)
-        getCtxStream()
+
+    with open('ctx.csv', 'w', encoding='utf-8') as w:
+        for key, value in freq.items():
+            w.write(key+','+str(value)+'\n')
 
 
 main()
