@@ -49,9 +49,9 @@ func handleQuestionResp(bs []byte) {
 	answer := FetchQuestion(question)
 
 	// fetch image of the quiz
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	imgTimeChan := make(chan int64)
-	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	// imgTimeChan := make(chan int64)
+	//go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	// question.CalData.TrueAnswer = answer
 	// question.CalData.Answer = answer
@@ -145,8 +145,8 @@ func handleQuestionResp(bs []byte) {
 	questionInfo, _ = json.Marshal(question)
 
 	// Image time and question core information may not be sent in one http GET response to client
-	question.CalData.ImageTime = <-imgTimeChan
-	questionInfo, _ = json.Marshal(question)
+	// question.CalData.ImageTime = <-imgTimeChan
+	// questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
