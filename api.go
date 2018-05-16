@@ -130,15 +130,15 @@ func preProcessOptions(options []string) [][]rune {
 }
 
 //GetFromAPI searh the quiz via popular search engins
-func GetFromAPI(quiz string, options []string) map[string]int {
+func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr string) {
 	N_opt = len(options)
 
-	res := make(map[string]int, N_opt)
+	res = make(map[string]int, N_opt)
 	for _, option := range options {
 		res[option] = 0
 	}
 	if N_opt == 0 {
-		return res
+		return res, ""
 	}
 
 	search := make(chan string, 4+2*N_opt)
@@ -175,6 +175,9 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 				}
 				if id[7] == '1' {
 					rawStrTesting += s[8:]
+				}
+				if id == "Luck0 01" {
+					rawLuckStr = s[8:]
 				}
 				count--
 				if count == 0 {
@@ -229,7 +232,7 @@ func GetFromAPI(quiz string, options []string) map[string]int {
 
 	tx3 := time.Now()
 	log.Printf("Processing time %d ms\n", tx3.Sub(tx2).Nanoseconds()/1e6)
-	return res
+	return res, rawLuckStr
 }
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]

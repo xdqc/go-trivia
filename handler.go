@@ -16,6 +16,7 @@ var (
 	roomID       string
 	storedAnsPos int
 	randClicked  bool
+	luckyPedias  []string
 )
 
 func handleQuestionResp(bs []byte) {
@@ -60,78 +61,79 @@ func handleQuestionResp(bs []byte) {
 	answerItem := "不知道"
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
+	if question.Data.Num == 1 {
+		luckyPedias = make([]string, 5)
+	}
 
-	if false && question.Data.School == "娱乐" && question.Data.Num != 5 {
+	if answer != "" {
+		for i, option := range question.Data.Options {
+			if option == answer {
+				// question.Data.Options[i] = option + "[.]"
+				ansPos = i + 1
+				answerItem = option
+				odds[i] = 888
+				break
+			}
+		}
+	}
+	storedAnsPos = ansPos
 
-	} else {
-		if answer != "" {
+	// Put true here to force searching, even if found answer in db
+	if true || storedAnsPos == 0 {
+		var ret map[string]int
+		ret, luckyStr := GetFromAPI(question.Data.Quiz, question.Data.Options)
+
+		luckyPedias[question.Data.Num-1] = luckyStr
+
+		log.Printf("Google predict => %v\n", ret)
+		total := 1
+
+		for _, option := range question.Data.Options {
+			total += ret[option]
+		}
+		if total != 1 {
+			// total == 1 -> 0,0,0,0
+			max := math.MinInt32
 			for i, option := range question.Data.Options {
-				if option == answer {
-					// question.Data.Options[i] = option + "[.]"
+				odds[i] = float32(ret[option]) / float32(total-ret[option])
+				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+				if ret[option] > max && ret[option] != 0 {
+					max = ret[option]
 					ansPos = i + 1
 					answerItem = option
-					odds[i] = 888
-					break
 				}
 			}
 		}
-		storedAnsPos = ansPos
-
-		// Put true here to force searching, even if found answer in db
-		if true || storedAnsPos == 0 {
-			var ret map[string]int
-			ret = GetFromAPI(question.Data.Quiz, question.Data.Options)
-			log.Printf("Google predict => %v\n", ret)
-			total := 1
-
-			for _, option := range question.Data.Options {
-				total += ret[option]
-			}
-			if total != 1 {
-				// total == 1 -> 0,0,0,0
-				max := math.MinInt32
-				for i, option := range question.Data.Options {
-					odds[i] = float32(ret[option]) / float32(total-ret[option])
-					// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-					if ret[option] > max && ret[option] != 0 {
-						max = ret[option]
-						ansPos = i + 1
-						answerItem = option
-					}
-				}
-			}
-			// verify the stored answer
-			if answer == answerItem {
-				//good
-				odds[ansPos-1] = 888
-			} else {
-				if answer != "" {
-					// searched result could be wrong
-					if storedAnsPos != 0 {
-						re := regexp.MustCompile("\\p{Han}+")
-						if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
-							log.Println("searched answer could be wrong...")
-							answerItem = answer
-							ansPos = storedAnsPos
-							odds[ansPos-1] = 333
-						} else {
-							// stored answer may be corrupted
-							log.Println("stored answer may be corrupted...")
-							odds[ansPos-1] = 444
-						}
+		// verify the stored answer
+		if answer == answerItem {
+			//good
+			odds[ansPos-1] = 888
+		} else {
+			if answer != "" {
+				// searched result could be wrong
+				if storedAnsPos != 0 {
+					re := regexp.MustCompile("\\p{Han}+")
+					if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
+						log.Println("searched answer could be wrong...")
+						answerItem = answer
+						ansPos = storedAnsPos
+						odds[ansPos-1] = 333
 					} else {
-						// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
-						log.Println("the previous option words changed by the game...")
+						// stored answer may be corrupted
+						log.Println("stored answer may be corrupted...")
+						odds[ansPos-1] = 444
 					}
 				} else {
-					log.Println("new question got!")
+					// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
+					log.Println("the previous option words changed by the game...")
 				}
-				if len(odds) == 4 {
-					storedAnsPos = ansPos
-				}
+			} else {
+				log.Println("new question got!")
+			}
+			if len(odds) == 4 {
+				storedAnsPos = ansPos
 			}
 		}
-
 	}
 
 	if Mode == 1 {
@@ -194,6 +196,9 @@ func clickProcess(ansPos int, question *Question) {
 	} else {
 		// go to next match
 		randClicked = false
+
+		inputADBText()
+
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
 		time.Sleep(time.Millisecond * 500)
@@ -210,14 +215,16 @@ func clickAction(posX int, posY int) {
 		log.Println("error: check adb connection.", err)
 	}
 }
+
 func swipeAction() {
-	_, err := exec.Command("adb", "shell", "input", "swipe", "75", "150", "75", "150", "0").Output()
+	_, err := exec.Command("adb", "shell", "input", "swipe", "75", "150", "75", "150", "0").Output() // swipe right, back
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
 }
+
 func clickEmoji() {
-	_, err := exec.Command("adb", "shell", "input", "tap", "100", "300").Output()
+	_, err := exec.Command("adb", "shell", "input", "tap", "100", "300").Output() // tap my avatar to summon emoji panel
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
@@ -225,10 +232,29 @@ func clickEmoji() {
 	fX, fY := 170, 560
 	dX, dY := 150, 150
 	touchX, touchY := strconv.Itoa(fX+dX*1), strconv.Itoa(fY+dY*2*rand.Intn(2))
-	_, err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output()
+	_, err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output() // tap the emoji
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
+}
+
+func inputADBText() {
+	time.Sleep(time.Millisecond * 500)
+	exec.Command("adb", "shell", "input", "tap", "1000", "1050").Output() // tap `review current game`
+	time.Sleep(time.Millisecond * 5000)
+	for index := 0; index < 5; index++ {
+		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
+		time.Sleep(time.Millisecond * 500)
+		msg := luckyPedias[index]
+		println(msg)
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", ``).Output() // sending text input
+		time.Sleep(time.Millisecond * 500)
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", `2`).Output() // sending editor action `GO`
+		time.Sleep(time.Millisecond * 500)
+		exec.Command("adb", "shell", "input", "swipe", "800", "500", "200", "500", "100").Output() // swipe left, forward
+		time.Sleep(time.Millisecond * 500)
+	}
+	exec.Command("adb", "shell", "input", "tap", "75", "150").Output() // tap esc arrow, go back
 }
 
 type Question struct {
