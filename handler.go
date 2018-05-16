@@ -176,14 +176,14 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && question.Data.School == "娱乐") {
+		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "娱乐" || question.Data.School == "流行")) {
 			// click randomly, only do it once on first 4 quiz
 			ansPos = rand.Intn(4) + 1
-			randClicked = true
+			// randClicked = true
 		}
 		time.Sleep(time.Millisecond * 1500)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
@@ -221,10 +221,10 @@ func clickEmoji() {
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
-	time.Sleep(time.Millisecond * 300)
+	time.Sleep(time.Millisecond * 200)
 	fX, fY := 170, 560
 	dX, dY := 150, 150
-	touchX, touchY := strconv.Itoa(fX+dX*1), strconv.Itoa(fY+dY*2)
+	touchX, touchY := strconv.Itoa(fX+dX*1), strconv.Itoa(fY+dY*2*rand.Intn(2))
 	_, err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output()
 	if err != nil {
 		log.Println("error: check adb connection.", err)
