@@ -51,6 +51,6 @@ func setQuizContext(quizContext *QuizContext) {
 		words = append(words, quizContext.Words...)
 		quizContext.Words = words
 	}
-	quizContexts.Set(quizContext.Quiz, quizContext, time.Second*60)
+	quizContexts.Set(quizContext.Quiz, quizContext, time.Second*600)
 
 }

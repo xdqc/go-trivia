@@ -1,13 +1,16 @@
 package solver
 
+import "regexp"
+
 var quizContextInfo []byte
 
 // Create stream around the context sliding window around option
 func cacheQuizContext(quiz string, ctx string) {
 	cuts := JB.Cut(ctx, true)
 	words := make([]string, 0)
+	re := regexp.MustCompile("[^\\p{Han}]+")
 	for _, w := range cuts {
-		if w == "" {
+		if w == " " || re.MatchString(w) {
 			continue
 		}
 		words = append(words, w)

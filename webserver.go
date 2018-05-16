@@ -199,7 +199,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 				c <- response.Body
 				done = true
 			} else {
-				log.Println("Something wrong with the http request: " + strconv.Itoa(response.StatusCode))
+				log.Println("Get quiz img http request err: " + strconv.Itoa(response.StatusCode))
 			}
 		}(rawImgReader)
 	}
