@@ -44,14 +44,15 @@ def main():
             freq[key] = int(row[1])
 
     noCxtCounter = 0
-    while noCxtCounter < 8:
+    while noCxtCounter < 17:
         noCxtCounter = getCtxStream(freq, noCxtCounter)
         time.sleep(10)
-
-    freq = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
-    with open('ctx.csv', 'w', encoding='utf-8') as w:
-        for key, value in freq:
-            w.write(key+','+str(value)+'\n')
+        if noCxtCounter % 10 == 8:
+            freq = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
+            with open('ctx.csv', 'w', encoding='utf-8') as w:
+                for key, value in freq:
+                    w.write(key+','+str(value)+'\n')
+                print("ctx.csv written")
 
 
 main()

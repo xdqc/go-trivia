@@ -201,7 +201,7 @@ func clickProcess(ansPos int, question *Question) {
 		// go to next match
 		randClicked = false
 
-		inputADBText()
+		// inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
@@ -260,7 +260,7 @@ func inputADBText() {
 				id := s[:8]
 				idx, _ := strconv.Atoi(s[4:5])
 				log.Println("search received...", id, idx)
-				if idx <= len(luckyPedias) && len(luckyPedias[idx-1]) < 100 {
+				if idx <= len(luckyPedias) && len(luckyPedias[idx-1]) < 60 {
 					luckyPedias[idx-1] = s[8:]
 				}
 				count--
@@ -295,11 +295,11 @@ func inputADBText() {
 		}
 		println(msg)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 400)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
-		time.Sleep(time.Millisecond * 300)
-		exec.Command("adb", "shell", "input", "swipe", "800", "500", "200", "500", "100").Output() // swipe left, forward
 		time.Sleep(time.Millisecond * 200)
+		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
+		time.Sleep(time.Millisecond * 400)
 	}
 	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
 	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back

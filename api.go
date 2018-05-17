@@ -178,7 +178,6 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 				}
 				if id == "Luck0 01" {
 					rawLuckStr += s[8:]
-					println(rawLuckStr)
 				}
 				count--
 				if count == 0 {
