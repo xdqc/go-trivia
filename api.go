@@ -44,9 +44,9 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	} else {
 		words = JB.Cut(qz, true)
 	}
-	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "关于", "没有", "其中", "未曾", "称为", "位于", "英文单词", "缩写", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "过", "中", "其", "及", "至", "们", "将", "会", "指", "所", "省", "年"}
+	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "关于", "按照", "有关", "没有", "共有", "包括", "其中", "未曾", "第几", "称为", "位于", "下面", "英文单词", "缩写", "下一句", "上一句", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "用", "过", "中", "其", "及", "至", "们", "将", "会", "指", "叫", "所", "省", "年"}
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是了而谁么")) {
+		if !(strings.ContainsAny(w, " 的哪是了而谁么者")) {
 			stop := false
 			for _, sw := range stopwords {
 				if w == sw {
@@ -147,7 +147,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
-	go searchFeelingLucky(strings.Join(keywords, " "), options, 0, false, true, search)  // testing
+	go searchFeelingLucky(strings.Join(keywords, ""), options, 0, false, true, search)   // testing
 	go searchGoogle(quiz, options, true, true, search)                                   // testing
 	go searchGoogleWithOptions(strings.Join(keywords, " "), options, true, true, search) // testing
 	go searchBaidu(quiz, quote, options, false, true, search)                            // training
@@ -177,7 +177,8 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 					rawStrTesting += s[8:]
 				}
 				if id == "Luck0 01" {
-					rawLuckStr = s[8:]
+					rawLuckStr += s[8:]
+					println(rawLuckStr)
 				}
 				count--
 				if count == 0 {
@@ -190,7 +191,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 	select {
 	case <-done:
 		fmt.Println("search done")
-	case <-time.After(2 * time.Second):
+	case <-time.After(3 * time.Second):
 		fmt.Println("search timeout")
 	}
 	tx2 := time.Now()
@@ -695,6 +696,29 @@ func searchFeelingLucky(quiz string, options []string, id int, isTrain bool, isT
 		text = text[:10000]
 	}
 	c <- text + "                                                  "
+}
+
+func searchBaiduBaike(options []string, id int, c chan string) {
+	req, _ := http.NewRequest("GET", "https://baike.baidu.com/item/"+options[id-1], nil)
+	resp, _ := http.DefaultClient.Do(req)
+
+	text := "bdbk" + strconv.Itoa(id) + " 00"
+
+	if resp == nil {
+
+	} else if resp.Request.URL.Host == "baike.baidu.com" {
+		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		text += doc.Find(".para").Text()
+	} else {
+		//doc, _ := goquery.NewDocumentFromReader(resp.Body)
+		//text += doc.Find("body").Text()
+		// log.Println(text)
+	}
+
+	if len(text) > 10000 {
+		text = text[:10000]
+	}
+	c <- text
 }
 
 func startBrowser(keywords []string) {

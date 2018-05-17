@@ -10,9 +10,14 @@ from collections import Counter
 def getCtxStream(freq, noCxtCounter):
     url = 'http://localhost:8080/quizContextStream'
 
-    resp = requests.get(url=url)
-    data = resp.json()
-    words = data['words']
+    try:
+        resp = requests.get(url=url)
+        data = resp.json()
+        words = data['words']
+    except requests.ConnectionError as err:
+        words = None
+        print(err)
+
 
     if words is not None:
         noCxtCounter = 0

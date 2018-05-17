@@ -2,6 +2,7 @@ package solver
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -17,6 +18,7 @@ var (
 	storedAnsPos int
 	randClicked  bool
 	luckyPedias  []string
+	answers      []string
 )
 
 func handleQuestionResp(bs []byte) {
@@ -62,7 +64,8 @@ func handleQuestionResp(bs []byte) {
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 	if question.Data.Num == 1 {
-		luckyPedias = make([]string, 5)
+		luckyPedias = make([]string, 0)
+		answers = make([]string, 0)
 	}
 
 	if answer != "" {
@@ -83,7 +86,7 @@ func handleQuestionResp(bs []byte) {
 		var ret map[string]int
 		ret, luckyStr := GetFromAPI(question.Data.Quiz, question.Data.Options)
 
-		luckyPedias[question.Data.Num-1] = luckyStr
+		luckyPedias = append(luckyPedias, luckyStr)
 
 		log.Printf("Google predict => %v\n", ret)
 		total := 1
@@ -136,6 +139,7 @@ func handleQuestionResp(bs []byte) {
 		}
 	}
 
+	answers = append(answers, answerItem)
 	if Mode == 1 {
 		go clickProcess(ansPos, question)
 	} // click answer
@@ -239,22 +243,66 @@ func clickEmoji() {
 }
 
 func inputADBText() {
+	search := make(chan string, 5)
+	done := make(chan bool, 1)
+	count := cap(search)
+	for i := 0; i < 5; i++ {
+		reNum := regexp.MustCompile("[0-9]+")
+		if !reNum.MatchString(answers[i]) {
+			go searchBaiduBaike(answers, i+1, search)
+		}
+	}
+	go func() {
+		for {
+			s, more := <-search
+			if more {
+				// The first 8 chars in text is the identifier of the search source, 4th is the index
+				id := s[:8]
+				idx, _ := strconv.Atoi(s[4:5])
+				log.Println("search received...", id, idx)
+				if idx <= len(luckyPedias) && len(luckyPedias[idx-1]) < 100 {
+					luckyPedias[idx-1] = s[8:]
+				}
+				count--
+				if count == 0 {
+					done <- true
+					return
+				}
+			}
+		}
+	}()
+
 	time.Sleep(time.Millisecond * 500)
 	exec.Command("adb", "shell", "input", "tap", "1000", "1050").Output() // tap `review current game`
-	time.Sleep(time.Millisecond * 5000)
+	time.Sleep(time.Millisecond * 4000)
+
+	select {
+	case <-done:
+		fmt.Println("search done")
+	case <-time.After(2 * time.Second):
+		fmt.Println("search timeout")
+	}
+
 	for index := 0; index < 5; index++ {
 		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
-		time.Sleep(time.Millisecond * 500)
-		msg := luckyPedias[index]
+		time.Sleep(time.Millisecond * 200)
+		re := regexp.MustCompile("[\\n\"]+")
+		quoted := regexp.MustCompile("\\[[^\\]]+\\]")
+		msg := re.ReplaceAllString(luckyPedias[index], "")
+		msg = quoted.ReplaceAllString(msg, "")
+		if len([]rune(msg)) > 500 {
+			msg = string([]rune(msg)[:500])
+		}
 		println(msg)
-		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", ``).Output() // sending text input
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
 		time.Sleep(time.Millisecond * 500)
-		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", `2`).Output() // sending editor action `GO`
-		time.Sleep(time.Millisecond * 500)
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
+		time.Sleep(time.Millisecond * 300)
 		exec.Command("adb", "shell", "input", "swipe", "800", "500", "200", "500", "100").Output() // swipe left, forward
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 200)
 	}
-	exec.Command("adb", "shell", "input", "tap", "75", "150").Output() // tap esc arrow, go back
+	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
+	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back
 }
 
 type Question struct {
