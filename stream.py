@@ -48,9 +48,9 @@ def main():
         noCxtCounter = getCtxStream(freq, noCxtCounter)
         time.sleep(10)
         if noCxtCounter % 10 == 8:
-            freq = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
+            freqList = sorted(freq.items(), key=operator.itemgetter(1), reverse=True)
             with open('ctx.csv', 'w', encoding='utf-8') as w:
-                for key, value in freq:
+                for key, value in freqList:
                     w.write(key+','+str(value)+'\n')
                 print("ctx.csv written")
 
