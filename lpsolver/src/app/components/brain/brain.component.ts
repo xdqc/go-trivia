@@ -93,7 +93,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   fetchOCR() {
-    this.http.put('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
+    this.http.post('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
   }
 
   voiceOn() {

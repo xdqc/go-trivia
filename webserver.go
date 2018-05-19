@@ -48,7 +48,7 @@ func RunWeb(port string) {
 
 	r.HandleFunc("/brain-ocr", func(w http.ResponseWriter, r *http.Request) {
 		handleQuestionResp([]byte{})
-	}).Methods("PUT")
+	}).Methods("POST")
 
 	r.HandleFunc("/quizContextStream", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
