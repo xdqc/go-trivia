@@ -24,7 +24,7 @@ var (
 func handleQuestionResp(bs []byte) {
 	question := &Question{}
 	storedAnsPos = 0
-	if len(bs) > 0 {
+	if len(bs) > 0 || !strings.Contains(string(bs), "encryptedData") {
 		// Get quiz from MITM
 		json.Unmarshal(bs, question)
 	} else {
