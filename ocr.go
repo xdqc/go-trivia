@@ -1,7 +1,6 @@
 package solver
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -20,7 +19,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 	tx1 := time.Now()
 
 	cfg := device.GetConfig()
-	// OCR := Answer.NewOcr(cfg)
+	OCR := device.NewBaidu(cfg)
 
 	imgQuiz := make(chan string, 1)
 	imgOptions := make(chan string, 1)
@@ -30,10 +29,12 @@ func getQuizFromOCR() (quiz string, options []string) {
 
 	go func() {
 		defer wig.Done()
-		// quizText, err := OCR.GetText(<-imgQuiz)
-		buf := new(bytes.Buffer)
-		err := detectText(buf, <-imgQuiz)
-		quizText := buf.String()
+		quizText, err := OCR.GetText(<-imgQuiz)
+
+		// for google api
+		// buf := new(bytes.Buffer)
+		// err := detectText(buf, <-imgQuiz)
+		// quizText := buf.String()
 
 		if err != nil {
 			log.Println(err.Error())
@@ -43,10 +44,12 @@ func getQuizFromOCR() (quiz string, options []string) {
 	}()
 	go func() {
 		defer wig.Done()
-		// optionsText, err := OCR.GetText(<-imgOptions)
-		buf := new(bytes.Buffer)
-		err := detectText(buf, <-imgOptions)
-		optionsText := buf.String()
+		optionsText, err := OCR.GetText(<-imgOptions)
+
+		// for google api
+		// buf := new(bytes.Buffer)
+		// err := detectText(buf, <-imgOptions)
+		// optionsText := buf.String()
 
 		if err != nil {
 			log.Println(err.Error())
@@ -86,8 +89,9 @@ func processQuiz(text string) string {
 }
 
 func processOptions(text string) []string {
+	println(text)
 	text = strings.Replace(text, "\"", "", -1)
-	arr := strings.Split(text, "\\n")
+	arr := strings.Split(text, "\n")
 	textArr := []string{}
 	for _, val := range arr {
 		if strings.TrimSpace(val) == "" {
