@@ -497,10 +497,12 @@ func searchBaidu(quiz string, quoted string, options []string, isTrain bool, isT
 				}
 			}
 		}
-		for _, n := range doc.Find(".c-abstract").Nodes {
-			f(n)
-			text += buf.String() + "                                                  "
-			buf.Reset()
+		if doc != nil && doc.Find(".c-abstract") != nil {
+			for _, n := range doc.Find(".c-abstract").Nodes {
+				f(n)
+				text += buf.String() + "                                                  "
+				buf.Reset()
+			}
 		}
 
 	}
@@ -541,10 +543,12 @@ func searchBaiduWithOptions(quiz string, options []string, isTrain bool, isTest 
 				}
 			}
 		}
-		for _, n := range doc.Find(".c-abstract").Nodes {
-			f(n)
-			text += buf.String() + "                                                  "
-			buf.Reset()
+		if doc != nil && doc.Find(".c-abstract") != nil {
+			for _, n := range doc.Find(".c-abstract").Nodes {
+				f(n)
+				text += buf.String() + "                                                  "
+				buf.Reset()
+			}
 		}
 	}
 	c <- text + "                                                  "
