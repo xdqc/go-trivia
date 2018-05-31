@@ -89,7 +89,7 @@ func processQuiz(text string) string {
 }
 
 func processOptions(text string) []string {
-	println(text)
+	// println(text)
 	text = strings.Replace(text, "\"", "", -1)
 	arr := strings.Split(text, "\n")
 	textArr := []string{}
