@@ -205,7 +205,7 @@ func clickProcess(ansPos int, question *Question) {
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY) // start new game
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY)
