@@ -182,21 +182,21 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "娱乐" || question.Data.School == "文艺")) {
-			// click randomly, only do it once on first 4 quiz
-			ansPos = rand.Intn(4) + 1
-			// randClicked = true
-		}
+		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "动漫")) {
+		// 	// click randomly, only do it once on first 4 quiz
+		// 	ansPos = rand.Intn(4) + 1
+		// 	randClicked = true
+		// }
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(3000)))
+		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1500)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 1000)
-		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 1000)
+		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
-		if rand.Intn(100) < 20 {
-			time.Sleep(time.Millisecond * 500)
-			go clickEmoji()
-		}
+		// if rand.Intn(100) < 20 {
+		// 	time.Sleep(time.Millisecond * 500)
+		// 	go clickEmoji()
+		// }
 	} else {
 		// go to next match
 		randClicked = false
@@ -205,7 +205,7 @@ func clickProcess(ansPos int, question *Question) {
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY) // start new game
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY)
@@ -235,7 +235,7 @@ func clickEmoji() {
 	time.Sleep(time.Millisecond * 200)
 	fX, fY := 170, 560
 	dX, dY := 150, 150
-	touchX, touchY := strconv.Itoa(fX+dX*1), strconv.Itoa(fY+dY*2*rand.Intn(2))
+	touchX, touchY := strconv.Itoa(fX+dX*(rand.Intn(2)*3+rand.Intn(2))), strconv.Itoa(fY+dY*rand.Intn(3))
 	_, err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output() // tap the emoji
 	if err != nil {
 		log.Println("error: check adb connection.", err)
@@ -295,11 +295,11 @@ func inputADBText() {
 		}
 		println(msg)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
-		time.Sleep(time.Millisecond * 400)
+		time.Sleep(time.Millisecond * 300)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
 		time.Sleep(time.Millisecond * 200)
 		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
-		time.Sleep(time.Millisecond * 400)
+		time.Sleep(time.Millisecond * 300)
 	}
 	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
 	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back
