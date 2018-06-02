@@ -18,7 +18,7 @@ func init() {
 	// Create a cache with a default expiration time of 5 minutes, and which
 	// purges expired items every 10 minutes
 	questions = cache.New(5*time.Minute, 10*time.Minute)
-	quizContexts = cache.New(5*time.Minute, 30*time.Minute)
+	quizContexts = cache.New(5*time.Minute, 180*time.Minute)
 }
 
 func GetQuestion(roomID, quizNum string) *Question {

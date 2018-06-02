@@ -201,7 +201,7 @@ func clickProcess(ansPos int, question *Question) {
 		// go to next match
 		randClicked = false
 
-		inputADBText()
+		// inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
@@ -284,7 +284,7 @@ func inputADBText() {
 		fmt.Println("search timeout")
 	}
 
-	for index := 0; index < 5; index++ {
+	for index := 0; index < len(luckyPedias); index++ {
 		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
 		time.Sleep(time.Millisecond * 200)
 		re := regexp.MustCompile("[\\n\"]+")
