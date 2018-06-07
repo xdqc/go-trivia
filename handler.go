@@ -178,6 +178,7 @@ func handleChooseResponse(bs []byte) {
 
 func handleNextQuestion() {
 	question := &Question{}
+	answers = make([]string, 0)
 
 	// Get random question from db for live streaming
 	question = FetchRandomQuestion()
@@ -211,6 +212,9 @@ func handleCurrentAnswer(qNum int) {
 	} else if question.Data.Num != qNum {
 		log.Println("Question #id does not match current.")
 		return
+	} else if len(answers) > 0 {
+		log.Println("Question has been answerd")
+		return
 	}
 
 	answer := question.CalData.Answer
@@ -227,6 +231,8 @@ func handleCurrentAnswer(qNum int) {
 	question.CalData.AnswerPos = ansPos
 	questionInfo, _ = json.Marshal(question)
 	question = nil
+
+	answers = append(answers, answer)
 
 	time.Sleep(10*time.Second)
 	handleNextQuestion()
