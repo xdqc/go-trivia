@@ -18,6 +18,9 @@ declare module QuestionInfo {
         TrueAnswer: string;
         Odds: string[];
         ImageTime: number;
+        User: string;
+        Choice: number;
+        Voice: number;
     }
 
     export interface QuestionInfo {

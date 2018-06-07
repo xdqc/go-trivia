@@ -64,8 +64,26 @@ func RunWeb(port string) {
 	}).Methods("GET")
 	r.HandleFunc("/currentQuizAnswer", func(w http.ResponseWriter, r *http.Request) {
 		qNums, _ := r.URL.Query()["qNum"]
+		users, _ := r.URL.Query()["user"]
+		choices, _ := r.URL.Query()["choice"]
 		qNum, _ := strconv.Atoi(qNums[0])
-		go handleCurrentAnswer(qNum)
+		user := users[0]
+		choice := strings.ToUpper(choices[0])
+		go handleCurrentAnswer(qNum, user, choice)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(nil)
+	}).Methods("GET")
+	r.HandleFunc("/setBroadcaster", func(w http.ResponseWriter, r *http.Request) {
+		voices, _ := r.URL.Query()["broadcaster"]
+		voice, _ := strconv.Atoi(voices[0])
+		question := &Question{}
+		err := json.Unmarshal(questionInfo, question)
+		if err != nil {
+			log.Println(err.Error())
+		} else if voice < 5 && voice >= 0 {
+			question.CalData.Voice = voice
+			questionInfo, _ = json.Marshal(question)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(nil)
 	}).Methods("GET")

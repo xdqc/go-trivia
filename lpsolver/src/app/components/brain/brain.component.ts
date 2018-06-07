@@ -21,9 +21,13 @@ export class BrainComponent implements OnInit, OnDestroy {
   qNum: qInfo.QuestionInfo['data']['num'];
   qSchool: qInfo.QuestionInfo['data']['school'];
   qType: qInfo.QuestionInfo['data']['type'];
+  qChoice: qInfo.Caldata['Choice'];
+  qVoice: qInfo.Caldata['Voice'];
   ans: qInfo.Caldata['Answer'];
   ansPos: qInfo.Caldata['AnswerPos'];
+  ansUser: qInfo.Caldata['User'];
   odds: qInfo.Caldata['Odds'];
+  highestOdd: number;
   imgTime: qInfo.Caldata['ImageTime'] = 0;
 
   speakOn: boolean;
@@ -44,13 +48,14 @@ export class BrainComponent implements OnInit, OnDestroy {
   constructor(private http: Http) {
     this.total = 5;
     this.speakOn = false;
+    this.qVoice = 3;
     this.getQuoteData().subscribe(data => {this.quotes=(data as Quotes.Quote[]);console.log(this.quotes)}, error => console.log(error));
   }
 
   ngOnInit() {
     console.log("brain start...");
 
-    this.fetch = setInterval(() => this.fetchQuestion(), 500);
+    this.fetch = setInterval(() => this.fetchQuestion(), 1000);
     // this.fetch = setInterval(() => this.fetchIdiom(), 3000)
 
   }
@@ -75,7 +80,12 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.ans = this.q.caldata.Answer;
             this.qSchool = this.q.data.school;
             this.qType = this.q.data.type;
+            this.qChoice = this.q.caldata.Choice;
+            this.ansUser = this.q.caldata.User;
             this.odds = this.q.caldata.Odds;
+            if (this.q.caldata.Voice > 0 && this.q.caldata.Voice <= 6){
+              this.qVoice = this.q.caldata.Voice - 1;
+            }
             if (this.odds != null) {              
               for (let i = 0; i < this.odds.length; i++) {
                 let n = parseFloat(this.odds[i])
@@ -92,7 +102,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       );
   }
 
-  fetchOCR() {
+  fetchOCR(){
     this.http.post('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
   }
 
@@ -129,10 +139,10 @@ export class BrainComponent implements OnInit, OnDestroy {
       // }
 
       // speak out new question answer
-      let higestOdd = 0
-      that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'should be ' : higestOdd == 888||higestOdd == 666 ? 'choose ' :higestOdd > 100? 'absolutely ':higestOdd > 10? 'definitely ':higestOdd > 3? 'exactly ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
-      if (that.q.data.school == '理科' && higestOdd < 1) {
+      this.highestOdd = 0;
+      that.odds.forEach(n => this.highestOdd = parseFloat(n) > this.highestOdd ? parseFloat(n) : this.highestOdd)
+      let utterance = this.highestOdd == 444 ? 'google ' : this.highestOdd == 333 ? 'should be ' : this.highestOdd == 888||that.highestOdd == 666 ? 'choose ' :that.highestOdd > 100? 'absolutely ':that.highestOdd > 10? 'definitely ':that.highestOdd > 3? 'exactly ': that.highestOdd > 1 ? 'probably ': that.highestOdd > 0.5 ? 'possibly ' : 'perhaps ';
+      if (that.q.data.school == '理科' && this.highestOdd < 1) {
         utterance = 'Attention, ' + utterance
       }
 
@@ -141,9 +151,9 @@ export class BrainComponent implements OnInit, OnDestroy {
       sayNumber.voice = en[Math.floor(Math.random() * en.length)];
       sayNumber.volume = (that.volume || 100) / 80;
 
-      if (higestOdd >= 1) {
+      if (this.highestOdd >= 1) {
         let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz+that.q.caldata.Answer);//
-        sayChoice.voice = zh[0];
+        sayChoice.voice = zh[this.qVoice];
           // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           // ? zh[Math.floor(Math.random() * zh.length)]
           // : sayNumber.voice;
@@ -154,7 +164,7 @@ export class BrainComponent implements OnInit, OnDestroy {
         speechSynthesis.speak(sayChoice)
       } else {
         let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz);//
-        sayChoice.voice = zh[0];
+        sayChoice.voice = zh[this.qVoice];
           // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           // ? zh[Math.floor(Math.random() * zh.length)]
           // : sayNumber.voice;

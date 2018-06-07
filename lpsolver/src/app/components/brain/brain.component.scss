@@ -100,17 +100,28 @@
     background: #FFDEAD;
     font-size: 1.5em;
   }
-  
+
+  /*change wrong answer background*/
+  .wrong-true, .wrong:hover {
+    background: #db3c3c;
+    color: white;
+  }
   /*change correct answer background*/
   .correct-true, .correct-true:hover {
     background: rgb(69, 139, 69);
     color: white;
   }
-  
-  /*change wrong answer background*/
-  .wrong, .wrong:hover {
-    background: #db3c3c;
-    color: white;
+  .lose-msg{
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 2px 2px 8px whitesmoke;
+    color: lightcoral;
+  }
+  .win-msg{
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 2px 2px 8px whitesmoke;
+    color: goldenrod ;
   }
 
   span.odds{

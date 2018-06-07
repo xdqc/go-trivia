@@ -30,14 +30,14 @@
       </div>
       <!-- Question #id -->
       <div *ngIf="showImage">
-        <span>题号：#{{qNum}}</span>
+        <span>题号：{{qNum}}</span>
       </div>
 
       <!-- Quiz Question -->
       <div class="quiz-questions" id="display-area">
         <p id="question">{{quiz}}</p>
         <ul id="answer">
-          <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">
+          <li *ngFor="let option of options;let i=index" class="wrong-{{i+1==qChoice}} correct-{{i+1==ansPos}}">
             <span [ngSwitch]="i">
             <span *ngSwitchCase="0">A. </span>
             <span *ngSwitchCase="1">B. </span>
@@ -49,6 +49,14 @@
           </li>
         </ul>
       </div>
+    </div>
+    <div *ngIf="highestOdd==333">
+      <!-- wrong answer -->
+      <p class="lose-msg">oops～请您再接再厉～</p>
+    </div>
+    <div *ngIf="highestOdd==666">
+      <!-- correct answer -->
+      <p class="win-msg">恭喜 {{ansUser}} 答对了！</p>
     </div>
     <div *ngIf="!showImage">
       <button class="btn btn-orange" (click)="fetchOCR()">

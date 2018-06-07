@@ -19,6 +19,8 @@ var (
 	randClicked  bool
 	luckyPedias  []string
 	answers      []string
+
+	prevQuizNum int
 )
 
 func handleQuestionResp(bs []byte) {
@@ -185,7 +187,13 @@ func handleNextQuestion() {
 	println(question.Data.Quiz)
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
-	question.Data.Num = rand.Intn(100)
+	for {
+		question.Data.Num = rand.Intn(9) + 1
+		if question.Data.Num != prevQuizNum {
+			prevQuizNum = question.Data.Num
+			break
+		}
+	}
 	question.CalData.Odds = odds
 	question.CalData.AnswerPos = ansPos
 	questionInfo, _ = json.Marshal(question)
@@ -203,7 +211,7 @@ func handleNextQuestion() {
 	question = nil
 }
 
-func handleCurrentAnswer(qNum int) {
+func handleCurrentAnswer(qNum int, user string, choice string) {
 	question := &Question{}
 	err := json.Unmarshal(questionInfo, question)
 	if err != nil {
@@ -217,24 +225,40 @@ func handleCurrentAnswer(qNum int) {
 		return
 	}
 
+	if choice == "A" {
+		question.CalData.Choice = 1
+	} else if choice == "B" {
+		question.CalData.Choice = 2
+	} else if choice == "C" {
+		question.CalData.Choice = 3
+	} else if choice == "D" {
+		question.CalData.Choice = 4
+	} else {
+		question.CalData.Choice = 0
+	}
 	answer := question.CalData.Answer
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 	for i, option := range question.Data.Options {
 		if option == answer {
 			ansPos = i + 1
-			odds[i] = 666
+			if ansPos == question.CalData.Choice {
+				odds[i] = 666
+			} else {
+				odds[i] = 333
+			}
 			break
 		}
 	}
 	question.CalData.Odds = odds
 	question.CalData.AnswerPos = ansPos
+	question.CalData.User = user
 	questionInfo, _ = json.Marshal(question)
 	question = nil
 
 	answers = append(answers, answer)
 
-	time.Sleep(10*time.Second)
+	time.Sleep(10 * time.Second)
 	handleNextQuestion()
 }
 
@@ -387,6 +411,9 @@ type Question struct {
 		TrueAnswer string
 		Odds       []float32
 		ImageTime  int64
+		User       string
+		Choice     int
+		Voice      int
 	} `json:"caldata"`
 	Errcode int `json:"errcode"`
 }
