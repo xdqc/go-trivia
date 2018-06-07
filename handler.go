@@ -52,9 +52,9 @@ func handleQuestionResp(bs []byte) {
 	answer := FetchQuestion(question)
 
 	// fetch image of the quiz
-	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	// imgTimeChan := make(chan int64)
-	//go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	// question.CalData.TrueAnswer = answer
 	// question.CalData.Answer = answer
@@ -82,7 +82,7 @@ func handleQuestionResp(bs []byte) {
 	storedAnsPos = ansPos
 
 	// Put true here to force searching, even if found answer in db
-	if true || storedAnsPos == 0 {
+	if storedAnsPos == 0 {
 		var ret map[string]int
 		ret, luckyStr := GetFromAPI(question.Data.Quiz, question.Data.Options)
 
@@ -150,9 +150,9 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 
-	// Image time and question core information may not be sent in one http GET response to client
-	// question.CalData.ImageTime = <-imgTimeChan
-	// questionInfo, _ = json.Marshal(question)
+	// Image time and question core information may not be sent in ONE http GET response to client
+	question.CalData.ImageTime = <-imgTimeChan
+	questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -174,6 +174,55 @@ func handleChooseResponse(bs []byte) {
 	log.Printf("[SaveData]  %s -> %s\n\n", question.Data.Quiz, question.CalData.TrueAnswer)
 	StoreQuestion(question)
 	StoreWholeQuestion(question)
+}
+
+func handleNextQuestion() {
+	question := &Question{}
+
+	// Get random question from db for live streaming
+	question = FetchRandomQuestion()
+	println(question.Data.Quiz)
+	ansPos := 0
+	odds := make([]float32, len(question.Data.Options))
+	question.CalData.Odds = odds
+	question.CalData.AnswerPos = ansPos
+	questionInfo, _ = json.Marshal(question)
+
+	answer := question.CalData.Answer
+
+	// fetch image of the quiz
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+
+	// Image time and question core information may not be sent in ONE http GET response to client
+	question.CalData.ImageTime = <-imgTimeChan
+	questionInfo, _ = json.Marshal(question)
+	question = nil
+}
+
+func handleCurrentAnswer() {
+	question := &Question{}
+	err := json.Unmarshal(questionInfo, question)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	answer := question.CalData.Answer
+	ansPos := 0
+	odds := make([]float32, len(question.Data.Options))
+	for i, option := range question.Data.Options {
+		if option == answer {
+			ansPos = i + 1
+			odds[i] = 666
+			break
+		}
+	}
+	question.CalData.Odds = odds
+	question.CalData.AnswerPos = ansPos
+	questionInfo, _ = json.Marshal(question)
+	question = nil
 }
 
 func clickProcess(ansPos int, question *Question) {

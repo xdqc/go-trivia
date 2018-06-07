@@ -24,9 +24,13 @@
   <div class="main">
     <div class="form-area">
       <!-- Number of Question  -->
-      <div class="wrapper" id="pages">
+      <div *ngIf="!showImage" class="wrapper" id="pages">
         <span id="quizNumber">{{qNum}}</span><span>/{{total}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
         <span>{{qSchool}}</span>&sdot;<span>{{qType}}</span>
+      </div>
+      <!-- Question #id -->
+      <div *ngIf="showImage">
+        <span>题号：#{{total}}</span>
       </div>
 
       <!-- Quiz Question -->
@@ -40,7 +44,7 @@
         </ul>
       </div>
     </div>
-    <div>
+    <div *ngIf="!showImage">
       <button class="btn btn-orange" (click)="fetchOCR()">
         <span>Fetch OCR</span>
       </button>

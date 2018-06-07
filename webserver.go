@@ -56,6 +56,18 @@ func RunWeb(port string) {
 		w.Write(quizContextInfo)
 	}).Methods("GET")
 
+	// 3. Live Stream Questions
+	r.HandleFunc("/nextQuiz", func(w http.ResponseWriter, r *http.Request) {
+		go handleNextQuestion()
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(nil)
+	}).Methods("GET")
+	r.HandleFunc("/currentQuizAnswer", func(w http.ResponseWriter, r *http.Request) {
+		go handleCurrentAnswer()
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(nil)
+	}).Methods("GET")
+
 	r.PathPrefix("/solver/").Handler(http.StripPrefix("/solver/", http.FileServer(http.Dir("./lpsolver/dist"))))
 
 	// Use default options
@@ -187,7 +199,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	rawImgReader := make(chan io.ReadCloser)
 	done := false
 	for _, img := range images {
-		url := img.Thumb
+		url := img.Img
 		go func(c chan io.ReadCloser) {
 			response, e := client.Get(url)
 			if e != nil {

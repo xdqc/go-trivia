@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -66,6 +67,7 @@ func StoreWholeQuestion(question *Question) error {
 	return nil
 }
 
+//FetchQuestion get question answer of a given quiz
 func FetchQuestion(question *Question) (str string) {
 	memoryDb.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(QuestionBucket))
@@ -75,6 +77,41 @@ func FetchQuestion(question *Question) (str string) {
 		}
 		q := DecodeQuestionCols(v, time.Now().Unix())
 		str = q.Answer
+		return nil
+	})
+	return
+}
+
+//FetchRandomQuestion get a random whole question
+func FetchRandomQuestion() (question *Question) {
+	question = &Question{}
+	memoryDb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(WholeQuestionBucket))
+		size := b.Stats().KeyN
+		c := b.Cursor()
+		firstk, _ := c.First()
+		c.Seek(firstk)
+		rand.Seed(time.Now().UnixNano())
+		pos := rand.Intn(size)
+
+		for index := 0; index < pos; index++ {
+			c.Next()
+		}
+
+		k, v := c.Prev()
+		println(pos, size, "quiz: ", string(k))
+
+		var wq = &WholeQuestionCols{}
+		err := json.Unmarshal(v, wq)
+		if err == nil {
+			question.Data.Quiz = string(k)
+			question.Data.School = wq.School
+			question.Data.Type = wq.Type
+			question.Data.Options = wq.Options
+			question.CalData.Answer = wq.Answer
+		} else {
+			log.Println(err.Error())
+		}
 		return nil
 	})
 	return

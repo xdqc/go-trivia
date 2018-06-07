@@ -75,17 +75,17 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.ans = this.q.caldata.Answer;
             this.qSchool = this.q.data.school;
             this.qType = this.q.data.type;
-            this.ansPos = this.q.caldata.AnswerPos;
             this.odds = this.q.caldata.Odds;
             if (this.odds != null) {              
               for (let i = 0; i < this.odds.length; i++) {
                 let n = parseFloat(this.odds[i])
-                this.odds[i] = n >= 999 ? "999" : n >= 888 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
+                this.odds[i] = n >= 999 ? "999" : n >= 666 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
               }
             }
             this.changeQuizAnsBackground(this.q.caldata.ImageTime)
             this.speechText(this)
             this.quiz = this.q.data.quiz;
+            this.ansPos = this.q.caldata.AnswerPos;
             this.qNum = this.q.data.num;
           }
         }
@@ -105,7 +105,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   speechText(that) {
-    if (that.speakOn && that.quiz !== that.q.data.quiz) {
+    if (that.speakOn && (that.quiz !== that.q.data.quiz || that.quiz+that.ansPos !== that.q.data.quiz+that.q.caldata.AnswerPos)) {
       const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
       const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
 
@@ -131,7 +131,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       let higestOdd = 0
       that.odds.forEach(n => higestOdd = parseFloat(n) > higestOdd ? parseFloat(n) : higestOdd)
-      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'should be ' : higestOdd == 888 ? 'choose ' :higestOdd > 100? 'absolutely ':higestOdd > 10? 'definitely ':higestOdd > 3? 'exactly ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
+      let utterance = higestOdd == 444 ? 'google ' : higestOdd == 333 ? 'should be ' : higestOdd == 888||higestOdd == 666 ? 'choose ' :higestOdd > 100? 'absolutely ':higestOdd > 10? 'definitely ':higestOdd > 3? 'exactly ': higestOdd > 1 ? 'probably ': higestOdd > 0.5 ? 'possibly ' : 'perhaps ';
       if (that.q.data.school == '理科' && higestOdd < 1) {
         utterance = 'Attention, ' + utterance
       }
@@ -140,10 +140,20 @@ export class BrainComponent implements OnInit, OnDestroy {
       
       sayNumber.voice = en[Math.floor(Math.random() * en.length)];
       sayNumber.volume = (that.volume || 100) / 80;
-      speechSynthesis.speak(sayNumber)
 
       if (higestOdd >= 1) {
-        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz + that.q.caldata.Answer);//
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz+that.q.caldata.Answer);//
+        sayChoice.voice = zh[0];
+          // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+          // ? zh[Math.floor(Math.random() * zh.length)]
+          // : sayNumber.voice;
+        sayChoice.rate = 1.05;
+        sayChoice.pitch = 1;
+        sayChoice.volume = (that.volume || 100) / 100;
+        that.language = sayNumber.voice.lang
+        speechSynthesis.speak(sayChoice)
+      } else {
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz);//
         sayChoice.voice = zh[0];
           // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           // ? zh[Math.floor(Math.random() * zh.length)]
