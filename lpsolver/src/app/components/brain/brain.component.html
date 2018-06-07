@@ -30,7 +30,7 @@
       </div>
       <!-- Question #id -->
       <div *ngIf="showImage">
-        <span>题号：#{{total}}</span>
+        <span>题号：#{{qNum}}</span>
       </div>
 
       <!-- Quiz Question -->
@@ -38,6 +38,12 @@
         <p id="question">{{quiz}}</p>
         <ul id="answer">
           <li *ngFor="let option of options;let i=index" class="correct-{{i+1==ansPos}}">
+            <span [ngSwitch]="i">
+            <span *ngSwitchCase="0">A. </span>
+            <span *ngSwitchCase="1">B. </span>
+            <span *ngSwitchCase="2">C. </span>
+            <span *ngSwitchCase="3">D. </span>
+            </span>
             {{option}}
             <span class="odds">{{odds[i]}}</span>
           </li>

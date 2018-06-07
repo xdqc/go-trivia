@@ -63,7 +63,9 @@ func RunWeb(port string) {
 		w.Write(nil)
 	}).Methods("GET")
 	r.HandleFunc("/currentQuizAnswer", func(w http.ResponseWriter, r *http.Request) {
-		go handleCurrentAnswer()
+		qNums, _ := r.URL.Query()["qNum"]
+		qNum, _ := strconv.Atoi(qNums[0])
+		go handleCurrentAnswer(qNum)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(nil)
 	}).Methods("GET")
@@ -183,7 +185,7 @@ func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan
 	for _, img := range resultImages.List {
 		width, _ := strconv.Atoi(img.Width)
 		height, _ := strconv.Atoi(img.Height)
-		if width < height && height > 200 {
+		if width > height && height > 200 {
 			images = append(images, img)
 			if len(images) >= 5 {
 				break

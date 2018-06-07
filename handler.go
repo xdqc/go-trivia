@@ -184,6 +184,7 @@ func handleNextQuestion() {
 	println(question.Data.Quiz)
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
+	question.Data.Num = rand.Intn(100)
 	question.CalData.Odds = odds
 	question.CalData.AnswerPos = ansPos
 	questionInfo, _ = json.Marshal(question)
@@ -201,11 +202,14 @@ func handleNextQuestion() {
 	question = nil
 }
 
-func handleCurrentAnswer() {
+func handleCurrentAnswer(qNum int) {
 	question := &Question{}
 	err := json.Unmarshal(questionInfo, question)
 	if err != nil {
 		log.Println(err.Error())
+		return
+	} else if question.Data.Num != qNum {
+		log.Println("Question #id does not match current.")
 		return
 	}
 
@@ -223,6 +227,9 @@ func handleCurrentAnswer() {
 	question.CalData.AnswerPos = ansPos
 	questionInfo, _ = json.Marshal(question)
 	question = nil
+
+	time.Sleep(10*time.Second)
+	handleNextQuestion()
 }
 
 func clickProcess(ansPos int, question *Question) {
