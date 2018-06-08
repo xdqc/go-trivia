@@ -3,11 +3,13 @@ package solver
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"math/rand"
 	"os/exec"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -244,6 +246,7 @@ func handleCurrentAnswer(qNum int, user string, choice string) {
 			ansPos = i + 1
 			if ansPos == question.CalData.Choice {
 				odds[i] = 666
+				go recordCorrectUser(user)
 			} else {
 				odds[i] = 333
 			}
@@ -390,6 +393,48 @@ func inputADBText() {
 	}
 	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
 	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back
+}
+
+func recordCorrectUser(user string) {
+	ranking := make(map[string]int)
+	bs, _ := ioutil.ReadFile("ranking.txt")
+	txt := string(bs)
+	lines := strings.Split(txt, "\n")
+	for _, line := range lines {
+		if len(strings.Split(line, "\t")) == 2 {
+			name := strings.Split(line, "\t")[1]
+			count, _ := strconv.Atoi(strings.Split(line, "\t")[0])
+			ranking[name] = count
+			log.Println(name, count)
+		}
+	}
+
+	if val, ok := ranking[user]; ok {
+		ranking[user] = val + 1
+	} else {
+		ranking[user] = 1
+	}
+
+	type kv struct {
+		Key   string
+		Value int
+	}
+
+	var ss []kv
+	for k, v := range ranking {
+		ss = append(ss, kv{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].Value > ss[j].Value
+	})
+
+	contents := ""
+	for _, kv := range ss {
+		contents += fmt.Sprintf("%d\t%s\n", kv.Value, kv.Key)
+	}
+	contents += "|\n|\n|\n"
+	ioutil.WriteFile("ranking.txt", []byte(contents), 0644)
 }
 
 type Question struct {

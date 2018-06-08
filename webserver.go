@@ -80,7 +80,7 @@ func RunWeb(port string) {
 		err := json.Unmarshal(questionInfo, question)
 		if err != nil {
 			log.Println(err.Error())
-		} else if voice < 5 && voice >= 0 {
+		} else if voice <= 6 && voice >= 0 {
 			question.CalData.Voice = voice
 			questionInfo, _ = json.Marshal(question)
 		}

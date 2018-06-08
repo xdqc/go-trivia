@@ -1,5 +1,5 @@
 <!-- Main page -->
-<div *ngIf="showImage" ></div>
+<div *ngIf="showImage"></div>
 <div class="bg bg-img" id="background">
   <div class="widgit-area">
     <div class="toggelSwitch toggelSwitch-img">
@@ -25,24 +25,27 @@
     <div class="form-area">
       <!-- Number of Question  -->
       <div *ngIf="!showImage" class="wrapper" id="pages">
-        <span id="quizNumber">{{qNum}}</span><span>/{{total}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
-        <span>{{qSchool}}</span>&sdot;<span>{{qType}}</span>
-      </div>
-      <!-- Question #id -->
-      <div *ngIf="showImage">
-        <span>题号：{{qNum}}</span>
+        <span id="quizNumber">{{qNum}}</span>
+        <span>/{{total}}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+        <span>{{qSchool}}</span>&sdot;
+        <span>{{qType}}</span>
       </div>
 
       <!-- Quiz Question -->
       <div class="quiz-questions" id="display-area">
-        <p id="question">{{quiz}}</p>
+        <p id="question">
+          <!-- Question #id -->
+          <span *ngIf="showImage">
+            <span>{{qNum}}. </span>
+          </span>
+          {{quiz}}</p>
         <ul id="answer">
           <li *ngFor="let option of options;let i=index" class="wrong-{{i+1==qChoice}} correct-{{i+1==ansPos}}">
             <span [ngSwitch]="i">
-            <span *ngSwitchCase="0">A. </span>
-            <span *ngSwitchCase="1">B. </span>
-            <span *ngSwitchCase="2">C. </span>
-            <span *ngSwitchCase="3">D. </span>
+              <span *ngSwitchCase="0">A. </span>
+              <span *ngSwitchCase="1">B. </span>
+              <span *ngSwitchCase="2">C. </span>
+              <span *ngSwitchCase="3">D. </span>
             </span>
             {{option}}
             <span class="odds">{{odds[i]}}</span>

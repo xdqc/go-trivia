@@ -163,7 +163,11 @@ export class BrainComponent implements OnInit, OnDestroy {
         that.language = sayNumber.voice.lang
         speechSynthesis.speak(sayChoice)
       } else {
-        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz);//
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz + 
+          '. A. '+that.q.data.options[0]+
+          '. B. '+that.q.data.options[1]+
+          '. C. '+that.q.data.options[2]+
+          '. D. '+that.q.data.options[3]);//
         sayChoice.voice = zh[this.qVoice];
           // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
           // ? zh[Math.floor(Math.random() * zh.length)]
