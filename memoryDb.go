@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -83,23 +84,35 @@ func FetchQuestion(question *Question) (str string) {
 }
 
 //FetchRandomQuestion get a random whole question
-func FetchRandomQuestion() (question *Question) {
+func FetchRandomQuestion(topic string) (question *Question) {
 	question = &Question{}
+	kv := make(map[string][]byte)
+	kvt := make(map[string][]byte)
 	memoryDb.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(WholeQuestionBucket))
-		size := b.Stats().KeyN
 		c := b.Cursor()
-		firstk, _ := c.First()
-		c.Seek(firstk)
-		rand.Seed(time.Now().UnixNano())
-		pos := rand.Intn(size)
 
-		for index := 0; index < pos; index++ {
-			c.Next()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			kv[string(k)] = v
+			if topic != "" && (strings.Contains(string(k), topic) || strings.Contains(string(v), "\""+topic+"\"")) {
+				kvt[string(k)] = v
+			}
+		}
+		// use topiced keys
+		if len(kvt) > 0 {
+			kv = kvt
 		}
 
-		k, v := c.Prev()
-		println(pos, size, "quiz: ", string(k))
+		// get random key of the map
+		i := rand.Intn(len(kv))
+		var k string
+		for k = range kv {
+			if i == 0 {
+				break
+			}
+			i--
+		}
+		v := kv[k]
 
 		var wq = &WholeQuestionCols{}
 		err := json.Unmarshal(v, wq)

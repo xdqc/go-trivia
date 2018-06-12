@@ -58,7 +58,12 @@ func RunWeb(port string) {
 
 	// 3. Live Stream Questions
 	r.HandleFunc("/nextQuiz", func(w http.ResponseWriter, r *http.Request) {
-		go handleNextQuestion()
+		topics, _ := r.URL.Query()["topic"]
+		if len(topics) == 0 {
+			go handleNextQuestion("")
+		} else {
+			go handleNextQuestion(topics[0])
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(nil)
 	}).Methods("GET")

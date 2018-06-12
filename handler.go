@@ -56,9 +56,9 @@ func handleQuestionResp(bs []byte) {
 	answer := FetchQuestion(question)
 
 	// fetch image of the quiz
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	imgTimeChan := make(chan int64)
-	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	// imgTimeChan := make(chan int64)
+	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	// question.CalData.TrueAnswer = answer
 	// question.CalData.Answer = answer
@@ -154,9 +154,9 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 
-	// Image time and question core information may not be sent in ONE http GET response to client
-	question.CalData.ImageTime = <-imgTimeChan
-	questionInfo, _ = json.Marshal(question)
+	// // Image time and question core information may not be sent in ONE http GET response to client
+	// question.CalData.ImageTime = <-imgTimeChan
+	// questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -180,13 +180,12 @@ func handleChooseResponse(bs []byte) {
 	StoreWholeQuestion(question)
 }
 
-func handleNextQuestion() {
+func handleNextQuestion(topic string) {
 	question := &Question{}
 	answers = make([]string, 0)
 
 	// Get random question from db for live streaming
-	question = FetchRandomQuestion()
-	println(question.Data.Quiz)
+	question = FetchRandomQuestion(topic)
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 	for {
@@ -262,7 +261,7 @@ func handleCurrentAnswer(qNum int, user string, choice string) {
 	answers = append(answers, answer)
 
 	time.Sleep(10 * time.Second)
-	handleNextQuestion()
+	handleNextQuestion("")
 }
 
 func clickProcess(ansPos int, question *Question) {
@@ -276,11 +275,11 @@ func clickProcess(ansPos int, question *Question) {
 			ansPos = rand.Intn(4) + 1
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(3000)+2000))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 1500)
+		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
 		if rand.Intn(100) < 10 {
 			time.Sleep(time.Millisecond * 500)
