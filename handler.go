@@ -56,12 +56,10 @@ func handleQuestionResp(bs []byte) {
 	answer := FetchQuestion(question)
 
 	// fetch image of the quiz
-	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	// imgTimeChan := make(chan int64)
-	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
-	// question.CalData.TrueAnswer = answer
-	// question.CalData.Answer = answer
 	go SetQuestion(question)
 
 	answerItem := "不知道"
@@ -148,15 +146,15 @@ func handleQuestionResp(bs []byte) {
 		go clickProcess(ansPos, question)
 	} // click answer
 
-	log.Printf("Question answer predict =>\n 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
+	fmt.Printf(" 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
 	question.CalData.Answer = answerItem
 	question.CalData.AnswerPos = ansPos
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 
-	// // Image time and question core information may not be sent in ONE http GET response to client
-	// question.CalData.ImageTime = <-imgTimeChan
-	// questionInfo, _ = json.Marshal(question)
+	// Image time and question core information may not be sent in ONE http GET response to client
+	question.CalData.ImageTime = <-imgTimeChan
+	questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -270,12 +268,12 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "哲学")) {
+		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.School == "生活")) {
 			// click randomly, only do it once on first 4 quiz
 			ansPos = rand.Intn(4) + 1
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(3000)+2000))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+1500))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
@@ -320,7 +318,7 @@ func clickEmoji() {
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
-	time.Sleep(time.Millisecond * 200)
+	time.Sleep(time.Millisecond * 100)
 	fX, fY := 170, 560
 	dX, dY := 150, 150
 	touchX, touchY := strconv.Itoa(fX+dX*(rand.Intn(2)*3+rand.Intn(2))), strconv.Itoa(fY+dY*rand.Intn(3))

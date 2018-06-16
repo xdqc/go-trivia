@@ -105,6 +105,7 @@ func FetchRandomQuestion(topic string) (question *Question) {
 
 		// get random key of the map
 		i := rand.Intn(len(kv))
+		n := i
 		var k string
 		for k = range kv {
 			if i == 0 {
@@ -113,6 +114,8 @@ func FetchRandomQuestion(topic string) (question *Question) {
 			i--
 		}
 		v := kv[k]
+
+		fmt.Printf("%d/%d	%v\n", n, len(kv), k)
 
 		var wq = &WholeQuestionCols{}
 		err := json.Unmarshal(v, wq)
