@@ -268,16 +268,16 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.School == "生活")) {
+		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
 			// click randomly, only do it once on first 4 quiz
 			ansPos = rand.Intn(4) + 1
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+1500))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+2000))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 1000)
+		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
 		if rand.Intn(100) < 10 {
 			time.Sleep(time.Millisecond * 500)
