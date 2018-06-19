@@ -142,7 +142,7 @@ func handleQuestionResp(bs []byte) {
 	}
 
 	answers = append(answers, answerItem)
-	if Mode == 1 {
+	if Mode == 1 && strings.Contains(string(bs), "218580973") {
 		go clickProcess(ansPos, question)
 	} // click answer
 
@@ -273,7 +273,7 @@ func clickProcess(ansPos int, question *Question) {
 			ansPos = rand.Intn(4) + 1
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+2000))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+1500))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
