@@ -16,13 +16,16 @@ import (
 )
 
 var (
+	brainID      string
 	roomID       string
 	storedAnsPos int
-	randClicked  bool
-	luckyPedias  []string
-	answers      []string
+	selfScore    int
+	oppoScore    int
+	randClicked  bool     // For click random answer
+	luckyPedias  []string // For input question comment
+	answers      []string // For input question comment
 
-	prevQuizNum int
+	prevQuizNum int // For getting random question from db for live streaming
 )
 
 func handleQuestionResp(bs []byte) {
@@ -31,6 +34,22 @@ func handleQuestionResp(bs []byte) {
 	if len(bs) > 0 && !strings.Contains(string(bs), "encryptedData") {
 		// Get quiz from MITM
 		json.Unmarshal(bs, question)
+
+		// Get self and oppo score
+		re := regexp.MustCompile(`"score":{"(\d+)":(\d+),"(\d+)":(\d+)}`)
+		scores := re.FindStringSubmatch(string(bs))
+
+		if len(scores) == 5 {
+			if scores[1] == brainID {
+				selfScore, _ = strconv.Atoi(scores[2])
+				oppoScore, _ = strconv.Atoi(scores[4])
+			} else if scores[3] == brainID {
+				selfScore, _ = strconv.Atoi(scores[4])
+				oppoScore, _ = strconv.Atoi(scores[2])
+			}
+		} else {
+			selfScore, oppoScore = 0, 0
+		}
 	} else {
 		// Get quiz from OCR
 		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
@@ -55,10 +74,10 @@ func handleQuestionResp(bs []byte) {
 	//Get the answer from the db if question fetched by MITM
 	answer := FetchQuestion(question)
 
-	// fetch image of the quiz
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	imgTimeChan := make(chan int64)
-	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	// // fetch image of the quiz
+	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	// imgTimeChan := make(chan int64)
+	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	go SetQuestion(question)
 
@@ -142,7 +161,7 @@ func handleQuestionResp(bs []byte) {
 	}
 
 	answers = append(answers, answerItem)
-	if Mode == 1 && strings.Contains(string(bs), "218580973") {
+	if Mode == 1 && strings.Contains(string(bs), brainID) {
 		go clickProcess(ansPos, question)
 	} // click answer
 
@@ -152,9 +171,9 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 
-	// Image time and question core information may not be sent in ONE http GET response to client
-	question.CalData.ImageTime = <-imgTimeChan
-	questionInfo, _ = json.Marshal(question)
+	// // Image time and question core information may not be sent in ONE http GET response to client
+	// question.CalData.ImageTime = <-imgTimeChan
+	// questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -268,30 +287,43 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "演艺" || question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
-			// click randomly, only do it once on first 4 quiz
-			ansPos = rand.Intn(4) + 1
+		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
+		// 	// click randomly, only do it once on first 4 quiz
+		// 	ansPos = rand.Intn(4) + 1
+		// 	randClicked = true
+		// }
+		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 250) {
+			// click randomly, only do it when have big advantage
+			correctAnsPos := ansPos
+			for {
+				ansPos = rand.Intn(4) + 1
+				if ansPos != correctAnsPos {
+					break
+				}
+			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(4000)+1500))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+3000))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
-		if rand.Intn(100) < 10 {
+		if rand.Intn(100) < 7 {
 			time.Sleep(time.Millisecond * 500)
 			go clickEmoji()
 		}
 	} else {
 		// go to next match
 		randClicked = false
+		selfScore = 0
+		oppoScore = 0
 
 		// inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
-		time.Sleep(time.Millisecond * 1000)
+		time.Sleep(time.Millisecond * 800)
 		go clickAction(centerX, nextMatchY) // start new game
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, nextMatchY)

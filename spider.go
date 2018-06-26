@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/coreos/goproxy"
+	"github.com/xdqc/letterpress-solver/device"
 	"github.com/yanyiwu/gojieba"
 )
 
@@ -46,6 +47,7 @@ func newSpider() *spider {
 	sp := &spider{}
 	sp.proxy = goproxy.NewProxyHttpServer()
 	sp.proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+
 	//Initialize jieba segmentor
 	JB = gojieba.NewJieba()
 
@@ -68,6 +70,9 @@ func newSpider() *spider {
 			Frequncy: float32(freq),
 		}
 	}
+
+	//Initialize brainID
+	brainID = device.GetConfig().BrainID
 	return sp
 }
 
