@@ -303,7 +303,7 @@ func clickProcess(ansPos int, question *Question) {
 			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+3000))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2800))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))

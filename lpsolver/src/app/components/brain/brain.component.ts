@@ -35,7 +35,7 @@ export class BrainComponent implements OnInit, OnDestroy {
   language: string;
   quotes:Quotes.Quote[];
 
-  showImage: boolean = true;
+  showImage: boolean = false;
   imgPath: string = 'solver/assets/quiz.jpg?';
 
   fetch
@@ -121,7 +121,6 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out game over
       if (that.q.data.quiz == "game over") {
         this.speakGameover()
-        console.log(that.q.data.quiz)
         return
       }
 
@@ -178,23 +177,31 @@ export class BrainComponent implements OnInit, OnDestroy {
   speakGameover(){
     const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
     let quote = this.quotes[Math.floor(Math.random()*this.quotes.length)];
+    this.q.data.quiz = quote.text + " - " + quote.author;
+
     let sayGG = new SpeechSynthesisUtterance(quote.text+" "+(quote.author=="Unknown"?"":quote.author));
     sayGG.voice = en[Math.floor(Math.random() * en.length)];
     sayGG.rate = 0.9;
+    console.log(quote);
     speechSynthesis.speak(sayGG)
   }
 
   changeQuizAnsBackground(newImgTime: number) {
     
-    if (newImgTime > this.imgTime && this.showImage) {
-      this.imgTime = newImgTime;
-      let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
-      sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("' + this.imgPath + this.imgTime + '")', 0);
-      sheet.deleteRule(1);
-
-      //reset wakeup alarm
-      clearInterval(this.wakeUp);
-      this.wakeUp = setInterval(()=>this.speakGameover(), 60000);
+    if (this.showImage) {      
+      if (newImgTime > this.imgTime) {
+        this.imgTime = newImgTime;
+        let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
+        sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("' + this.imgPath + this.imgTime + '")', 0);
+        sheet.deleteRule(1);
+  
+      }
+      
+      if (this.quiz !== this.q.data.quiz) {
+        //reset wakeup alarm
+        clearInterval(this.wakeUp);
+        this.wakeUp = setInterval(()=>this.speakGameover(), 60000);
+      }
     }
   }
 
