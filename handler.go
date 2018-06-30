@@ -74,10 +74,10 @@ func handleQuestionResp(bs []byte) {
 	//Get the answer from the db if question fetched by MITM
 	answer := FetchQuestion(question)
 
-	// // fetch image of the quiz
-	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	// imgTimeChan := make(chan int64)
-	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	// fetch image of the quiz
+	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	imgTimeChan := make(chan int64)
+	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	go SetQuestion(question)
 
@@ -103,7 +103,7 @@ func handleQuestionResp(bs []byte) {
 	storedAnsPos = ansPos
 
 	// Put true here to force searching, even if found answer in db
-	if storedAnsPos == 0 {
+	if true || storedAnsPos == 0 {
 		var ret map[string]int
 		ret, luckyStr := GetFromAPI(question.Data.Quiz, question.Data.Options)
 
@@ -137,7 +137,7 @@ func handleQuestionResp(bs []byte) {
 				// searched result could be wrong
 				if storedAnsPos != 0 {
 					re := regexp.MustCompile("\\p{Han}+")
-					if odds[ansPos-1] < 5 || len(answer) > 6 || !re.MatchString(answer) {
+					if odds[ansPos-1] < 50 || len(answer) > 6 || !re.MatchString(answer) {
 						log.Println("searched answer could be wrong...")
 						answerItem = answer
 						ansPos = storedAnsPos
@@ -171,9 +171,9 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.Odds = odds
 	questionInfo, _ = json.Marshal(question)
 
-	// // Image time and question core information may not be sent in ONE http GET response to client
-	// question.CalData.ImageTime = <-imgTimeChan
-	// questionInfo, _ = json.Marshal(question)
+	// Image time and question core information may not be sent in ONE http GET response to client
+	question.CalData.ImageTime = <-imgTimeChan
+	questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -303,7 +303,7 @@ func clickProcess(ansPos int, question *Question) {
 			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2800))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2500))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
@@ -319,7 +319,7 @@ func clickProcess(ansPos int, question *Question) {
 		selfScore = 0
 		oppoScore = 0
 
-		// inputADBText()
+		inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu

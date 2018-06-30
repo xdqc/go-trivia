@@ -33,7 +33,8 @@ export class BrainComponent implements OnInit, OnDestroy {
   speakOn: boolean;
   volume: number;
   language: string;
-  quotes:Quotes.Quote[];
+  quotes: Quotes.Quote[];
+  quote: string;
 
   showImage: boolean = false;
   imgPath: string = 'solver/assets/quiz.jpg?';
@@ -50,7 +51,7 @@ export class BrainComponent implements OnInit, OnDestroy {
     this.total = 5;
     this.speakOn = false;
     this.qVoice = 3;
-    this.getQuoteData().subscribe(data => {this.quotes=(data as Quotes.Quote[]);console.log(this.quotes)}, error => console.log(error));
+    this.getQuoteData().subscribe(data => { this.quotes = (data as Quotes.Quote[]); console.log(this.quotes) }, error => console.log(error));
   }
 
   ngOnInit() {
@@ -82,10 +83,10 @@ export class BrainComponent implements OnInit, OnDestroy {
             this.qChoice = this.q.caldata.Choice;
             this.ansUser = this.q.caldata.User;
             this.odds = this.q.caldata.Odds;
-            if (this.q.caldata.Voice > 0 && this.q.caldata.Voice <= 6){
+            if (this.q.caldata.Voice > 0 && this.q.caldata.Voice <= 6) {
               this.qVoice = this.q.caldata.Voice - 1;
             }
-            if (this.odds != null) {              
+            if (this.odds != null) {
               for (let i = 0; i < this.odds.length; i++) {
                 let n = parseFloat(this.odds[i])
                 this.odds[i] = n >= 999 ? "999" : n >= 666 ? n.toFixed(0) : n > 0.005 ? n.toFixed(2) : "0";
@@ -93,15 +94,17 @@ export class BrainComponent implements OnInit, OnDestroy {
             }
             this.changeQuizAnsBackground(this.q.caldata.ImageTime)
             this.speechText(this)
+
+            this.ansPos = false&&this.showImage && (this.ansPos!==this.q.caldata.AnswerPos || this.qNum!==this.q.data.num) ? 0 : this.q.caldata.AnswerPos;
             this.quiz = this.q.data.quiz;
-            this.ansPos = this.q.caldata.AnswerPos;
             this.qNum = this.q.data.num;
+            this.quote = this.quiz === "game over" ? this.quote : "";
           }
         }
       );
   }
 
-  fetchOCR(){
+  fetchOCR() {
     this.http.post('http://' + env.host + ':' + env.port + '/brain-ocr', null).subscribe();
   }
 
@@ -114,7 +117,8 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   speechText(that) {
-    if (that.speakOn && (that.quiz !== that.q.data.quiz || that.quiz+that.ansPos !== that.q.data.quiz+that.q.caldata.AnswerPos)) {
+    if (that.speakOn && (that.quiz !== that.q.data.quiz)) {
+
       const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
       const zh = speechSynthesis.getVoices().filter(v => v.lang.indexOf('zh') >= 0);
 
@@ -122,6 +126,9 @@ export class BrainComponent implements OnInit, OnDestroy {
       if (that.q.data.quiz == "game over") {
         this.speakGameover()
         return
+      } else {
+        // show the true answer
+        setTimeout(()=>{this.ansPos = this.q.caldata.AnswerPos;},7000);
       }
 
       // speak out quiz school
@@ -134,37 +141,43 @@ export class BrainComponent implements OnInit, OnDestroy {
       // speak out new question answer
       this.highestOdd = 0;
       that.odds.forEach(n => this.highestOdd = parseFloat(n) > this.highestOdd ? parseFloat(n) : this.highestOdd)
-      let utterance = this.highestOdd == 444 ? 'google ' : this.highestOdd == 333 ? 'should be ' : this.highestOdd == 888||that.highestOdd == 666 ? 'choose ' :that.highestOdd > 100? 'absolutely ':that.highestOdd > 10? 'definitely ':that.highestOdd > 3? 'exactly ': that.highestOdd > 1 ? 'probably ': that.highestOdd > 0.5 ? 'possibly ' : 'perhaps ';
+      let utterance = this.highestOdd == 444 ? 'google ' : this.highestOdd == 333 ? 'should be ' : this.highestOdd == 888 || that.highestOdd == 666 ? 'choose ' : that.highestOdd > 100 ? 'absolutely ' : that.highestOdd > 10 ? 'definitely ' : that.highestOdd > 3 ? 'exactly ' : that.highestOdd > 1 ? 'probably ' : that.highestOdd > 0.5 ? 'possibly ' : 'perhaps ';
       if (that.q.data.school == '理科' && this.highestOdd < 1) {
         utterance = 'Attention, ' + utterance
       }
 
       let sayNumber = new SpeechSynthesisUtterance(utterance + that.q.caldata.AnswerPos + '. ');
-      
+
       sayNumber.voice = en[Math.floor(Math.random() * en.length)];
       sayNumber.volume = (that.volume || 100) / 80;
 
       if (this.highestOdd >= 1) {
-        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz+that.q.caldata.Answer);//
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz);//
         sayChoice.voice = zh[this.qVoice];
-          // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
-          // ? zh[Math.floor(Math.random() * zh.length)]
-          // : sayNumber.voice;
+        // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+        // ? zh[Math.floor(Math.random() * zh.length)]
+        // : sayNumber.voice;
         sayChoice.rate = 1.05;
         sayChoice.pitch = 1;
         sayChoice.volume = (that.volume || 100) / 100;
         that.language = sayNumber.voice.lang
         speechSynthesis.speak(sayChoice)
+
+        setTimeout(()=>{
+          sayChoice.text = '选'+this.q.caldata.AnswerPos+'-: '+ that.q.caldata.Answer;
+          speechSynthesis.speak(sayChoice);
+          sayChoice=null;
+        },6000);
       } else {
-        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz + 
-          '. A. '+that.q.data.options[0]+
-          '. B. '+that.q.data.options[1]+
-          '. C. '+that.q.data.options[2]+
-          '. D. '+that.q.data.options[3]);//
+        let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz +
+          '. A. ' + that.q.data.options[0] +
+          '. B. ' + that.q.data.options[1] +
+          '. C. ' + that.q.data.options[2] +
+          '. D. ' + that.q.data.options[3]);//
         sayChoice.voice = zh[this.qVoice];
-          // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
-          // ? zh[Math.floor(Math.random() * zh.length)]
-          // : sayNumber.voice;
+        // /[\u4E00-\u9FA5\uF900-\uFA2D]/.test(that.q.caldata.Answer)
+        // ? zh[Math.floor(Math.random() * zh.length)]
+        // : sayNumber.voice;
         sayChoice.rate = 1.05;
         sayChoice.pitch = 1;
         sayChoice.volume = (that.volume || 100) / 100;
@@ -174,12 +187,12 @@ export class BrainComponent implements OnInit, OnDestroy {
     }
   }
 
-  speakGameover(){
+  speakGameover() {
     const en = speechSynthesis.getVoices().filter(v => v.lang.indexOf('en') >= 0);
-    let quote = this.quotes[Math.floor(Math.random()*this.quotes.length)];
-    this.q.data.quiz = quote.text + " - " + quote.author;
+    let quote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
+    this.quote = quote.text + "\n\n\t - " + quote.author;
 
-    let sayGG = new SpeechSynthesisUtterance(quote.text+" "+(quote.author=="Unknown"?"":quote.author));
+    let sayGG = new SpeechSynthesisUtterance(quote.text + " " + (quote.author == "Unknown" ? "" : quote.author));
     sayGG.voice = en[Math.floor(Math.random() * en.length)];
     sayGG.rate = 0.9;
     console.log(quote);
@@ -187,29 +200,29 @@ export class BrainComponent implements OnInit, OnDestroy {
   }
 
   changeQuizAnsBackground(newImgTime: number) {
-    
-    if (this.showImage) {      
+
+    if (this.showImage) {
       if (newImgTime > this.imgTime) {
         this.imgTime = newImgTime;
         let sheet = document.styleSheets[document.styleSheets.length - 1] as CSSStyleSheet
         sheet.addRule('.bg-img[_ngcontent-c1]::before', 'background-image: url("' + this.imgPath + this.imgTime + '")', 0);
         sheet.deleteRule(1);
-  
+
       }
-      
+
       if (this.quiz !== this.q.data.quiz) {
         //reset wakeup alarm
         clearInterval(this.wakeUp);
-        this.wakeUp = setInterval(()=>this.speakGameover(), 60000);
+        this.wakeUp = setInterval(() => this.speakGameover(), 60000);
       }
     }
   }
 
-  getQuoteData(){
+  getQuoteData() {
     let apiUrl = 'solver/assets/quotes.json';
     return this.http.get(apiUrl)
-    .map((res:any) => res.json());
- }  
+      .map((res: any) => res.json());
+  }
 
 
   //process idioms json
