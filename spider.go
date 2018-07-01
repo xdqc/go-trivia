@@ -55,22 +55,23 @@ func newSpider() *spider {
 	JB = gojieba.NewJieba()
 
 	//Initialize corpus
-	csvFile, _ := os.Open("CorpusWordPOSlist.csv")
+	csvFile, _ := os.Open("CorpusBG.csv")
 	reader := csv.NewReader(bufio.NewReader(csvFile))
-	CorpusWord = make(map[string]CVocab)
+	CorpusWord = make(map[string]zhCNvocabulary)
 	for {
 		line, err := reader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			log.Fatal(err)
-		}
-		count, _ := strconv.Atoi(line[3])
-		freq, _ := strconv.ParseFloat(line[4], 32)
-		CorpusWord[line[0]] = CVocab{
-			Category: line[1],
-			Count:    count,
-			Frequncy: float32(freq),
+		} else if len([]rune(line[1])) > 0 {
+			count, _ := strconv.Atoi(line[1])
+			// freq, _ := strconv.ParseFloat(line[4], 32)
+			CorpusWord[line[0]] = zhCNvocabulary{
+				Count: count,
+				// Category: line[1],
+				// Frequncy: float32(freq),
+			}
 		}
 	}
 
@@ -78,7 +79,7 @@ func newSpider() *spider {
 	brainID = device.GetConfig().BrainID
 
 	//Initialize sensitive word filter
-	content, err := ioutil.ReadFile("./dict/dict.txt")
+	content, err := ioutil.ReadFile("./dict/sen.txt")
 	if err != nil {
 		println(err)
 	}
@@ -164,8 +165,24 @@ func (s *spider) Init() {
 				} // swipe back, start new game
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if ctx.Req.URL.Path == "/question/comment/listBase" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			if strings.Contains(string(bs), brainID) {
+				hasReviewedQuestion = true
+			} else {
+				hasReviewedQuestion = false
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
+		} else if ctx.Req.URL.Path == "/question/comment/comment" {
+			bs, _ := ioutil.ReadAll(resp.Body)
+			log.Println(string(bs))
+			if strings.Contains(string(bs), "41001"){
+				postedReview = false
+			} 
+			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)
+			println(ctx.Req.URL.Host + ctx.Req.URL.Path)
 			println(string(bs))
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "mp.weixin.qq.com:443" && ctx.Req.URL.Path == "/s" {

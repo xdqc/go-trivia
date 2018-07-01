@@ -26,7 +26,7 @@ var (
 	//JB jieba chinese words segregation
 	JB *gojieba.Jieba
 	//CorpusWord the chiese vocabulary
-	CorpusWord map[string]CVocab
+	CorpusWord map[string]zhCNvocabulary
 	//N_opt number of question options
 	N_opt = 4
 )
@@ -130,7 +130,7 @@ func preProcessOptions(options []string) [][]rune {
 }
 
 //GetFromAPI searh the quiz via popular search engins
-func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr string) {
+func GetFromAPI(quiz string, options []string) (res map[string]int) {
 	N_opt = len(options)
 
 	res = make(map[string]int, N_opt)
@@ -138,7 +138,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 		res[option] = 0
 	}
 	if N_opt == 0 {
-		return res, ""
+		return res
 	}
 
 	search := make(chan string, 4+2*N_opt)
@@ -175,9 +175,6 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 				}
 				if id[7] == '1' {
 					rawStrTesting += s[8:]
-				}
-				if id == "Luck0 01" {
-					rawLuckStr += s[8:]
 				}
 				count--
 				if count == 0 {
@@ -232,7 +229,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int, rawLuckStr s
 
 	tx3 := time.Now()
 	log.Printf("Processing time %d ms\n", tx3.Sub(tx2).Nanoseconds()/1e6)
-	return res, rawLuckStr
+	return res
 }
 
 //CountMatches sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
@@ -421,14 +418,15 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 			rsd = math.Sqrt(variance) / mean
 		}
 		kwWeight[kw] = rsd
-		// Use corpus frequency data to correct keyword weight
-		if c, ok := CorpusWord[kw]; ok {
-			count := c.Count
-			kwWeight[kw] = rsd / math.Log(float64(count)) * 10
-		} else {
-			// the min count in corpus is 50, use 10 for non-exist rare word
-			kwWeight[kw] = rsd / math.Log(30) * 10
-		}
+
+		// // Use corpus frequency data to correct keyword weight
+		// if c, ok := CorpusWord[kw]; ok {
+		// 	count := c.Count
+		// 	kwWeight[kw] = rsd / math.Log(float64(count)) * 10
+		// } else {
+		// 	// the min count in corpus is 50, use 10 for non-exist rare word
+		// 	kwWeight[kw] = rsd / math.Log(30) * 10
+		// }
 
 		// 10 times important
 		if strings.ContainsRune(kw, '第') || strings.ContainsRune(kw, '最') {
@@ -741,8 +739,8 @@ func startBrowser(keywords []string) {
 	}
 }
 
-//CVocab chinese word
-type CVocab struct {
+//zhCNvocabulary chinese word
+type zhCNvocabulary struct {
 	Word     string  `json:"word"`
 	Category string  `json:"category"`
 	Count    int     `json:"count"`

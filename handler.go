@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"os"
 	"os/exec"
 	"regexp"
 	"sort"
@@ -23,8 +24,9 @@ var (
 	oppoScore    int
 	randClicked  bool // For click random answer
 
-	luckyPedias []string // For input question comment
-	answers     []string // For input question comment
+	hasReviewedQuestion bool // For input question comment
+	postedReview        bool
+	answers             []string // For input question comment
 
 	prevQuizNum int // For getting random question from db for live streaming
 )
@@ -86,7 +88,6 @@ func handleQuestionResp(bs []byte) {
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
 	if question.Data.Num == 1 {
-		luckyPedias = make([]string, 0)
 		answers = make([]string, 0)
 	}
 
@@ -104,11 +105,8 @@ func handleQuestionResp(bs []byte) {
 	storedAnsPos = ansPos
 
 	// Put true here to force searching, even if found answer in db
-	if true || storedAnsPos == 0 {
-		var ret map[string]int
-		ret, luckyStr := GetFromAPI(question.Data.Quiz, question.Data.Options)
-
-		luckyPedias = append(luckyPedias, luckyStr)
+	if storedAnsPos == 0 {
+		ret := GetFromAPI(question.Data.Quiz, question.Data.Options)
 
 		log.Printf("Google predict => %v\n", ret)
 		total := 1
@@ -161,10 +159,37 @@ func handleQuestionResp(bs []byte) {
 		}
 	}
 
-	answers = append(answers, answerItem)
+	// Determine the pedia term for quiz review comment
+	pediaTerm := quoted
+	if len(pediaTerm) == 0 || len([]rune(pediaTerm)) > 8 {
+		// Find keyword with minimum count in Corpus
+		minCount := math.MaxInt32
+		for _, kw := range keywords {
+			if word, ok := CorpusWord[kw]; ok {
+				if word.Count < minCount {
+					minCount = CorpusWord[kw].Count
+					pediaTerm = kw
+				}
+			}
+		}
+		// Use answer as the pedia item
+		reNum := regexp.MustCompile("[0-9]+")
+		if !reNum.MatchString(answerItem) {
+			if word, ok := CorpusWord[answerItem]; ok {
+				if word.Count < minCount {
+					pediaTerm = answerItem
+				}
+			} else if len([]rune(answerItem)) < 6 {
+				pediaTerm = answerItem
+			}
+		}
+	}
+	answers = append(answers, pediaTerm)
+
+	// click answer
 	if Mode == 1 && strings.Contains(string(bs), brainID) {
 		go clickProcess(ansPos, question)
-	} // click answer
+	}
 
 	fmt.Printf(" 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
 	question.CalData.Answer = answerItem
@@ -286,7 +311,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1650
+	var nextMatchY = 1400 // 1650 1400 1150 900
 	if ansPos >= 0 {
 		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
 		// 	// click randomly, only do it once on first 4 quiz
@@ -304,7 +329,7 @@ func clickProcess(ansPos int, question *Question) {
 			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2500))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2700))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
@@ -365,10 +390,13 @@ func inputADBText() {
 	search := make(chan string, 5)
 	done := make(chan bool, 1)
 	count := cap(search)
+	pediaContents := make([]string, len(answers)) // For input question comment
+
 	for i := 0; i < len(answers); i++ {
 		// donot search the pure number answer, meaningless
 		reNum := regexp.MustCompile("[0-9]+")
 		if !reNum.MatchString(answers[i]) {
+			log.Println("Pedia item:", answers[i])
 			go searchBaiduBaike(answers, i+1, search)
 		}
 	}
@@ -380,9 +408,8 @@ func inputADBText() {
 				id := s[:8]
 				idx, _ := strconv.Atoi(s[4:5])
 				log.Println("search received...", id, idx)
-				if idx <= len(luckyPedias) && len(luckyPedias[idx-1]) < 60 {
-					luckyPedias[idx-1] = s[8:]
-				}
+				pediaContents[idx-1] = s[8:]
+
 				count--
 				if count == 0 {
 					done <- true
@@ -403,24 +430,50 @@ func inputADBText() {
 		fmt.Println("search timeout")
 	}
 
-	for index := 0; index < len(luckyPedias); index++ {
+	postedReview = true
+	prevMsg := ""
+	for index := 0; index < len(answers); index++ {
+		if postedReview && len(prevMsg) > 0 {
+			f, _ := os.OpenFile("./dict/passed.txt", os.O_APPEND|os.O_WRONLY, 0644)
+			defer f.Close()
+			f.WriteString(prevMsg + "\n\n")
+		} else if len(prevMsg) > 0 {
+			break
+		}
+
 		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Millisecond * 100)
 		re := regexp.MustCompile("[\\n\"]+")
 		quoted := regexp.MustCompile("\\[[^\\]]+\\]")
-		msg := re.ReplaceAllString(luckyPedias[index], "")
+		msg := re.ReplaceAllString(pediaContents[index], "")
 		msg = quoted.ReplaceAllString(msg, "")
+		msg, _ = filterManage.Filter().Replace(msg, '*') // filter sensitive words
+		msg = strings.Replace(msg, "*", "", -1)
 		if len([]rune(msg)) > 500 {
 			msg = string([]rune(msg)[:500])
 		}
-		msg, _ = filterManage.Filter().Replace(msg, '*') // filter sensitive words
+		if hasReviewedQuestion {
+			continue
+		}
 		println(msg)
+		prevMsg = msg
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
-		time.Sleep(time.Millisecond * 300)
+		time.Sleep(time.Millisecond * 100)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Millisecond * 500)
+
+		exec.Command("adb", "shell", "input", "tap", "500", "500").Output()                        // tap center, esc error msg dialog box
 		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
 		time.Sleep(time.Millisecond * 300)
+	}
+	if postedReview && len(prevMsg) > 0 {
+		f, _ := os.OpenFile("./dict/passed.txt", os.O_APPEND|os.O_WRONLY, 0644)
+		defer f.Close()
+		f.WriteString(prevMsg + "\n\n")
+	} else if len(prevMsg) > 0 {
+		f, _ := os.OpenFile("./dict/failed.txt", os.O_APPEND|os.O_WRONLY, 0644)
+		defer f.Close()
+		f.WriteString(prevMsg + "\n\n")
 	}
 	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
 	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back
