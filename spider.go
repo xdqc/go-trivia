@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 
+	filter "github.com/antlinker/go-dirtyfilter"
+	"github.com/antlinker/go-dirtyfilter/store"
 	"github.com/coreos/goproxy"
 	"github.com/xdqc/letterpress-solver/device"
 	"github.com/yanyiwu/gojieba"
@@ -24,7 +26,8 @@ import (
 var (
 	_spider = newSpider()
 	Mode    int
-	magic   = "string" // the identifier of a quiz
+
+	filterManage *filter.DirtyManager //For ADBkeyboard input question comment
 )
 
 type spider struct {
@@ -73,6 +76,21 @@ func newSpider() *spider {
 
 	//Initialize brainID
 	brainID = device.GetConfig().BrainID
+
+	//Initialize sensitive word filter
+	content, err := ioutil.ReadFile("./dict/dict.txt")
+	if err != nil {
+		println(err)
+	}
+	words := strings.Split(string(content), "\n")
+	memStore, err := store.NewMemoryStore(store.MemoryConfig{
+		DataSource: words,
+	})
+	if err != nil {
+		panic(err)
+	}
+	filterManage = filter.NewDirtyManager(memStore)
+
 	return sp
 }
 
@@ -96,30 +114,6 @@ func (s *spider) Init() {
 		} else if false && ctx.Req.URL.Host == "question-zh.hortor.net:443" && ctx.Req.URL.Path == "/question/bat/choose" {
 			//fmt.Println(formatRequest(request))
 			bs, _ := ioutil.ReadAll(req.Body)
-
-			query := string(bs)
-			// Parse query string
-			values, keys, err := parseURLquery(query)
-			if err == nil {
-				// modify the selected option
-				selectedOpt := ""
-				if opt, ok := values["option"]; ok {
-					selectedOpt = opt[0]
-					if storedAnsPos > 0 && storedAnsPos <= 4 && values["magic"][0] != magic {
-						selectedOpt = strconv.Itoa(storedAnsPos)
-					}
-					log.Println("selected opt:", selectedOpt, request.URL)
-					values["option"][0] = selectedOpt
-
-					magic = values["magic"][0]
-				}
-				// encode the values
-				query = encodeURLquery(values, keys)
-				log.Println(query)
-			} else {
-				println("parse req url query error:", err.Error())
-			}
-			bs = []byte(query)
 			req.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		}
 		return

@@ -21,9 +21,10 @@ var (
 	storedAnsPos int
 	selfScore    int
 	oppoScore    int
-	randClicked  bool     // For click random answer
-	luckyPedias  []string // For input question comment
-	answers      []string // For input question comment
+	randClicked  bool // For click random answer
+
+	luckyPedias []string // For input question comment
+	answers     []string // For input question comment
 
 	prevQuizNum int // For getting random question from db for live streaming
 )
@@ -412,6 +413,7 @@ func inputADBText() {
 		if len([]rune(msg)) > 500 {
 			msg = string([]rune(msg)[:500])
 		}
+		msg, _ = filterManage.Filter().Replace(msg, '*') // filter sensitive words
 		println(msg)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
 		time.Sleep(time.Millisecond * 300)
