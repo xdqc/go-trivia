@@ -159,7 +159,7 @@ func (s *spider) Init() {
 				question.Data.Quiz = "game over"
 				questionInfo, _ = json.Marshal(question)
 
-				re := regexp.MustCompile("\"gold\":\\d{8,},") // account that has 8+ digits gold
+				re := regexp.MustCompile("\"gold\":\\d{5,},") // account that has 8+ digits gold
 				if Mode == 1 && re.Match(bs) {
 					go clickProcess(-1, question)
 				} // swipe back, start new game
@@ -168,17 +168,17 @@ func (s *spider) Init() {
 		} else if ctx.Req.URL.Path == "/question/comment/listBase" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			if strings.Contains(string(bs), brainID) {
-				hasReviewedQuestion = true
+				hasReviewCommented = true
 			} else {
-				hasReviewedQuestion = false
+				hasReviewCommented = false
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/comment/comment" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			log.Println(string(bs))
-			if strings.Contains(string(bs), "41001"){
-				postedReview = false
-			} 
+			if strings.Contains(string(bs), ":41001,") {
+				isReviewCommentPassed = false
+			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Host == "question-zh.hortor.net:443" {
 			bs, _ := ioutil.ReadAll(resp.Body)

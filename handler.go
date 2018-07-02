@@ -24,9 +24,9 @@ var (
 	oppoScore    int
 	randClicked  bool // For click random answer
 
-	hasReviewedQuestion bool // For input question comment
-	postedReview        bool
-	answers             []string // For input question comment
+	hasReviewCommented    bool     // For input question comment
+	isReviewCommentPassed bool     // For input question comment
+	answers               []string // For input question comment
 
 	prevQuizNum int // For getting random question from db for live streaming
 )
@@ -311,7 +311,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1400 // 1650 1400 1150 900
+	var nextMatchY = 1650 // 1650 1400 1150 900
 	if ansPos >= 0 {
 		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
 		// 	// click randomly, only do it once on first 4 quiz
@@ -329,13 +329,13 @@ func clickProcess(ansPos int, question *Question) {
 			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)+2700))
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2800))
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 1000)
 		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
 		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1))
-		if rand.Intn(100) < 7 {
+		if rand.Intn(100) < 5 {
 			time.Sleep(time.Millisecond * 500)
 			go clickEmoji()
 		}
@@ -430,10 +430,11 @@ func inputADBText() {
 		fmt.Println("search timeout")
 	}
 
-	postedReview = true
+	isReviewCommentPassed = true
 	prevMsg := ""
 	for index := 0; index < len(answers); index++ {
-		if postedReview && len(prevMsg) > 0 {
+		// record the passed comments
+		if isReviewCommentPassed && len(prevMsg) > 0 {
 			f, _ := os.OpenFile("./dict/passed.txt", os.O_APPEND|os.O_WRONLY, 0644)
 			defer f.Close()
 			f.WriteString(prevMsg + "\n\n")
@@ -441,32 +442,35 @@ func inputADBText() {
 			break
 		}
 
-		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
-		time.Sleep(time.Millisecond * 100)
 		re := regexp.MustCompile("[\\n\"]+")
 		quoted := regexp.MustCompile("\\[[^\\]]+\\]")
 		msg := re.ReplaceAllString(pediaContents[index], "")
 		msg = quoted.ReplaceAllString(msg, "")
 		msg, _ = filterManage.Filter().Replace(msg, '*') // filter sensitive words
 		msg = strings.Replace(msg, "*", "", -1)
-		if len([]rune(msg)) > 500 {
-			msg = string([]rune(msg)[:500])
+		if len([]rune(msg)) > 300 {
+			msg = string([]rune(msg)[:300])
 		}
-		if hasReviewedQuestion {
+		if hasReviewCommented {
+			exec.Command("adb", "shell", "input", "tap", "500", "500").Output()                        // tap center, esc error msg dialog box
+			exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
 			continue
 		}
 		println(msg)
 		prevMsg = msg
+		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
+		time.Sleep(time.Millisecond * 10)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
-		time.Sleep(time.Millisecond * 100)
+		time.Sleep(time.Millisecond * 10)
 		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * 100)
 
 		exec.Command("adb", "shell", "input", "tap", "500", "500").Output()                        // tap center, esc error msg dialog box
 		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
-		time.Sleep(time.Millisecond * 300)
+		time.Sleep(time.Millisecond * 100)
 	}
-	if postedReview && len(prevMsg) > 0 {
+	// record the last passed and failed comments
+	if isReviewCommentPassed && len(prevMsg) > 0 {
 		f, _ := os.OpenFile("./dict/passed.txt", os.O_APPEND|os.O_WRONLY, 0644)
 		defer f.Close()
 		f.WriteString(prevMsg + "\n\n")
