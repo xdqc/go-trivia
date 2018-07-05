@@ -1,15 +1,15 @@
 # brainID
-Brain_ID: 218580973
-# Brain_ID: 235964182
+# Brain_ID: 218580973
+Brain_ID: 235964182
 
 # 西瓜视频 夜神模拟器
 debug: false
-# 游戏名称, xigua  每日挑战 / cddh 大奖赛 / huajiao 花椒 / zscr 芝士超人
-app: xigua
+# 游戏名称, xigua  每日挑战 / cddh 大奖赛 / zscr `Nexus-5 quiz` / huajiao 花椒 
+app: zscr
 # 是否模拟自动答题
 automatic: false
 # 对应的设备类型：ios or android
-device: ios
+device: android
 # 使用的ocr工具： baidu or tesseract
 ocr: baidu
 # android 连接地址
@@ -46,20 +46,20 @@ cd_a_y: 550
 cd_a_w: 480
 cd_a_h: 380
 # 芝士超人
-zs_q_x: 30
-zs_q_y: 240
-zs_q_w: 840
-zs_q_h: 180
-zs_a_x: 30
-zs_a_y: 380
-zs_a_w: 840
-zs_a_h: 410
+zs_q_x: 100
+zs_q_y: 640
+zs_q_w: 880
+zs_q_h: 260
+zs_a_x: 100
+zs_a_y: 880
+zs_a_w: 880
+zs_a_h: 800
 # 花椒直播
-hj_q_x: 30
-hj_q_y: 240
-hj_q_w: 840
-hj_q_h: 180
-hj_a_x: 30
-hj_a_y: 410
-hj_a_w: 840
-hj_a_h: 450
+hj_q_x: 100
+hj_q_y: 500
+hj_q_w: 880
+hj_q_h: 250
+hj_a_x: 100
+hj_a_y: 750
+hj_a_w: 880
+hj_a_h: 800

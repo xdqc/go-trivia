@@ -46,7 +46,7 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	}
 	stopwords := [...]string{"下列", "以下", "可以", "什么", "多少", "选项", "一项", "属于", "关于", "按照", "有关", "没有", "共有", "包括", "其中", "未曾", "第几", "称为", "位于", "下面", "英文单词", "缩写", "下一句", "上一句", "几", "不", "有", "在", "上", "以", "和", "种", "或", "与", "为", "于", "被", "由", "用", "过", "中", "其", "及", "至", "们", "将", "会", "指", "叫", "所", "省", "年"}
 	for _, w := range words {
-		if !(strings.ContainsAny(w, " 的哪是了而谁么者几")) {
+		if !(strings.ContainsAny(w, " 的哪是了而谁么者几着")) {
 			stop := false
 			for _, sw := range stopwords {
 				if w == sw {
@@ -64,9 +64,16 @@ func preProcessQuiz(quiz string, isForSearch bool) (keywords []string, quoted st
 	if strings.IndexRune(quiz, '「') >= 0 && strings.IndexRune(quiz, '「') < strings.IndexRune(quiz, '」') {
 		quoted = quiz[strings.IndexRune(quiz, '「'):strings.IndexRune(quiz, '」')]
 	}
-	// else if strings.ContainsRune(quiz, '《') {
-	// 	quoted = quiz[strings.IndexRune(quiz, '《'):strings.IndexRune(quiz, '》')]
-	// }
+	if (len(quoted) == 0 || len(quoted) > 5) && strings.IndexRune(quiz, '《') >= 0 && strings.IndexRune(quiz, '《') < strings.IndexRune(quiz, '》') {
+		quoted = quiz[strings.IndexRune(quiz, '《'):strings.IndexRune(quiz, '》')]
+		stopwordss := append(stopwords[:], "三国演义", "水浒传", "红楼梦", "西游记")
+		for _, sw := range stopwordss {
+			if strings.Contains(quoted, sw) {
+				quoted = ""
+				break
+			}
+		}
+	}
 	quoted = re.ReplaceAllString(quoted, "")
 	return
 }
@@ -716,8 +723,8 @@ func searchBaiduBaike(options []string, id int, c chan string) {
 		// log.Println(text)
 	}
 
-	if len(text) > 1000 {
-		text = text[:1000]
+	if len(text) > 10000 {
+		text = text[:10000]
 	}
 	c <- text
 }

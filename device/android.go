@@ -41,7 +41,7 @@ func (android *Android) GetImage() (img image.Image, err error) {
 		fmt.Println(err.Error())
 		return nil, err
 	}
-	x := bytes.Replace(out.Bytes(), []byte("\r\r\n"), []byte("\n"), -1)
+	x := bytes.Replace(out.Bytes(), []byte("\r\n"), []byte("\n"), -1)
 	img, err = png.Decode(bytes.NewReader(x))
 	return
 }

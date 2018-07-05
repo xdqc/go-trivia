@@ -175,7 +175,9 @@ func handleQuestionResp(bs []byte) {
 		// Use answer as the pedia item
 		reNum := regexp.MustCompile("[0-9]+")
 		if !reNum.MatchString(answerItem) {
-			if word, ok := CorpusWord[answerItem]; ok {
+			if len([]rune(quoted)) > 8 {
+				pediaTerm = answerItem
+			} else if word, ok := CorpusWord[answerItem]; ok {
 				if word.Count < minCount {
 					pediaTerm = answerItem
 				}
@@ -311,7 +313,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1650 // 1650 1400 1150 900
+	var nextMatchY = 1400 // 1650 1400 1150 900
 	if ansPos >= 0 {
 		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
 		// 	// click randomly, only do it once on first 4 quiz
@@ -329,12 +331,27 @@ func clickProcess(ansPos int, question *Question) {
 			}
 			randClicked = true
 		}
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2800))
-		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
-		time.Sleep(time.Millisecond * 1000)
-		go clickAction(centerX, firstItemY+optionHeight*(ansPos-1))
+		if question.Data.ImageID != "" {
+			offsetX := 200
+			offsetY := -100
+			if ansPos%2 != 0 {
+				offsetX = -offsetX
+			}
+			if ansPos > 2 {
+				offsetY = 0
+			}
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2800))
+			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
+			time.Sleep(time.Millisecond * 1000)
+			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
+		} else {
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+3200))
+			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
+			time.Sleep(time.Millisecond * 1000)
+			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
+		}
 		time.Sleep(time.Millisecond * 500)
-		go clickAction(centerX, firstItemY+optionHeight*(4-1))
+		go clickAction(centerX, firstItemY+optionHeight*(4-1)) // click fourth option
 		if rand.Intn(100) < 5 {
 			time.Sleep(time.Millisecond * 500)
 			go clickEmoji()
@@ -345,7 +362,7 @@ func clickProcess(ansPos int, question *Question) {
 		selfScore = 0
 		oppoScore = 0
 
-		inputADBText()
+		// inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
@@ -357,7 +374,7 @@ func clickProcess(ansPos int, question *Question) {
 }
 
 func clickAction(posX int, posY int) {
-	touchX, touchY := strconv.Itoa(posX+rand.Intn(400)-200), strconv.Itoa(posY+rand.Intn(50)-25)
+	touchX, touchY := strconv.Itoa(posX+rand.Intn(100)-50), strconv.Itoa(posY+rand.Intn(50)-25)
 	_, err := exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output()
 	if err != nil {
 		log.Println("error: check adb connection.", err)
@@ -535,6 +552,7 @@ type Question struct {
 		Contributor string   `json:"contributor"`
 		EndTime     int      `json:"endTime"`
 		CurTime     int      `json:"curTime"`
+		ImageID     string   `json:"imageId"`
 	} `json:"data"`
 	CalData struct {
 		RoomID     string
