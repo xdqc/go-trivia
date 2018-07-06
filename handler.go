@@ -313,13 +313,13 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1400 // 1650 1400 1150 900
+	var nextMatchY = 1650 // 1650 1400 1150 900
 	if ansPos >= 0 {
-		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.Type == "时尚" || question.Data.Type == "电视" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
-		// 	// click randomly, only do it once on first 4 quiz
-		// 	ansPos = rand.Intn(4) + 1
-		// 	randClicked = true
-		// }
+		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "生活" ||question.Data.Type == "时尚" || question.Data.Type == "演艺" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
+			// click randomly, only do it once on first 4 quiz
+			ansPos = rand.Intn(4) + 1
+			randClicked = true
+		}
 		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 250) {
 			// click randomly, only do it when have big advantage
 			correctAnsPos := ansPos
@@ -332,20 +332,20 @@ func clickProcess(ansPos int, question *Question) {
 			randClicked = true
 		}
 		if question.Data.ImageID != "" {
-			offsetX := 200
-			offsetY := -100
-			if ansPos%2 != 0 {
-				offsetX = -offsetX
-			}
-			if ansPos > 2 {
+			offsetX := -200
+			offsetY := -200
+			if ansPos%2 == 0 {
 				offsetY = 0
 			}
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2800))
+			if ansPos > 2 {
+				offsetX = -offsetX
+			}
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2700))
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 		} else {
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+3200))
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
 			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
 			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
@@ -374,7 +374,7 @@ func clickProcess(ansPos int, question *Question) {
 }
 
 func clickAction(posX int, posY int) {
-	touchX, touchY := strconv.Itoa(posX+rand.Intn(100)-50), strconv.Itoa(posY+rand.Intn(50)-25)
+	touchX, touchY := strconv.Itoa(posX+rand.Intn(40)-20), strconv.Itoa(posY+rand.Intn(20)-10)
 	_, err := exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output()
 	if err != nil {
 		log.Println("error: check adb connection.", err)

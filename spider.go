@@ -159,7 +159,7 @@ func (s *spider) Init() {
 				question.Data.Quiz = "game over"
 				questionInfo, _ = json.Marshal(question)
 
-				re := regexp.MustCompile("\"gold\":\\d{5,},") // account that has 8+ digits gold
+				re := regexp.MustCompile("\"gold\":\\d{5,7},") // account that has 8+ digits gold
 				if Mode == 1 && re.Match(bs) {
 					go clickProcess(-1, question)
 				} // swipe back, start new game

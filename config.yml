@@ -8,7 +8,7 @@ debug: false
 app: zscr
 # 是否模拟自动答题
 automatic: false
-# 对应的设备类型：ios or android
+# 对应的设备类型： ios  or  android
 device: android
 # 使用的ocr工具： baidu or tesseract
 ocr: baidu
