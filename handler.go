@@ -82,8 +82,6 @@ func handleQuestionResp(bs []byte) {
 	imgTimeChan := make(chan int64)
 	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
-	go SetQuestion(question)
-
 	answerItem := "不知道"
 	ansPos := 0
 	odds := make([]float32, len(question.Data.Options))
@@ -158,6 +156,12 @@ func handleQuestionResp(bs []byte) {
 			}
 		}
 	}
+
+	// save question to buff, with the imageID
+	if question.Data.ImageID != "" {
+		question.Data.Quiz = question.Data.Quiz + question.Data.ImageID
+	}
+	go SetQuestion(question)
 
 	// Determine the pedia term for quiz review comment
 	pediaTerm := quoted
@@ -315,12 +319,12 @@ func clickProcess(ansPos int, question *Question) {
 	var optionHeight = 200
 	var nextMatchY = 1650 // 1650 1400 1150 900
 	if ansPos >= 0 {
-		if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "生活" ||question.Data.Type == "时尚" || question.Data.Type == "演艺" || question.Data.Type == "经济" || question.Data.Type == "日常")) {
-			// click randomly, only do it once on first 4 quiz
-			ansPos = rand.Intn(4) + 1
-			randClicked = true
-		}
-		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 250) {
+		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "流行")) {
+		// 	// click randomly, only do it once on first 4 quiz
+		// 	ansPos = rand.Intn(4) + 1
+		// 	randClicked = true
+		// }
+		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 240) {
 			// click randomly, only do it when have big advantage
 			correctAnsPos := ansPos
 			for {
@@ -340,20 +344,24 @@ func clickProcess(ansPos int, question *Question) {
 			if ansPos > 2 {
 				offsetX = -offsetX
 			}
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2700))
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 		} else {
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
+			waitLonger := rand.Intn(2033)
+			if waitLonger > 2000 {
+				time.Sleep(time.Millisecond * time.Duration(waitLonger))
+			}
 			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
 			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
 		}
 		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1)) // click fourth option
-		if rand.Intn(100) < 5 {
-			time.Sleep(time.Millisecond * 500)
+		if rand.Intn(100) < 40 && question.Data.Num == 5 {
+			time.Sleep(time.Millisecond * 200)
 			go clickEmoji()
 		}
 	} else {
@@ -362,7 +370,7 @@ func clickProcess(ansPos int, question *Question) {
 		selfScore = 0
 		oppoScore = 0
 
-		// inputADBText()
+		inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu

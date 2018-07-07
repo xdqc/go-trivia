@@ -11,8 +11,9 @@ type Screenshot interface {
 
 //NewScreenshot 根据手机系统区分
 func NewScreenshot(cfg *Config) Screenshot {
-	if cfg.Device == DeviceiOS {
-		return NewIOS(cfg)
+	// if cfg.Device == DeviceiOS {
+	if cfg.APP == "zscr" {
+		return NewAndroid(cfg)
 	}
-	return NewAndroid(cfg)
+	return NewIOS(cfg)
 }

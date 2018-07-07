@@ -167,7 +167,7 @@ export class BrainComponent implements OnInit, OnDestroy {
           sayChoice.text = '选'+this.q.caldata.AnswerPos+'-: '+ that.q.caldata.Answer;
           speechSynthesis.speak(sayChoice);
           sayChoice=null;
-        },6000);
+        },6);
       } else {
         let sayChoice = new SpeechSynthesisUtterance(that.q.data.quiz +
           '. A. ' + that.q.data.options[0] +
@@ -213,7 +213,7 @@ export class BrainComponent implements OnInit, OnDestroy {
       if (this.quiz !== this.q.data.quiz) {
         //reset wakeup alarm
         clearInterval(this.wakeUp);
-        this.wakeUp = setInterval(() => this.speakGameover(), 60000);
+        this.wakeUp = setInterval(() => this.speakGameover(), 180000);
       }
     }
   }

@@ -32,3 +32,4 @@ conf.json
 /**/environments/environment.ts
 /images/*
 *.txt
+*.yml
