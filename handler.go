@@ -37,7 +37,10 @@ func handleQuestionResp(bs []byte) {
 	if len(bs) > 0 && !strings.Contains(string(bs), "encryptedData") {
 		// Get quiz from MITM
 		json.Unmarshal(bs, question)
-
+		// save question to buff, with the imageID
+		if question.Data.ImageID != "" {
+			question.Data.Quiz = question.Data.Quiz + question.Data.ImageID
+		}
 		// Get self and oppo score
 		re := regexp.MustCompile(`"score":{"(\d+)":(\d+),"(\d+)":(\d+)}`)
 		scores := re.FindStringSubmatch(string(bs))
@@ -54,6 +57,12 @@ func handleQuestionResp(bs []byte) {
 			selfScore, oppoScore = 0, 0
 		}
 	} else {
+		if strings.Contains(string(bs), "encryptedData") {
+			time.Sleep(time.Millisecond * time.Duration(2700))
+			go func() {
+				question.Data.Quiz, question.Data.Options = getQuizFromOCR()
+			}()
+		}
 		// Get quiz from OCR
 		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
 		if len(question.Data.Options) == 0 || question.Data.Quiz == "" {
@@ -157,10 +166,6 @@ func handleQuestionResp(bs []byte) {
 		}
 	}
 
-	// save question to buff, with the imageID
-	if question.Data.ImageID != "" {
-		question.Data.Quiz = question.Data.Quiz + question.Data.ImageID
-	}
 	go SetQuestion(question)
 
 	// Determine the pedia term for quiz review comment
@@ -317,14 +322,14 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1650 // 1650 1400 1150 900
+	var nextMatchY = 1400 // 1650 1400 1150 900
 	if ansPos >= 0 {
-		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "流行")) {
+		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "文科")) {
 		// 	// click randomly, only do it once on first 4 quiz
 		// 	ansPos = rand.Intn(4) + 1
 		// 	randClicked = true
 		// }
-		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 240) {
+		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 220) {
 			// click randomly, only do it when have big advantage
 			correctAnsPos := ansPos
 			for {
@@ -350,7 +355,7 @@ func clickProcess(ansPos int, question *Question) {
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 		} else {
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
-			waitLonger := rand.Intn(2033)
+			waitLonger := rand.Intn(2018)
 			if waitLonger > 2000 {
 				time.Sleep(time.Millisecond * time.Duration(waitLonger))
 			}
