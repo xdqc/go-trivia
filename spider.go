@@ -139,7 +139,7 @@ func (s *spider) Init() {
 				go deleteWordDb(inValidWord)
 			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" { //|| ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" {
+		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
 			// println("\nquiz\n" + string(bs))

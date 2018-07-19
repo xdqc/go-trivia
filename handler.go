@@ -62,6 +62,7 @@ func handleQuestionResp(bs []byte) {
 			go func() {
 				question.Data.Quiz, question.Data.Options = getQuizFromOCR()
 			}()
+			time.Sleep(time.Millisecond * time.Duration(200))
 		}
 		// Get quiz from OCR
 		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
@@ -88,8 +89,8 @@ func handleQuestionResp(bs []byte) {
 
 	// fetch image of the quiz
 	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
-	imgTimeChan := make(chan int64)
-	go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
+	// imgTimeChan := make(chan int64)
+	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
 	answerItem := "不知道"
 	ansPos := 0
@@ -209,8 +210,8 @@ func handleQuestionResp(bs []byte) {
 	questionInfo, _ = json.Marshal(question)
 
 	// Image time and question core information may not be sent in ONE http GET response to client
-	question.CalData.ImageTime = <-imgTimeChan
-	questionInfo, _ = json.Marshal(question)
+	// question.CalData.ImageTime = <-imgTimeChan
+	// questionInfo, _ = json.Marshal(question)
 	question = nil
 }
 
@@ -322,7 +323,10 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1400 // 1650 1400 1150 900
+	var nextMatchY = 1650 // 1650 1400 1150 900
+	if rand.Intn(100) < 80 {
+		nextMatchY = 1400
+	}
 	if ansPos >= 0 {
 		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "文科")) {
 		// 	// click randomly, only do it once on first 4 quiz
@@ -365,8 +369,8 @@ func clickProcess(ansPos int, question *Question) {
 		}
 		time.Sleep(time.Millisecond * 500)
 		go clickAction(centerX, firstItemY+optionHeight*(4-1)) // click fourth option
-		if rand.Intn(100) < 40 && question.Data.Num == 5 {
-			time.Sleep(time.Millisecond * 200)
+		if rand.Intn(100) < 20 && question.Data.Num == 5 {
+			time.Sleep(time.Millisecond * 400)
 			go clickEmoji()
 		}
 	} else {
@@ -375,7 +379,7 @@ func clickProcess(ansPos int, question *Question) {
 		selfScore = 0
 		oppoScore = 0
 
-		inputADBText()
+		// inputADBText()
 
 		time.Sleep(time.Millisecond * 500)
 		go swipeAction() // go back to game selection menu
