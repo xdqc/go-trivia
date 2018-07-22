@@ -18,8 +18,8 @@ func getQuizFromOCR() (quiz string, options []string) {
 	// tx1 := time.Now()
 
 	cfg := device.GetConfig()
-	OCR := device.NewBaidu(cfg)
-	// OCR := device.NewTesseract()
+	// OCR := device.NewBaidu(cfg)
+	OCR := device.NewTesseract()
 
 	imgQuiz := make(chan string, 1)
 	imgOptions1 := make(chan string, 1)

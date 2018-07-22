@@ -330,7 +330,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1150 // 1650 1400 1150 900
+	var nextMatchY = 900 // 1650 1400 1150 900
 	// if rand.Intn(100) < 80 {
 	// 	nextMatchY = 1400
 	// }
