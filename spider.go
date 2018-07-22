@@ -24,9 +24,9 @@ import (
 )
 
 var (
-	_spider = newSpider()
-	Mode    int
-
+	_spider      = newSpider()
+	Autoclick    int
+	Hashquiz     int
 	filterManage *filter.DirtyManager //For ADBkeyboard input question comment
 )
 
@@ -34,8 +34,9 @@ type spider struct {
 	proxy *goproxy.ProxyHttpServer
 }
 
-func Run(port string, mode int) {
-	Mode = mode
+func Run(port string, autoclick int, hashquiz int) {
+	Autoclick = autoclick
+	Hashquiz = hashquiz
 	_spider.Init()
 	_spider.Run(port)
 }
@@ -96,6 +97,7 @@ func newSpider() *spider {
 }
 
 func (s *spider) Run(port string) {
+	initMemoryDb()
 	log.Println("proxy server at port:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, s.proxy))
 }
@@ -143,12 +145,20 @@ func (s *spider) Init() {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
 			// println("\nquiz\n" + string(bs))
-			go handleQuestionResp(bs)
+			if Hashquiz == 1 {
+				go handleScreenshotQuestionResp()
+			} else {
+				go handleQuestionResp(bs)
+			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			println("\nchoose:\n" + string(bs))
-			go handleChooseResponse(bs)
+			if Hashquiz == 1 {
+				go handleScreenshotChooseResponse(bs)
+			} else {
+				go handleChooseResponse(bs)
+			}
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/fightResult" {
 			bs, _ := ioutil.ReadAll(resp.Body)
@@ -160,7 +170,7 @@ func (s *spider) Init() {
 				questionInfo, _ = json.Marshal(question)
 
 				re := regexp.MustCompile("\"gold\":\\d{8,},") // account that has 8+ digits gold
-				if Mode == 1 && re.Match(bs) {
+				if Autoclick == 1 && re.Match(bs) {
 					go clickProcess(-1, question)
 				} // swipe back, start new game
 			}

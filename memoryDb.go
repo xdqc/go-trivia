@@ -17,29 +17,44 @@ var (
 	memoryDb            *bolt.DB
 	QuestionBucket      = "Question"
 	WholeQuestionBucket = "WholeQuestion"
+	HashQuestionBucket  = "HashQuestion"
 )
 
-func init() {
+func initMemoryDb() {
 	var err error
-	memoryDb, err = bolt.Open("questions.data", 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	memoryDb.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(QuestionBucket))
+	if Hashquiz == 1 {
+		memoryDb, err = bolt.Open("questionsHash.data", 0600, nil)
 		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+			log.Fatal(err)
 		}
-		return nil
-	})
+		memoryDb.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists([]byte(HashQuestionBucket))
+			if err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
+			return nil
+		})
+	} else {
+		memoryDb, err = bolt.Open("questions.data", 0600, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		memoryDb.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists([]byte(QuestionBucket))
+			if err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
+			return nil
+		})
 
-	memoryDb.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(WholeQuestionBucket))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		return nil
-	})
+		memoryDb.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists([]byte(WholeQuestionBucket))
+			if err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
+			return nil
+		})
+	}
 }
 
 func StoreQuestion(question *Question) error {
@@ -68,6 +83,18 @@ func StoreWholeQuestion(question *Question) error {
 	return nil
 }
 
+//StoreHashQuestion store the hash question and hash correct answer to db
+func StoreHashQuestion(question *Question) error {
+	if question.CalData.TrueAnswer != "" {
+		return memoryDb.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte(HashQuestionBucket))
+			err := b.Put([]byte(question.Data.Quiz), []byte(question.CalData.TrueAnswer))
+			return err
+		})
+	}
+	return nil
+}
+
 //FetchQuestion get question answer of a given quiz
 func FetchQuestion(question *Question) (str string) {
 	memoryDb.View(func(tx *bolt.Tx) error {
@@ -78,6 +105,20 @@ func FetchQuestion(question *Question) (str string) {
 		}
 		q := DecodeQuestionCols(v, time.Now().Unix())
 		str = q.Answer
+		return nil
+	})
+	return
+}
+
+//FetchHashQuestion get question answer hash of a given quiz hash
+func FetchHashQuestion(questionHash string) (answerHash string) {
+	memoryDb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(HashQuestionBucket))
+		v := b.Get([]byte(questionHash))
+		if len(v) == 0 {
+			return nil
+		}
+		answerHash = string(v)
 		return nil
 	})
 	return

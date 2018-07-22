@@ -65,7 +65,7 @@ func handleQuestionResp(bs []byte) {
 		if len(question.Data.Options) == 0 || question.Data.Quiz == "" {
 			log.Println("No quiz or options found in screenshot...")
 			// click answer
-			if Mode == 1 {
+			if Autoclick == 1 {
 				go clickProcess(0, question)
 			}
 			return
@@ -169,7 +169,7 @@ func handleQuestionResp(bs []byte) {
 	}
 
 	// click answer
-	if Mode == 1 {
+	if Autoclick == 1 {
 		go clickProcess(ansPos, question)
 	}
 

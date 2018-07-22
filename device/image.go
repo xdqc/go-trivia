@@ -1,6 +1,7 @@
 package device
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"image"
@@ -9,8 +10,44 @@ import (
 	"os"
 	"sync"
 
+	"github.com/devedge/imagehash"
 	"github.com/ngaut/log"
 )
+
+func GetImageHash(png image.Image, cfg *Config) (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, err error) {
+	//裁剪图片
+	questionImg, _, answer1Img, answer2Img, answer3Img, answer4Img, err := splitImage(png, cfg)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("截图失败，%v", err)
+	}
+	const hashLen = 8
+	var question, answer1, answer2, answer3, answer4 []byte
+	var wg sync.WaitGroup
+	wg.Add(5)
+	go func() {
+		defer wg.Done()
+		question, _ = imagehash.Dhash(questionImg, hashLen)
+	}()
+	go func() {
+		defer wg.Done()
+		answer1, _ = imagehash.Dhash(answer1Img, hashLen)
+	}()
+	go func() {
+		defer wg.Done()
+		answer2, _ = imagehash.Dhash(answer2Img, hashLen)
+	}()
+	go func() {
+		defer wg.Done()
+		answer3, _ = imagehash.Dhash(answer3Img, hashLen)
+	}()
+	go func() {
+		defer wg.Done()
+		answer4, _ = imagehash.Dhash(answer4Img, hashLen)
+	}()
+	wg.Wait()
+	quiz, opt1, opt2, opt3, opt4 = hex.EncodeToString(question), hex.EncodeToString(answer1), hex.EncodeToString(answer2), hex.EncodeToString(answer3), hex.EncodeToString(answer4)
+	return
+}
 
 func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string) error {
 	/* 	go func() {
