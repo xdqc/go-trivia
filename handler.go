@@ -58,16 +58,16 @@ func handleQuestionResp(bs []byte) {
 		}
 	} else {
 		if strings.Contains(string(bs), "encryptedData") {
-			time.Sleep(time.Millisecond * time.Duration(2700))
-			go func() {
-				question.Data.Quiz, question.Data.Options = getQuizFromOCR()
-			}()
-			time.Sleep(time.Millisecond * time.Duration(200))
+			// Get quiz from OCR
+			time.Sleep(time.Millisecond * time.Duration(4200))
+			question.Data.Quiz, question.Data.Options = getQuizFromOCR()
 		}
-		// Get quiz from OCR
-		question.Data.Quiz, question.Data.Options = getQuizFromOCR()
 		if len(question.Data.Options) == 0 || question.Data.Quiz == "" {
 			log.Println("No quiz or options found in screenshot...")
+			// click answer
+			if Mode == 1 {
+				go clickProcess(0, question)
+			}
 			return
 		}
 		quiz := question.Data.Quiz
@@ -78,6 +78,7 @@ func handleQuestionResp(bs []byte) {
 		quiz = strings.Replace(quiz, "\"", "“", -1)
 		quiz = strings.Replace(quiz, "'", "‘", -1)
 		quiz = strings.Replace(quiz, "!", "！", -1)
+		quiz = strings.Replace(quiz, "」」", "」", -1)
 		question.Data.Quiz = quiz
 	}
 
@@ -88,7 +89,7 @@ func handleQuestionResp(bs []byte) {
 	answer := FetchQuestion(question)
 
 	// fetch image of the quiz
-	keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
+	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
 	// imgTimeChan := make(chan int64)
 	// go fetchAnswerImage(answer, keywords, quoted, imgTimeChan)
 
@@ -167,41 +168,41 @@ func handleQuestionResp(bs []byte) {
 		}
 	}
 
+	// click answer
+	if Mode == 1 {
+		go clickProcess(ansPos, question)
+	}
+
 	go SetQuestion(question)
 
 	// Determine the pedia term for quiz review comment
-	pediaTerm := quoted
-	if len(pediaTerm) == 0 || len([]rune(pediaTerm)) > 8 {
-		// Find keyword with minimum count in Corpus
-		minCount := math.MaxInt32
-		for _, kw := range keywords {
-			if word, ok := CorpusWord[kw]; ok {
-				if word.Count < minCount {
-					minCount = CorpusWord[kw].Count
-					pediaTerm = kw
-				}
-			}
-		}
-		// Use answer as the pedia item
-		reNum := regexp.MustCompile("[0-9]+")
-		if !reNum.MatchString(answerItem) {
-			if len([]rune(quoted)) > 8 {
-				pediaTerm = answerItem
-			} else if word, ok := CorpusWord[answerItem]; ok {
-				if word.Count < minCount {
-					pediaTerm = answerItem
-				}
-			} else if len([]rune(answerItem)) < 6 {
-				pediaTerm = answerItem
-			}
-		}
-	}
-	answers = append(answers, pediaTerm)
-
-	// click answer
-	if Mode == 1 && strings.Contains(string(bs), brainID) {
-		go clickProcess(ansPos, question)
-	}
+	// pediaTerm := quoted
+	// if len(pediaTerm) == 0 || len([]rune(pediaTerm)) > 8 {
+	// 	// Find keyword with minimum count in Corpus
+	// 	minCount := math.MaxInt32
+	// 	for _, kw := range keywords {
+	// 		if word, ok := CorpusWord[kw]; ok {
+	// 			if word.Count < minCount {
+	// 				minCount = CorpusWord[kw].Count
+	// 				pediaTerm = kw
+	// 			}
+	// 		}
+	// 	}
+	// 	// Use answer as the pedia item
+	// 	reNum := regexp.MustCompile("[0-9]+")
+	// 	if !reNum.MatchString(answerItem) {
+	// 		if len([]rune(quoted)) > 8 {
+	// 			pediaTerm = answerItem
+	// 		} else if word, ok := CorpusWord[answerItem]; ok {
+	// 			if word.Count < minCount {
+	// 				pediaTerm = answerItem
+	// 			}
+	// 		} else if len([]rune(answerItem)) < 6 {
+	// 			pediaTerm = answerItem
+	// 		}
+	// 	}
+	// }
+	// answers = append(answers, pediaTerm)
 
 	fmt.Printf(" 【Q】 %v\n 【A】 %v\n", question.Data.Quiz, answerItem)
 	question.CalData.Answer = answerItem
@@ -323,27 +324,27 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1650 // 1650 1400 1150 900
-	if rand.Intn(100) < 80 {
-		nextMatchY = 1400
-	}
+	var nextMatchY = 1400 // 1650 1400 1150 900
+	// if rand.Intn(100) < 80 {
+	// 	nextMatchY = 1400
+	// }
 	if ansPos >= 0 {
-		// if ansPos == 0 || (!randClicked && question.Data.Num != 5 && (question.Data.School == "文科")) {
-		// 	// click randomly, only do it once on first 4 quiz
-		// 	ansPos = rand.Intn(4) + 1
-		// 	randClicked = true
-		// }
-		if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 220) {
-			// click randomly, only do it when have big advantage
-			correctAnsPos := ansPos
-			for {
-				ansPos = rand.Intn(4) + 1
-				if ansPos != correctAnsPos {
-					break
-				}
-			}
+		if ansPos == 0 || ansPos > 4 {
+			// click randomly, only do it once on first 4 quiz
+			ansPos = rand.Intn(4) + 1
 			randClicked = true
 		}
+		// if ansPos == 0 || selfScore-oppoScore > 500 || (question.Data.Num < 5 && selfScore-oppoScore > 220) {
+		// 	// click randomly, only do it when have big advantage
+		// 	correctAnsPos := ansPos
+		// 	for {
+		// 		ansPos = rand.Intn(4) + 1
+		// 		if ansPos != correctAnsPos {
+		// 			break
+		// 		}
+		// 	}
+		// 	randClicked = true
+		// }
 		if question.Data.ImageID != "" {
 			offsetX := -200
 			offsetY := -200
@@ -353,18 +354,8 @@ func clickProcess(ansPos int, question *Question) {
 			if ansPos > 2 {
 				offsetX = -offsetX
 			}
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
-			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
-			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX+offsetX, firstItemY+optionHeight*(4-1)+offsetY) // click image option
 		} else {
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)+2500))
-			waitLonger := rand.Intn(2018)
-			if waitLonger > 2000 {
-				time.Sleep(time.Millisecond * time.Duration(waitLonger))
-			}
-			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
-			time.Sleep(time.Millisecond * 1000)
 			go clickAction(centerX, firstItemY+optionHeight*(ansPos-1)) // click answer option
 		}
 		time.Sleep(time.Millisecond * 500)
@@ -583,6 +574,13 @@ type Question struct {
 		Choice     int
 		Voice      int
 	} `json:"caldata"`
+	Errcode int `json:"errcode"`
+}
+
+type EncodedQuestion struct {
+	Data struct {
+		EncryptedData string `json:"encryptedData"`
+	} `json:"data"`
 	Errcode int `json:"errcode"`
 }
 

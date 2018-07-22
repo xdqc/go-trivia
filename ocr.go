@@ -73,6 +73,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 			imgOptions <- device.AnswerImage
 			return
 		}
+		log.Printf("Image save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	}()
 	wig.Wait()
 
