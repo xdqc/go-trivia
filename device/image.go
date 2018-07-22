@@ -23,13 +23,13 @@ func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string)
 	}() */
 
 	//裁剪图片
-	questionImg, answerImg, err := splitImage(png, cfg)
+	questionImg, answerImg, answer1Img, answer2Img, answer3Img, answer4Img, err := splitImage(png, cfg)
 	if err != nil {
 		return fmt.Errorf("截图失败，%v", err)
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(6)
 
 	go func() {
 		defer wg.Done()
@@ -50,6 +50,46 @@ func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string)
 			log.Errorf("保存answer截图失败，%v", err)
 		}
 		c2 <- AnswerImage
+		log.Debugf("保存answer截图成功")
+	}()
+
+	go func() {
+		defer wg.Done()
+		// pic := thresholdingImage(answerImg)
+		err = savePNG(Answer1Image, answer1Img)
+		if err != nil {
+			log.Errorf("保存answer截图失败，%v", err)
+		}
+		log.Debugf("保存answer截图成功")
+	}()
+
+	go func() {
+		defer wg.Done()
+		// pic := thresholdingImage(answerImg)
+		err = savePNG(Answer2Image, answer2Img)
+		if err != nil {
+			log.Errorf("保存answer截图失败，%v", err)
+		}
+		log.Debugf("保存answer截图成功")
+	}()
+
+	go func() {
+		defer wg.Done()
+		// pic := thresholdingImage(answerImg)
+		err = savePNG(Answer3Image, answer3Img)
+		if err != nil {
+			log.Errorf("保存answer截图失败，%v", err)
+		}
+		log.Debugf("保存answer截图成功")
+	}()
+
+	go func() {
+		defer wg.Done()
+		// pic := thresholdingImage(answerImg)
+		err = savePNG(Answer4Image, answer4Img)
+		if err != nil {
+			log.Errorf("保存answer截图失败，%v", err)
+		}
 		log.Debugf("保存answer截图成功")
 	}()
 
@@ -85,32 +125,98 @@ func cutImage(src image.Image, x, y, w, h int) (image.Image, error) {
 }
 
 //裁剪图片
-func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerImg image.Image, err error) {
-	var qX, qY, qW, qH, aX, aY, aW, aH int
+func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerImg image.Image, answer1Img image.Image, answer2Img image.Image, answer3Img image.Image, answer4Img image.Image, err error) {
+	var qX, qY, qW, qH, aX, aY, aW, aH, a1X, a1Y, a1W, a1H, a2X, a2Y, a2W, a2H, a3X, a3Y, a3W, a3H, a4X, a4Y, a4W, a4H int
 	switch cfg.APP {
 	case "xigua":
 		qX, qY, qW, qH = cfg.XgQx, cfg.XgQy, cfg.XgQw, cfg.XgQh
 		aX, aY, aW, aH = cfg.XgAx, cfg.XgAy, cfg.XgAw, cfg.XgAh
+		a1X, a1Y, a1W, a1H = cfg.NsA1x, cfg.NsA1y, cfg.NsA1w, cfg.NsA1h
+		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
+		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
+		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
 	case "cddh":
 		qX, qY, qW, qH = cfg.CdQx, cfg.CdQy, cfg.CdQw, cfg.CdQh
 		aX, aY, aW, aH = cfg.CdAx, cfg.CdAy, cfg.CdAw, cfg.CdAh
+		a1X, a1Y, a1W, a1H = cfg.NsA1x, cfg.NsA1y, cfg.NsA1w, cfg.NsA1h
+		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
+		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
+		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
 	case "huajiao":
 		qX, qY, qW, qH = cfg.HjQx, cfg.HjQy, cfg.HjQw, cfg.HjQh
 		aX, aY, aW, aH = cfg.HjAx, cfg.HjAy, cfg.HjAw, cfg.HjAh
+		a1X, a1Y, a1W, a1H = cfg.NsA1x, cfg.NsA1y, cfg.NsA1w, cfg.NsA1h
+		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
+		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
+		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
 	case "zscr":
 		qX, qY, qW, qH = cfg.ZsQx, cfg.ZsQy, cfg.ZsQw, cfg.ZsQh
 		aX, aY, aW, aH = cfg.ZsAx, cfg.ZsAy, cfg.ZsAw, cfg.ZsAh
+		a1X, a1Y, a1W, a1H = cfg.NsA1x, cfg.NsA1y, cfg.NsA1w, cfg.NsA1h
+		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
+		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
+		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
+	case "nexusq":
+		qX, qY, qW, qH = cfg.NsQx, cfg.NsQy, cfg.NsQw, cfg.NsQh
+		aX, aY, aW, aH = cfg.NsAx, cfg.NsAy, cfg.NsAw, cfg.NsAh
+		a1X, a1Y, a1W, a1H = cfg.NsA1x, cfg.NsA1y, cfg.NsA1w, cfg.NsA1h
+		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
+		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
+		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
 	}
 
-	questionImg, err = cutImage(src, qX, qY, qW, qH)
-	if err != nil {
-		return
-	}
+	var wg sync.WaitGroup
+	wg.Add(6)
 
-	answerImg, err = cutImage(src, aX, aY, aW, aH)
-	if err != nil {
-		return
-	}
+	go func() {
+		defer wg.Done()
+		questionImg, err = cutImage(src, qX, qY, qW, qH)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		answerImg, err = cutImage(src, aX, aY, aW, aH)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		answer1Img, err = cutImage(src, a1X, a1Y, a1W, a1H)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		answer2Img, err = cutImage(src, a2X, a2Y, a2W, a2H)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		answer3Img, err = cutImage(src, a3X, a3Y, a3W, a3H)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		answer4Img, err = cutImage(src, a4X, a4Y, a4W, a4H)
+		if err != nil {
+			return
+		}
+	}()
+
+	wg.Wait()
 	return
 }
 

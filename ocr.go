@@ -60,6 +60,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 	go func() {
 		screenshot := device.NewScreenshot(cfg)
 		png, err := screenshot.GetImage()
+		log.Printf("Image get time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 		if err != nil {
 			log.Println(err.Error())
 			imgQuiz <- device.QuestionImage
@@ -73,7 +74,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 			imgOptions <- device.AnswerImage
 			return
 		}
-		log.Printf("Image save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+		log.Printf("Image get+save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	}()
 	wig.Wait()
 

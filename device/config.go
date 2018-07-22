@@ -64,6 +64,33 @@ type Config struct {
 	ZsAy int `yaml:"zs_a_y"`
 	ZsAw int `yaml:"zs_a_w"`
 	ZsAh int `yaml:"zs_a_h"`
+
+	//nexusq截图题目位置
+	NsQx int `yaml:"ns_q_x"`
+	NsQy int `yaml:"ns_q_y"`
+	NsQw int `yaml:"ns_q_w"`
+	NsQh int `yaml:"ns_q_h"`
+	//nexusq截取答案位置
+	NsAx  int `yaml:"ns_a_x"`
+	NsAy  int `yaml:"ns_a_y"`
+	NsAw  int `yaml:"ns_a_w"`
+	NsAh  int `yaml:"ns_a_h"`
+	NsA1x int `yaml:"ns_a1_x"`
+	NsA1y int `yaml:"ns_a1_y"`
+	NsA1w int `yaml:"ns_a1_w"`
+	NsA1h int `yaml:"ns_a1_h"`
+	NsA2x int `yaml:"ns_a2_x"`
+	NsA2y int `yaml:"ns_a2_y"`
+	NsA2w int `yaml:"ns_a2_w"`
+	NsA2h int `yaml:"ns_a2_h"`
+	NsA3x int `yaml:"ns_a3_x"`
+	NsA3y int `yaml:"ns_a3_y"`
+	NsA3w int `yaml:"ns_a3_w"`
+	NsA3h int `yaml:"ns_a3_h"`
+	NsA4x int `yaml:"ns_a4_x"`
+	NsA4y int `yaml:"ns_a4_y"`
+	NsA4w int `yaml:"ns_a4_w"`
+	NsA4h int `yaml:"ns_a4_h"`
 }
 
 var cfg *Config

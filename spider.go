@@ -147,7 +147,7 @@ func (s *spider) Init() {
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
-			// println("\nchoose:\n" + string(bs))
+			println("\nchoose:\n" + string(bs))
 			go handleChooseResponse(bs)
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/fightResult" {
