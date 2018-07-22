@@ -11,6 +11,7 @@ const (
 	Answer2Image  = ImagePath + "answer2.png"
 	Answer3Image  = ImagePath + "answer3.png"
 	Answer4Image  = ImagePath + "answer4.png"
+	SampleImage   = ImagePath + "sample.png"
 
 	BaiduAccessTokenKey = "qanswer_baidu_access_token"
 

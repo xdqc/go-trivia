@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/xdqc/letterpress-solver/device"
@@ -14,14 +13,14 @@ var questionHash *Question
 
 func handleScreenshotQuestionResp() {
 	questionHash = &Question{}
-	time.Sleep(time.Millisecond * time.Duration(4200))
+	time.Sleep(time.Millisecond * time.Duration(4250))
 	quiz, opt1, opt2, opt3, opt4, isImgQuiz := getHashFromScreenshot()
 	questionHash.Data.Quiz = quiz
 	questionHash.Data.Options = append(questionHash.Data.Options, opt1, opt2, opt3, opt4)
 	questionHash.Data.CurTime = int(time.Now().Unix())
 	if isImgQuiz {
 		questionHash.Data.ImageID = "_img"
-		questionHash.Data.Quiz += "_img"
+		questionHash.Data.Quiz += questionHash.Data.ImageID
 	} else {
 		questionHash.Data.ImageID = ""
 	}
@@ -34,7 +33,7 @@ func handleScreenshotQuestionResp() {
 	if answer != "" {
 		for i, option := range questionHash.Data.Options {
 			// skip blank option screenshot (shot too early)
-			if len(strings.Replace(option, "0", "", -1)) == 0 {
+			if option == "00000000000000000000000000000000" {
 				questionHash.Data.CurTime = -1
 				break
 			}
@@ -45,7 +44,15 @@ func handleScreenshotQuestionResp() {
 			}
 		}
 	}
-	fmt.Printf(" 【Q】 %v\n 【A】 %v\n", questionHash.Data.Quiz, questionHash.CalData.Answer)
+
+	if ansPos == 0 {
+		questionDataQuiz, questionDataOptions := getQuizFromOCR()
+		odds := make([]float32, len(questionDataOptions))
+		answerItem := "不知道"
+		answerItem, ansPos = getAnswerFromAPI(odds, questionDataQuiz, questionDataOptions, answer)
+		fmt.Printf(" 【Q】 %v\n 【A】 %v\n", questionDataQuiz, answerItem)
+	}
+
 	// click answer
 	if Autoclick == 1 {
 		go clickProcess(ansPos, questionHash)
@@ -81,8 +88,8 @@ func handleScreenshotChooseResponse(bs []byte) {
 }
 
 func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, isImgQuiz bool) {
-	log.Println("Hashing quiz and options from screenshot ...")
-	tx1 := time.Now()
+	// log.Println("Hashing quiz and options from screenshot ...")
+	// tx1 := time.Now()
 
 	cfg := device.GetConfig()
 	screenshot := device.NewScreenshot(cfg)
@@ -93,16 +100,20 @@ func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string
 	}
 
 	//TODO: test the png image quiz or not
-	isImgQuiz = false
-
-	log.Printf("Image get time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
-
-	quiz, opt1, opt2, opt3, opt4, err = device.GetImageHash(png, cfg)
+	sampleHash := ""
+	quiz, opt1, opt2, opt3, opt4, sampleHash, err = device.GetImageHash(png, cfg.APP)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
-	println(quiz, opt1, opt2, opt3, opt4)
-	log.Printf("Image get+hash time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+	if sampleHash == "00000000000000000000000000000000" {
+		isImgQuiz = false
+	} else {
+		isImgQuiz = true
+		log.Println("deal with image quiz")
+		quiz, opt1, opt2, opt3, opt4, sampleHash, err = device.GetImageHash(png, cfg.APP+"_img")
+	}
+	// fmt.Printf("%v\n%v\n%v\n%v\n%v\n%v\n", quiz, opt1, opt2, opt3, opt4, sampleHash)
+	// log.Printf("Image get+hash time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	return
 }

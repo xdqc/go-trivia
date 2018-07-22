@@ -153,7 +153,7 @@ func (s *spider) Init() {
 			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
 		} else if ctx.Req.URL.Path == "/question/bat/choose" {
 			bs, _ := ioutil.ReadAll(resp.Body)
-			println("\nchoose:\n" + string(bs))
+			// println("\nchoose:\n" + string(bs))
 			if Hashquiz == 1 {
 				go handleScreenshotChooseResponse(bs)
 			} else {

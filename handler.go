@@ -115,57 +115,7 @@ func handleQuestionResp(bs []byte) {
 
 	// Put true here to force searching, even if found answer in db
 	if storedAnsPos == 0 {
-		ret := GetFromAPI(question.Data.Quiz, question.Data.Options)
-
-		log.Printf("Google predict => %v\n", ret)
-		total := 1
-
-		for _, option := range question.Data.Options {
-			total += ret[option]
-		}
-		if total != 1 {
-			// total == 1 -> 0,0,0,0
-			max := math.MinInt32
-			for i, option := range question.Data.Options {
-				odds[i] = float32(ret[option]) / float32(total-ret[option])
-				// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
-				if ret[option] > max && ret[option] != 0 {
-					max = ret[option]
-					ansPos = i + 1
-					answerItem = option
-				}
-			}
-		}
-		// verify the stored answer
-		if answer == answerItem {
-			//good
-			odds[ansPos-1] = 888
-		} else {
-			if answer != "" {
-				// searched result could be wrong
-				if storedAnsPos != 0 {
-					re := regexp.MustCompile("\\p{Han}+")
-					if odds[ansPos-1] < 50 || len(answer) > 6 || !re.MatchString(answer) {
-						log.Println("searched answer could be wrong...")
-						answerItem = answer
-						ansPos = storedAnsPos
-						odds[ansPos-1] = 333
-					} else {
-						// stored answer may be corrupted
-						log.Println("stored answer may be corrupted...")
-						odds[ansPos-1] = 444
-					}
-				} else {
-					// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
-					log.Println("the previous option words changed by the game...")
-				}
-			} else {
-				log.Println("new question got!")
-			}
-			if len(odds) == 4 {
-				storedAnsPos = ansPos
-			}
-		}
+		answerItem, ansPos = getAnswerFromAPI(odds, question.Data.Quiz, question.Data.Options, answer)
 	}
 
 	// click answer
@@ -214,6 +164,62 @@ func handleQuestionResp(bs []byte) {
 	// question.CalData.ImageTime = <-imgTimeChan
 	// questionInfo, _ = json.Marshal(question)
 	question = nil
+}
+
+func getAnswerFromAPI(odds []float32, questionDataQuiz string, questionDataOptions []string, answer string) (answerItem string, ansPos int) {
+	ret := GetFromAPI(questionDataQuiz, questionDataOptions)
+
+	log.Printf("Google predict => %v\n", ret)
+	total := 1
+	ansPos = 1
+
+	for _, option := range questionDataOptions {
+		total += ret[option]
+	}
+	if total != 1 {
+		// total == 1 -> 0,0,0,0
+		max := math.MinInt32
+		for i, option := range questionDataOptions {
+			odds[i] = float32(ret[option]) / float32(total-ret[option])
+			// question.Data.Options[i] = option + "[" + strconv.Itoa(ret[option]) + "]"
+			if ret[option] > max && ret[option] != 0 {
+				max = ret[option]
+				ansPos = i + 1
+				answerItem = option
+			}
+		}
+	}
+	// verify the stored answer
+	if answer == answerItem {
+		//good
+		odds[ansPos-1] = 888
+	} else {
+		if answer != "" {
+			// searched result could be wrong
+			if storedAnsPos != 0 {
+				re := regexp.MustCompile("\\p{Han}+")
+				if odds[ansPos-1] < 50 || len(answer) > 6 || !re.MatchString(answer) {
+					log.Println("searched answer could be wrong...")
+					answerItem = answer
+					ansPos = storedAnsPos
+					odds[ansPos-1] = 333
+				} else {
+					// stored answer may be corrupted
+					log.Println("stored answer may be corrupted...")
+					odds[ansPos-1] = 444
+				}
+			} else {
+				// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
+				log.Println("the previous option words changed by the game...")
+			}
+		} else {
+			// log.Println("new question got!")
+		}
+		if len(odds) == 4 {
+			storedAnsPos = ansPos
+		}
+	}
+	return
 }
 
 func handleChooseResponse(bs []byte) {
@@ -324,7 +330,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 1400 // 1650 1400 1150 900
+	var nextMatchY = 1150 // 1650 1400 1150 900
 	// if rand.Intn(100) < 80 {
 	// 	nextMatchY = 1400
 	// }

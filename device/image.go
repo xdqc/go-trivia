@@ -14,42 +14,76 @@ import (
 	"github.com/ngaut/log"
 )
 
-func GetImageHash(png image.Image, cfg *Config) (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, err error) {
+func GetImageHash(png image.Image, cfgAPP string) (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, sample string, err error) {
 	//裁剪图片
-	questionImg, _, answer1Img, answer2Img, answer3Img, answer4Img, err := splitImage(png, cfg)
+	questionImg, _, answer1Img, answer2Img, answer3Img, answer4Img, sampleImg, err := splitImage(png, cfgAPP)
 	if err != nil {
-		return "", "", "", "", "", fmt.Errorf("截图失败，%v", err)
+		return "", "", "", "", "", "", fmt.Errorf("截图失败，%v", err)
 	}
 	const hashLen = 8
-	var question, answer1, answer2, answer3, answer4 []byte
+	var question, answer1, answer2, answer3, answer4, sampleBytes []byte
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(6)
 	go func() {
 		defer wg.Done()
 		question, _ = imagehash.Dhash(questionImg, hashLen)
+		err = savePNG(QuestionImage, questionImg)
+		if err != nil {
+			log.Errorf("保存question截图失败，%v", err)
+		}
+		// log.Debugf("保存question截图成功")
 	}()
 	go func() {
 		defer wg.Done()
 		answer1, _ = imagehash.Dhash(answer1Img, hashLen)
+		err = savePNG(Answer1Image, answer1Img)
+		if err != nil {
+			log.Errorf("保存answer1截图失败，%v", err)
+		}
+		// log.Debugf("保存answer1截图成功")
 	}()
 	go func() {
 		defer wg.Done()
 		answer2, _ = imagehash.Dhash(answer2Img, hashLen)
+		err = savePNG(Answer2Image, answer2Img)
+		if err != nil {
+			log.Errorf("保存answer2截图失败，%v", err)
+		}
+		// log.Debugf("保存answer2截图成功")
 	}()
 	go func() {
 		defer wg.Done()
 		answer3, _ = imagehash.Dhash(answer3Img, hashLen)
+		err = savePNG(Answer3Image, answer3Img)
+		if err != nil {
+			log.Errorf("保存answer3截图失败，%v", err)
+		}
+		// log.Debugf("保存answer3截图成功")
 	}()
 	go func() {
 		defer wg.Done()
 		answer4, _ = imagehash.Dhash(answer4Img, hashLen)
+		err = savePNG(Answer4Image, answer4Img)
+		if err != nil {
+			log.Errorf("保存answer4截图失败，%v", err)
+		}
+		// log.Debugf("保存answer4截图成功")
+	}()
+	go func() {
+		defer wg.Done()
+		sampleBytes, _ = imagehash.Dhash(sampleImg, hashLen)
+		err = savePNG(SampleImage, sampleImg)
+		if err != nil {
+			log.Errorf("保存answer4截图失败，%v", err)
+		}
+		// log.Debugf("保存answer4截图成功")
 	}()
 	wg.Wait()
-	quiz, opt1, opt2, opt3, opt4 = hex.EncodeToString(question), hex.EncodeToString(answer1), hex.EncodeToString(answer2), hex.EncodeToString(answer3), hex.EncodeToString(answer4)
+	quiz, opt1, opt2, opt3, opt4, sample = hex.EncodeToString(question), hex.EncodeToString(answer1), hex.EncodeToString(answer2), hex.EncodeToString(answer3), hex.EncodeToString(answer4), hex.EncodeToString(sampleBytes)
 	return
 }
 
-func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string) error {
+func SaveImage(png image.Image, cfgAPP string, c1 chan<- string, c2 chan<- string) error {
 	/* 	go func() {
 		screenshotPath := fmt.Sprintf("%sscreenshot.png", util.ImagePath)
 		err := util.SavePNG(screenshotPath, png)
@@ -60,13 +94,13 @@ func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string)
 	}() */
 
 	//裁剪图片
-	questionImg, answerImg, answer1Img, answer2Img, answer3Img, answer4Img, err := splitImage(png, cfg)
+	questionImg, answerImg, answer1Img, answer2Img, answer3Img, answer4Img, sampleImg, err := splitImage(png, cfgAPP)
 	if err != nil {
 		return fmt.Errorf("截图失败，%v", err)
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(6)
+	wg.Add(7)
 
 	go func() {
 		defer wg.Done()
@@ -130,6 +164,15 @@ func SaveImage(png image.Image, cfg *Config, c1 chan<- string, c2 chan<- string)
 		log.Debugf("保存answer截图成功")
 	}()
 
+	go func() {
+		defer wg.Done()
+		// pic := thresholdingImage(answerImg)
+		err = savePNG(SampleImage, sampleImg)
+		if err != nil {
+			log.Errorf("保存answer截图失败，%v", err)
+		}
+		log.Debugf("保存answer截图成功")
+	}()
 	wg.Wait()
 	return nil
 }
@@ -162,9 +205,9 @@ func cutImage(src image.Image, x, y, w, h int) (image.Image, error) {
 }
 
 //裁剪图片
-func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerImg image.Image, answer1Img image.Image, answer2Img image.Image, answer3Img image.Image, answer4Img image.Image, err error) {
-	var qX, qY, qW, qH, aX, aY, aW, aH, a1X, a1Y, a1W, a1H, a2X, a2Y, a2W, a2H, a3X, a3Y, a3W, a3H, a4X, a4Y, a4W, a4H int
-	switch cfg.APP {
+func splitImage(src image.Image, cfgAPP string) (questionImg image.Image, answerImg image.Image, answer1Img image.Image, answer2Img image.Image, answer3Img image.Image, answer4Img image.Image, sampleImg image.Image, err error) {
+	var qX, qY, qW, qH, aX, aY, aW, aH, a1X, a1Y, a1W, a1H, a2X, a2Y, a2W, a2H, a3X, a3Y, a3W, a3H, a4X, a4Y, a4W, a4H, spX, spY, spW, spH int
+	switch cfgAPP {
 	case "xigua":
 		qX, qY, qW, qH = cfg.XgQx, cfg.XgQy, cfg.XgQw, cfg.XgQh
 		aX, aY, aW, aH = cfg.XgAx, cfg.XgAy, cfg.XgAw, cfg.XgAh
@@ -200,10 +243,19 @@ func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerIm
 		a2X, a2Y, a2W, a2H = cfg.NsA2x, cfg.NsA2y, cfg.NsA2w, cfg.NsA2h
 		a3X, a3Y, a3W, a3H = cfg.NsA3x, cfg.NsA3y, cfg.NsA3w, cfg.NsA3h
 		a4X, a4Y, a4W, a4H = cfg.NsA4x, cfg.NsA4y, cfg.NsA4w, cfg.NsA4h
+		spX, spY, spW, spH = cfg.NsSPx, cfg.NsSPy, cfg.NsSPw, cfg.NsSPh
+	case "nexusq_img":
+		qX, qY, qW, qH = cfg.NsiQx, cfg.NsiQy, cfg.NsiQw, cfg.NsiQh
+		aX, aY, aW, aH = cfg.NsiAx, cfg.NsiAy, cfg.NsiAw, cfg.NsiAh
+		a1X, a1Y, a1W, a1H = cfg.NsiA1x, cfg.NsiA1y, cfg.NsiA1w, cfg.NsiA1h
+		a2X, a2Y, a2W, a2H = cfg.NsiA2x, cfg.NsiA2y, cfg.NsiA2w, cfg.NsiA2h
+		a3X, a3Y, a3W, a3H = cfg.NsiA3x, cfg.NsiA3y, cfg.NsiA3w, cfg.NsiA3h
+		a4X, a4Y, a4W, a4H = cfg.NsiA4x, cfg.NsiA4y, cfg.NsiA4w, cfg.NsiA4h
+		spX, spY, spW, spH = cfg.NsSPx, cfg.NsSPy, cfg.NsSPw, cfg.NsSPh
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(6)
+	wg.Add(7)
 
 	go func() {
 		defer wg.Done()
@@ -248,6 +300,14 @@ func splitImage(src image.Image, cfg *Config) (questionImg image.Image, answerIm
 	go func() {
 		defer wg.Done()
 		answer4Img, err = cutImage(src, a4X, a4Y, a4W, a4H)
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		sampleImg, err = cutImage(src, spX, spY, spW, spH)
 		if err != nil {
 			return
 		}

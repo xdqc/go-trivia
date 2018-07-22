@@ -150,7 +150,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int) {
 
 	search := make(chan string, 4+2*N_opt)
 	done := make(chan bool, 1)
-	tx := time.Now()
+	// tx := time.Now()
 
 	keywords, quote := preProcessQuiz(quiz, false)
 
@@ -166,7 +166,7 @@ func GetFromAPI(quiz string, options []string) (res map[string]int) {
 
 	// startBrowser(keywords)
 
-	println("\n.......................searching..............................\n")
+	// println("\n.......................searching..............................\n")
 	rawStrTraining := "                                                  "
 	rawStrTesting := "                                                  "
 	count := cap(search)
@@ -193,12 +193,12 @@ func GetFromAPI(quiz string, options []string) (res map[string]int) {
 	}()
 	select {
 	case <-done:
-		fmt.Println("search done")
-	case <-time.After(3 * time.Second):
-		fmt.Println("search timeout")
+		// fmt.Println("search done")
+	case <-time.After(2 * time.Second):
+		// fmt.Println("search timeout")
 	}
-	tx2 := time.Now()
-	log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
+	// tx2 := time.Now()
+	// log.Printf("Searching time: %d ms\n", tx2.Sub(tx).Nanoseconds()/1e6)
 
 	// sliding window, count the common chars between [neighbor of the option in search text] and [quiz]
 	CountMatches(quiz, options, rawStrTraining, rawStrTesting, res)
@@ -234,8 +234,8 @@ func GetFromAPI(quiz string, options []string) (res map[string]int) {
 		}
 	}
 
-	tx3 := time.Now()
-	log.Printf("Processing time %d ms\n", tx3.Sub(tx2).Nanoseconds()/1e6)
+	// tx3 := time.Now()
+	// log.Printf("Processing time %d ms\n", tx3.Sub(tx2).Nanoseconds()/1e6)
 	return res
 }
 
@@ -247,15 +247,15 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	testingStr = re.ReplaceAllString(testingStr, "")
 	training := []rune(trainingStr)
 	testing := []rune(testingStr)
-	log.Printf("\t\tTraining: %d\tTesting: %d", len(training), len(testing))
+	// log.Printf("\t\tTraining: %d\tTesting: %d", len(training), len(testing))
 
-	optCounts, plainQuizCount := trainKeyWords(append(testing, training...), quiz, options, res)
+	optCounts, _ := trainKeyWords(append(testing, training...), quiz, options, res)
 
 	sumCounts := 0
 	for i := range optCounts {
 		sumCounts += optCounts[i]
 	}
-	log.Printf("Sum Count: %d\tPlain quiz: %d\n", sumCounts, plainQuizCount)
+	// log.Printf("Sum Count: %d\tPlain quiz: %d\n", sumCounts, plainQuizCount)
 
 	// If all counts of options in text less than 2, choose the 1 or nothing
 	// Or If majority matches are plain quiz, just use count
@@ -285,10 +285,10 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	for _, option := range options {
 		total += res[option]
 	}
-	for i, option := range options {
-		odd := float32(res[option]) / float32(total-res[option])
-		fmt.Printf("%4d|%8.3f| %s\n", optCounts[i]-1, odd, option)
-	}
+	// for i, option := range options {
+	// 	odd := float32(res[option]) / float32(total-res[option])
+	// 	fmt.Printf("%4d|%8.3f| %s\n", optCounts[i]-1, odd, option)
+	// }
 }
 
 func trainKeyWords(text []rune, quiz string, options []string, res map[string]int) ([]int, int) {
@@ -302,7 +302,10 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	if quoted != "" {
 		quotedKeywords = JB.Cut(quoted, true)
 	}
-	shortOptions := preProcessOptions(options)
+	shortOptions := make([][]rune, 0) //preProcessOptions(options)
+	for _, opt := range options {
+		shortOptions = append(shortOptions, []rune(opt))
+	}
 
 	optCounts := make([]int, N_opt)
 	plainQuizCount := 0
@@ -440,7 +443,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 			kwWeight[kw] *= 10
 		}
 
-		fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", kwWeight[kw]*100, kw, kwMap[kw])
+		// fmt.Printf("W~\t%4.2f%%\t%6s\t%v\n", kwWeight[kw]*100, kw, kwMap[kw])
 	}
 
 	optMatrix := make([][]float64, N_opt)
@@ -461,7 +464,7 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		}
 		// vM = math.Sqrt(vM)
 		res[option] = int(vM * 10000)
-		fmt.Printf("%10s %4.3f\t%1.2f\n", option, vM, optMatrix[i])
+		// fmt.Printf("%10s %4.3f\t%1.2f\n", option, vM, optMatrix[i])
 	}
 
 	return optCounts, plainQuizCount

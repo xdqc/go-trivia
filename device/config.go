@@ -91,6 +91,39 @@ type Config struct {
 	NsA4y int `yaml:"ns_a4_y"`
 	NsA4w int `yaml:"ns_a4_w"`
 	NsA4h int `yaml:"ns_a4_h"`
+
+	//nexusq_img截图题目位置
+	NsiQx int `yaml:"nsi_q_x"`
+	NsiQy int `yaml:"nsi_q_y"`
+	NsiQw int `yaml:"nsi_q_w"`
+	NsiQh int `yaml:"nsi_q_h"`
+	//nexusq_img截取答案位置
+	NsiAx  int `yaml:"nsi_a_x"`
+	NsiAy  int `yaml:"nsi_a_y"`
+	NsiAw  int `yaml:"nsi_a_w"`
+	NsiAh  int `yaml:"nsi_a_h"`
+	NsiA1x int `yaml:"nsi_a1_x"`
+	NsiA1y int `yaml:"nsi_a1_y"`
+	NsiA1w int `yaml:"nsi_a1_w"`
+	NsiA1h int `yaml:"nsi_a1_h"`
+	NsiA2x int `yaml:"nsi_a2_x"`
+	NsiA2y int `yaml:"nsi_a2_y"`
+	NsiA2w int `yaml:"nsi_a2_w"`
+	NsiA2h int `yaml:"nsi_a2_h"`
+	NsiA3x int `yaml:"nsi_a3_x"`
+	NsiA3y int `yaml:"nsi_a3_y"`
+	NsiA3w int `yaml:"nsi_a3_w"`
+	NsiA3h int `yaml:"nsi_a3_h"`
+	NsiA4x int `yaml:"nsi_a4_x"`
+	NsiA4y int `yaml:"nsi_a4_y"`
+	NsiA4w int `yaml:"nsi_a4_w"`
+	NsiA4h int `yaml:"nsi_a4_h"`
+
+	//nexusq_截图sample位置
+	NsSPx int `yaml:"ns_sp_x"`
+	NsSPy int `yaml:"ns_sp_y"`
+	NsSPw int `yaml:"ns_sp_w"`
+	NsSPh int `yaml:"ns_sp_h"`
 }
 
 var cfg *Config

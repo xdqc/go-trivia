@@ -178,7 +178,7 @@ func ShowAllQuestions() {
 	var kv = map[string]string{}
 	memoryDb.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
-		b := tx.Bucket([]byte(WholeQuestionBucket))
+		b := tx.Bucket([]byte(HashQuestionBucket))
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			// fmt.Printf("key=%s, value=%s\n", k, v)
