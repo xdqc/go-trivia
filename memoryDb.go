@@ -22,39 +22,34 @@ var (
 
 func initMemoryDb() {
 	var err error
-	if Hashquiz == 1 {
-		memoryDb, err = bolt.Open("questionsHash.data", 0600, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		memoryDb.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists([]byte(HashQuestionBucket))
-			if err != nil {
-				return fmt.Errorf("create bucket: %s", err)
-			}
-			return nil
-		})
-	} else {
-		memoryDb, err = bolt.Open("questions.data", 0600, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		memoryDb.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists([]byte(QuestionBucket))
-			if err != nil {
-				return fmt.Errorf("create bucket: %s", err)
-			}
-			return nil
-		})
-
-		memoryDb.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists([]byte(WholeQuestionBucket))
-			if err != nil {
-				return fmt.Errorf("create bucket: %s", err)
-			}
-			return nil
-		})
+	memoryDb, err = bolt.Open("questions.data", 0600, nil)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	memoryDb.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(HashQuestionBucket))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
+
+	memoryDb.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(QuestionBucket))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
+
+	memoryDb.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(WholeQuestionBucket))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
 }
 
 func StoreQuestion(question *Question) error {
@@ -85,10 +80,10 @@ func StoreWholeQuestion(question *Question) error {
 
 //StoreHashQuestion store the hash question and hash correct answer to db
 func StoreHashQuestion(question *Question) error {
-	if question.CalData.TrueAnswer != "" {
+	if question.HashData.TrueAnswer != "" {
 		return memoryDb.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(HashQuestionBucket))
-			err := b.Put([]byte(question.Data.Quiz), []byte(question.CalData.TrueAnswer))
+			err := b.Put([]byte(question.HashData.Quiz), []byte(question.HashData.TrueAnswer))
 			return err
 		})
 	}
@@ -96,10 +91,10 @@ func StoreHashQuestion(question *Question) error {
 }
 
 //FetchQuestion get question answer of a given quiz
-func FetchQuestion(question *Question) (str string) {
+func FetchQuestion(question string) (str string) {
 	memoryDb.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(QuestionBucket))
-		v := b.Get([]byte(question.Data.Quiz))
+		v := b.Get([]byte(question))
 		if len(v) == 0 {
 			return nil
 		}
@@ -186,15 +181,14 @@ func ShowAllQuestions() {
 		}
 
 		bs := new(bytes.Buffer)
-		fmt.Fprintf(bs, "{")
+		fmt.Fprintf(bs, "[")
 		for key, value := range kv {
-			fmt.Fprintf(bs, "\"%s\":%s,\n", key, value)
+			fmt.Fprintf(bs, "{\"%s\":\"%s\"},\n", key, value)
 		}
-		fmt.Fprintf(bs, "}")
+		fmt.Fprintf(bs, "]")
 		ioutil.WriteFile("wq.json", bs.Bytes(), 0600)
 		return nil
 	})
-
 }
 
 type QuestionCols struct {

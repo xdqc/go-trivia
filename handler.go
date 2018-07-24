@@ -86,7 +86,7 @@ func handleQuestionResp(bs []byte) {
 	question.CalData.quizNum = strconv.Itoa(question.Data.Num)
 
 	//Get the answer from the db if question fetched by MITM
-	answer := FetchQuestion(question)
+	answer := FetchQuestion(question.Data.Quiz)
 
 	// fetch image of the quiz
 	// keywords, quoted := preProcessQuiz(question.Data.Quiz, false)
@@ -207,6 +207,7 @@ func getAnswerFromAPI(odds []float32, questionDataQuiz string, questionDataOptio
 					// stored answer may be corrupted
 					log.Println("stored answer may be corrupted...")
 					odds[ansPos-1] = 444
+					questionDataOptions[ansPos-1] = answer
 				}
 			} else {
 				// if storedAnsPos==0, the stored anser exists, but match nothing => the option words changed by the game
@@ -330,7 +331,7 @@ func clickProcess(ansPos int, question *Question) {
 	var centerX = 540    // center of screen
 	var firstItemY = 840 // center of first item (y)
 	var optionHeight = 200
-	var nextMatchY = 900 // 1650 1400 1150 900
+	var nextMatchY = 900 // 1650 1400 1150 900 680
 	// if rand.Intn(100) < 80 {
 	// 	nextMatchY = 1400
 	// }
@@ -389,21 +390,21 @@ func clickProcess(ansPos int, question *Question) {
 
 func clickAction(posX int, posY int) {
 	touchX, touchY := strconv.Itoa(posX+rand.Intn(40)-20), strconv.Itoa(posY+rand.Intn(20)-10)
-	_, err := exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output()
+	err := exec.Command("adb", "shell", "input", "tap", touchX, touchY).Run()
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
 }
 
 func swipeAction() {
-	_, err := exec.Command("adb", "shell", "input", "swipe", "75", "150", "75", "150", "0").Output() // swipe right, back
+	err := exec.Command("adb", "shell", "input", "swipe", "75", "150", "75", "150", "0").Run() // swipe right, back
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
 }
 
 func clickEmoji() {
-	_, err := exec.Command("adb", "shell", "input", "tap", "100", "300").Output() // tap my avatar to summon emoji panel
+	err := exec.Command("adb", "shell", "input", "tap", "100", "300").Run() // tap my avatar to summon emoji panel
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
@@ -411,7 +412,7 @@ func clickEmoji() {
 	fX, fY := 170, 560
 	dX, dY := 150, 150
 	touchX, touchY := strconv.Itoa(fX+dX*(rand.Intn(2)*3+rand.Intn(2))), strconv.Itoa(fY+dY*rand.Intn(3))
-	_, err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Output() // tap the emoji
+	err = exec.Command("adb", "shell", "input", "tap", touchX, touchY).Run() // tap the emoji
 	if err != nil {
 		log.Println("error: check adb connection.", err)
 	}
@@ -451,7 +452,7 @@ func inputADBText() {
 	}()
 
 	time.Sleep(time.Millisecond * 500)
-	exec.Command("adb", "shell", "input", "tap", "1000", "1050").Output() // tap `review current game`
+	exec.Command("adb", "shell", "input", "tap", "1000", "1050").Run() // tap `review current game`
 	time.Sleep(time.Millisecond * 4000)
 
 	select {
@@ -483,21 +484,21 @@ func inputADBText() {
 			msg = string([]rune(msg)[:300])
 		}
 		if hasReviewCommented {
-			exec.Command("adb", "shell", "input", "tap", "500", "500").Output()                        // tap center, esc error msg dialog box
-			exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
+			exec.Command("adb", "shell", "input", "tap", "500", "500").Run()                        // tap center, esc error msg dialog box
+			exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Run() // swipe left, forward
 			continue
 		}
 		println(msg)
 		prevMsg = msg
-		exec.Command("adb", "shell", "input", "tap", "500", "1700").Output() // tap `input bar`
+		exec.Command("adb", "shell", "input", "tap", "500", "1700").Run() // tap `input bar`
 		time.Sleep(time.Millisecond * 10)
-		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Output() // sending text input
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_INPUT_TEXT", "--es msg", "\""+msg+"\"").Run() // sending text input
 		time.Sleep(time.Millisecond * 10)
-		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Output() // editor action `send`
+		exec.Command("adb", "shell", "am", "broadcast", "-a ADB_EDITOR_CODE", "--ei code", "4").Run() // editor action `send`
 		time.Sleep(time.Millisecond * 100)
 
-		exec.Command("adb", "shell", "input", "tap", "500", "500").Output()                        // tap center, esc error msg dialog box
-		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Output() // swipe left, forward
+		exec.Command("adb", "shell", "input", "tap", "500", "500").Run()                        // tap center, esc error msg dialog box
+		exec.Command("adb", "shell", "input", "swipe", "800", "470", "200", "470", "200").Run() // swipe left, forward
 		time.Sleep(time.Millisecond * 100)
 	}
 	// record the last passed and failed comments
@@ -510,8 +511,8 @@ func inputADBText() {
 		defer f.Close()
 		f.WriteString(prevMsg + "\n\n")
 	}
-	exec.Command("adb", "shell", "input", "tap", "500", "500").Output() // tap center, esc dialog box, to go back
-	exec.Command("adb", "shell", "input", "tap", "75", "150").Output()  // tap esc arrow, go back
+	exec.Command("adb", "shell", "input", "tap", "500", "500").Run() // tap center, esc dialog box, to go back
+	exec.Command("adb", "shell", "input", "tap", "75", "150").Run()  // tap esc arrow, go back
 }
 
 func recordCorrectUser(user string) {
@@ -580,6 +581,11 @@ type Question struct {
 		Choice     int
 		Voice      int
 	} `json:"caldata"`
+	HashData struct {
+		Quiz       string   `json:"quiz"`
+		Options    []string `json:"options"`
+		TrueAnswer string
+	} `json:"hashdata"`
 	Errcode int `json:"errcode"`
 }
 

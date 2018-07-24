@@ -88,6 +88,14 @@ func preProcessOptions(options []string) [][]rune {
 	isSameBegin := true
 	isSameEnd := true
 	for isSameBegin || isSameEnd {
+		if len(newOptions) == 0 {
+			return newOptions
+		}
+		for _, opt := range newOptions {
+			if len(opt) == 0 {
+				return newOptions
+			}
+		}
 		begin := newOptions[0][0]
 		end := newOptions[0][len(newOptions[0])-1]
 		if re.MatchString(string(begin)) || re.MatchString(string(end)) {
@@ -105,14 +113,14 @@ func preProcessOptions(options []string) [][]rune {
 			for i, option := range newOptions {
 				option = option[1:]
 				newOptions[i] = option
-				log.Printf("options: %v", string(option))
+				// log.Printf("options: %v", string(option))
 			}
 		}
 		if isSameEnd {
 			for i, option := range newOptions {
 				option = option[:len(option)-1]
 				newOptions[i] = option
-				log.Printf("options: %v", string(option))
+				// log.Printf("options: %v", string(option))
 			}
 		}
 	}
@@ -302,10 +310,10 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 	if quoted != "" {
 		quotedKeywords = JB.Cut(quoted, true)
 	}
-	shortOptions := make([][]rune, 0) //preProcessOptions(options)
-	for _, opt := range options {
-		shortOptions = append(shortOptions, []rune(opt))
-	}
+	shortOptions := preProcessOptions(options) //:= make([][]rune, 0)
+	// for _, opt := range options {
+	// 	shortOptions = append(shortOptions, []rune(opt))
+	// }
 
 	optCounts := make([]int, N_opt)
 	plainQuizCount := 0
@@ -429,14 +437,14 @@ func trainKeyWords(text []rune, quiz string, options []string, res map[string]in
 		}
 		kwWeight[kw] = rsd
 
-		// // Use corpus frequency data to correct keyword weight
-		// if c, ok := CorpusWord[kw]; ok {
-		// 	count := c.Count
-		// 	kwWeight[kw] = rsd / math.Log(float64(count)) * 10
-		// } else {
-		// 	// the min count in corpus is 50, use 10 for non-exist rare word
-		// 	kwWeight[kw] = rsd / math.Log(30) * 10
-		// }
+		// Use corpus frequency data to correct keyword weight
+		if c, ok := CorpusWord[kw]; ok {
+			count := c.Count
+			kwWeight[kw] = rsd / math.Log(float64(count)) * 10
+		} else {
+			// the min count in corpus is 50, use 10 for non-exist rare word
+			kwWeight[kw] = rsd / math.Log(30) * 10
+		}
 
 		// 10 times important
 		if strings.ContainsRune(kw, '第') || strings.ContainsRune(kw, '最') {

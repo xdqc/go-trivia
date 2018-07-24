@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/xdqc/letterpress-solver/device"
@@ -16,43 +17,43 @@ var questionHash *Question
 
 func handleScreenshotQuestionResp() {
 	questionHash = &Question{}
-	time.Sleep(time.Millisecond * time.Duration(4300))
+	time.Sleep(time.Millisecond * time.Duration(4100))
 	quiz, opt1, opt2, opt3, opt4, isImgQuiz := getHashFromScreenshot()
-	questionHash.Data.Quiz = quiz
-	questionHash.Data.Options = append(questionHash.Data.Options, opt1, opt2, opt3, opt4)
+	questionHash.HashData.Quiz = quiz
+	questionHash.HashData.Options = append(questionHash.HashData.Options, opt1, opt2, opt3, opt4)
 	questionHash.Data.CurTime = int(time.Now().Unix())
-	for _, option := range questionHash.Data.Options {
+	for _, option := range questionHash.HashData.Options {
 		// skip blank option screenshot (shot too early)
-		if option == "000000000000000000000000000000000000000000000000000000000000000000000000" {
-			questionHash.Data.CurTime = -1
-			// click answer
-			if Autoclick == 1 {
-				go clickProcess(0, questionHash)
-			}
-			return
+		if option == "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" {
+			quiz, opt1, opt2, opt3, opt4, isImgQuiz = getHashFromScreenshot()
+			questionHash.HashData.Quiz = quiz
+			questionHash.HashData.Options = make([]string, 0)
+			questionHash.HashData.Options = append(questionHash.HashData.Options, opt1, opt2, opt3, opt4)
+			questionHash.Data.CurTime = int(time.Now().Unix())
+			break
 		}
 	}
-
+	// tx1 := time.Now()
 	if isImgQuiz {
 		questionHash.Data.ImageID = "_img"
-		questionHash.Data.Quiz += questionHash.Data.ImageID
+		questionHash.HashData.Quiz += questionHash.Data.ImageID
 	} else {
 		questionHash.Data.ImageID = ""
 	}
 
-	//Get the answer from the db if question fetched by MITM
-	answer := FetchHashQuestion(questionHash.Data.Quiz)
+	answer := FetchHashQuestion(questionHash.HashData.Quiz)
 	questionHash.CalData.Answer = "不知道"
 	ansPos := 0
 
-	hammings := make([]int, 0)
 	if answer != "" {
-		for _, option := range questionHash.Data.Options {
-			ham, _ := Hamming(option, answer)
+		println("----------------", questionHash.HashData.Quiz, "----------------")
+		hammings := make([]int, 0)
+		for _, option := range questionHash.HashData.Options {
+			ham := Hamming(option, answer)
 			hammings = append(hammings, ham)
 		}
 		min := math.MaxInt32
-		for i, option := range questionHash.Data.Options {
+		for i, option := range questionHash.HashData.Options {
 			if hammings[i] < min && hammings[i] >= 0 {
 				min = hammings[i]
 				ansPos = i + 1
@@ -68,35 +69,72 @@ func handleScreenshotQuestionResp() {
 
 				defer f.Close()
 
-				if _, err = f.WriteString(quiz + "\n" + answer + "\n" + questionHash.CalData.Answer + "\n\n"); err != nil {
+				if _, err = f.WriteString(time.Now().Format(time.RFC3339) + "\t" + quiz + "\n\t" + answer + "\n\t" + questionHash.CalData.Answer + "\n\n"); err != nil {
+					panic(err)
+				}
+				for _, opt := range questionHash.HashData.Options {
+					if _, err = f.WriteString(strconv.Itoa(Hamming(answer, opt)) + "\t" + opt + "\n"); err != nil {
+						panic(err)
+					}
+				}
+				if _, err = f.WriteString("\n\n"); err != nil {
 					panic(err)
 				}
 			}()
 		}
 	}
 
+	// log.Printf("hash process time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	if ansPos == 0 {
-		questionDataQuiz, questionDataOptions := getQuizFromOCR()
-		odds := make([]float32, len(questionDataOptions))
-		answerItem := "不知道"
-		answerItem, ansPos = getAnswerFromAPI(odds, questionDataQuiz, questionDataOptions, answer)
-		fmt.Printf(" 【Q】 %v\n 【A】 %v\n", questionDataQuiz, answerItem)
-	}
+		questionHash.Data.Quiz, questionHash.Data.Options = getQuizFromOCR()
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "?", "？", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, ",", "，", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "(", "（", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, ")", "）", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "\"", "“", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "'", "‘", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "!", "！", -1)
+		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "」」", "」", -1)
+		odds := make([]float32, len(questionHash.Data.Options))
 
+		answer := FetchQuestion(questionHash.Data.Quiz)
+
+		answerItem := "不知道"
+		if answer != "" {
+			for i, option := range questionHash.Data.Options {
+				if option == answer {
+					ansPos = i + 1
+					answerItem = option
+					odds[i] = 888
+					break
+				}
+			}
+		}
+
+		if ansPos == 0 {
+			answerItem, ansPos = getAnswerFromAPI(odds, questionHash.Data.Quiz, questionHash.Data.Options, answer)
+		}
+		questionHash.CalData.TrueAnswer = answerItem
+		fmt.Printf(" 【Q】 %v\n 【A】 %v\n", questionHash.Data.Quiz, answerItem)
+	}
 	// click answer
 	if Autoclick == 1 {
 		go clickProcess(ansPos, questionHash)
 	}
-
 }
 
 //Hamming distance is simply the minimum number of substitutions required to change one string into the other.
-func Hamming(a, b string) (int, error) {
+func Hamming(a, b string) int {
+	if a == b {
+		return 0
+	}
+
 	al := len(a)
 	bl := len(b)
 
 	if al != bl {
-		return -1, fmt.Errorf("strings are not equal (len(a)=%d, len(b)=%d)", al, bl)
+		fmt.Errorf("strings are not equal (len(a)=%d, len(b)=%d)", al, bl)
+		return -1
 	}
 
 	var difference = 0
@@ -109,12 +147,12 @@ func Hamming(a, b string) (int, error) {
 		}
 	}
 
-	return difference, nil
+	return difference
 }
 
 func stringToBin(hexStr string) (binString string) {
 	for _, c := range hexStr {
-		if s, err := strconv.ParseInt(string(c), 16, 4); err == nil {
+		if s, err := strconv.ParseInt(string(c), 16, 8); err == nil {
 			binString = fmt.Sprintf("%s%04s", binString, strconv.FormatInt(s, 2))
 		}
 	}
@@ -131,7 +169,7 @@ func handleScreenshotChooseResponse(bs []byte) {
 		return
 	}
 	chooseTime := int(time.Now().Unix())
-	if chooseTime < questionHash.Data.CurTime || chooseTime-questionHash.Data.CurTime > 10 {
+	if chooseTime < questionHash.Data.CurTime || chooseTime-questionHash.Data.CurTime > 15 {
 		log.Println("error getting question: questionHash expired")
 		return
 	}
@@ -139,26 +177,36 @@ func handleScreenshotChooseResponse(bs []byte) {
 	chooseResp := &ChooseResp{}
 	json.Unmarshal(bs, chooseResp)
 
-	//If the question fetched by MITM, save it; elif fetched by OCR(no roomID or Num), don't save
-	questionHash.CalData.TrueAnswer = questionHash.Data.Options[chooseResp.Data.Answer-1]
+	questionHash.HashData.TrueAnswer = questionHash.HashData.Options[chooseResp.Data.Answer-1]
 	if chooseResp.Data.Yes {
-		questionHash.CalData.TrueAnswer = questionHash.Data.Options[chooseResp.Data.Option-1]
+		questionHash.HashData.TrueAnswer = questionHash.HashData.Options[chooseResp.Data.Option-1]
 	}
-	log.Printf("[SaveHash]  %s -> %s\n\n", questionHash.Data.Quiz, questionHash.CalData.TrueAnswer)
-	StoreHashQuestion(questionHash)
+	log.Printf("[SaveHash] %s ", questionHash.HashData.Quiz)
+	go StoreHashQuestion(questionHash)
+
+	if questionHash.Data.Quiz != "" && len(questionHash.Data.Options) == 4 {
+		if chooseResp.Data.Yes {
+			questionHash.CalData.TrueAnswer = questionHash.Data.Options[chooseResp.Data.Option-1]
+		} else {
+			questionHash.CalData.TrueAnswer = questionHash.Data.Options[chooseResp.Data.Answer-1]
+		}
+		log.Printf("[SaveQuiz] %s-> %s\n\n", questionHash.Data.Quiz, questionHash.CalData.TrueAnswer)
+		go StoreQuestion(questionHash)
+	} else {
+		log.Println("[NoQuizSaved] - incomplete data\n")
+	}
 }
 
 func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, isImgQuiz bool) {
 	// log.Println("Hashing quiz and options from screenshot ...")
-	// tx1 := time.Now()
 
 	cfg := device.GetConfig()
-	screenshot := device.NewScreenshot(cfg)
-	png, err := screenshot.GetImage()
+	png, err := device.NewScreenshot(cfg).GetImage()
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
+	// tx1 := time.Now()
 
 	//TODO: test the png image quiz or not
 	sampleHash := ""
@@ -174,7 +222,7 @@ func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string
 		log.Println("deal with image quiz")
 		quiz, opt1, opt2, opt3, opt4, sampleHash, err = device.GetImageHash(png, cfg.APP+"_img")
 	}
-	fmt.Printf("%v\n%v\n%v\n%v\n%v\n%v\n", quiz, opt1, opt2, opt3, opt4, sampleHash)
+	// fmt.Printf("%v\n%v\n%v\n%v\n%v\n%v\n", quiz, opt1, opt2, opt3, opt4, sampleHash)
 	// log.Printf("Image get+hash time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	return
 }

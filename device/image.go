@@ -21,18 +21,26 @@ func GetImageHash(png image.Image, cfgAPP string) (quiz string, opt1 string, opt
 		return "", "", "", "", "", "", fmt.Errorf("截图失败，%v", err)
 	}
 	const hashLenH = 8
-	const hashLen = 12
+	const hashLen = 16
 	var question, answer1, answer2, answer3, answer4, sampleBytes []byte
 	var wg sync.WaitGroup
-	wg.Add(6)
+	wg.Add(7)
 	go func() {
 		defer wg.Done()
-		question, _ = imagehash.DhashHorizontal(questionImg, hashLenH)
+		question, _ = imagehash.Dhash(questionImg, hashLenH)
 		err = savePNG(QuestionImage, questionImg)
 		if err != nil {
 			log.Errorf("保存question截图失败，%v", err)
 		}
 		// log.Debugf("保存question截图成功")
+	}()
+	go func() {
+		defer wg.Done()
+		// err = savePNG(AnswerImage, answerImg)
+		if err != nil {
+			log.Errorf("保存answerImg截图失败，%v", err)
+		}
+		// log.Debugf("保存answerImg截图成功")
 	}()
 	go func() {
 		defer wg.Done()
@@ -73,7 +81,7 @@ func GetImageHash(png image.Image, cfgAPP string) (quiz string, opt1 string, opt
 	go func() {
 		defer wg.Done()
 		sampleBytes, _ = imagehash.DhashHorizontal(sampleImg, hashLenH)
-		err = savePNG(SampleImage, sampleImg)
+		// err = savePNG(SampleImage, sampleImg)
 		if err != nil {
 			log.Errorf("保存answer4截图失败，%v", err)
 		}

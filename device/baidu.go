@@ -58,7 +58,7 @@ func (baidu *Baidu) GetText(imgPath string) (string, error) {
 
 	postData := url.Values{}
 	postData.Add("image", base64Data)
-	body, err := PostForm(uri, postData, 6)
+	body, err := PostForm(uri, postData, 4)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +112,7 @@ func GetCache() *cache.Cache {
 	if c != nil {
 		return c
 	}
-	c = cache.New(5*time.Minute, 10*time.Minute)
+	c = cache.New(30*time.Minute, 30*time.Minute)
 	return c
 }
 

@@ -18,8 +18,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 	// tx1 := time.Now()
 
 	cfg := device.GetConfig()
-	// OCR := device.NewBaidu(cfg)
-	OCR := device.NewTesseract()
+	OCR := device.NewOcr(cfg)
 
 	imgQuiz := make(chan string, 1)
 	imgOptions1 := make(chan string, 1)
@@ -129,6 +128,7 @@ func getQuizFromOCR() (quiz string, options []string) {
 				imgOptions <- device.AnswerImage
 				return
 			}
+			return
 			// log.Printf("Image get+save time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 		}
 	}()
