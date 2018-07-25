@@ -80,7 +80,7 @@ func GetImageHash(png image.Image, cfgAPP string) (quiz string, opt1 string, opt
 	}()
 	go func() {
 		defer wg.Done()
-		sampleBytes, _ = imagehash.DhashHorizontal(sampleImg, hashLenH)
+		sampleBytes, _ = imagehash.DhashHorizontal(sampleImg, 8)
 		// err = savePNG(SampleImage, sampleImg)
 		if err != nil {
 			log.Errorf("保存answer4截图失败，%v", err)

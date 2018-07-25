@@ -35,6 +35,7 @@ func (tesseract *Tesseract) GetText(imgPath string) (string, error) {
 	text = strings.Replace(text, "{氏", "低", -1)
 	text = strings.Replace(text, "带‖", "制", -1)
 	text = strings.Replace(text, "i寺", "诗", -1)
+	text = strings.Replace(text, "才匕", "北", -1)
 	text = strings.Replace(text, "届于", "属于", -1)
 
 	// log.Printf("tesseract time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)

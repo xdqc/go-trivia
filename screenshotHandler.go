@@ -69,7 +69,7 @@ func handleScreenshotQuestionResp() {
 
 				defer f.Close()
 
-				if _, err = f.WriteString(time.Now().Format(time.RFC3339) + "\t" + quiz + "\n\t" + answer + "\n\t" + questionHash.CalData.Answer + "\n\n"); err != nil {
+				if _, err = f.WriteString(time.Now().Format(time.RFC3339) + "\t" + quiz + "\n\t" + answer + "\n"); err != nil {
 					panic(err)
 				}
 				for _, opt := range questionHash.HashData.Options {
@@ -77,7 +77,7 @@ func handleScreenshotQuestionResp() {
 						panic(err)
 					}
 				}
-				if _, err = f.WriteString("\n\n"); err != nil {
+				if _, err = f.WriteString("\n"); err != nil {
 					panic(err)
 				}
 			}()
