@@ -17,7 +17,7 @@ var questionHash *Question
 
 func handleScreenshotQuestionResp() {
 	questionHash = &Question{}
-	time.Sleep(time.Millisecond * time.Duration(4100))
+	time.Sleep(time.Millisecond * time.Duration(4000))
 	quiz, opt1, opt2, opt3, opt4, isImgQuiz := getHashFromScreenshot()
 	questionHash.HashData.Quiz = quiz
 	questionHash.HashData.Options = append(questionHash.HashData.Options, opt1, opt2, opt3, opt4)
@@ -86,6 +86,7 @@ func handleScreenshotQuestionResp() {
 
 	// log.Printf("hash process time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	if ansPos == 0 {
+		//if cannot find quiz in hashed quiz-answer screenshot, use OCR to find answer
 		questionHash.Data.Quiz, questionHash.Data.Options = getQuizFromOCR()
 		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, "?", "？", -1)
 		questionHash.Data.Quiz = strings.Replace(questionHash.Data.Quiz, ",", "，", -1)
@@ -112,6 +113,7 @@ func handleScreenshotQuestionResp() {
 		}
 
 		if ansPos == 0 {
+			//if cannot find answer in memory db, find answer via google
 			answerItem, ansPos = getAnswerFromAPI(odds, questionHash.Data.Quiz, questionHash.Data.Options, answer)
 		}
 		questionHash.CalData.TrueAnswer = answerItem
@@ -198,7 +200,7 @@ func handleScreenshotChooseResponse(bs []byte) {
 }
 
 func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string, opt4 string, isImgQuiz bool) {
-	// log.Println("Hashing quiz and options from screenshot ...")
+	log.Println("Hashing quiz and options from screenshot ...")
 
 	cfg := device.GetConfig()
 	png, err := device.NewScreenshot(cfg).GetImage()
@@ -206,7 +208,6 @@ func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string
 		log.Println(err.Error())
 		return
 	}
-	// tx1 := time.Now()
 
 	//TODO: test the png image quiz or not
 	sampleHash := ""
@@ -222,7 +223,7 @@ func getHashFromScreenshot() (quiz string, opt1 string, opt2 string, opt3 string
 		log.Println("deal with image quiz")
 		quiz, opt1, opt2, opt3, opt4, sampleHash, err = device.GetImageHash(png, cfg.APP+"_img")
 	}
-	// fmt.Printf("%v\n%v\n%v\n%v\n%v\n%v\n", quiz, opt1, opt2, opt3, opt4, sampleHash)
-	// log.Printf("Image get+hash time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+
+	fmt.Printf("%v\n%v\n%v\n%v\n%v\n%v\n", quiz, opt1, opt2, opt3, opt4, sampleHash)
 	return
 }

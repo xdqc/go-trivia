@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"log"
 	"os/exec"
+	"time"
 )
 
 //Android android
@@ -37,16 +39,16 @@ func (android *Android) GetImage() (img image.Image, err error) {
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
-	// tx1 := time.Now()
+	tx1 := time.Now()
 
 	if err = cmd.Run(); err != nil {
 		fmt.Println(err.Error())
 		return nil, err
 	}
-	// log.Printf("Image get time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+	log.Printf("Image get time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 
 	x := bytes.Replace(out.Bytes(), []byte("\r\n"), []byte("\n"), -1)
 	img, err = png.Decode(bytes.NewReader(x))
-	// log.Printf("Image decode time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
+	log.Printf("Image decode time: %d ms\n", time.Now().Sub(tx1).Nanoseconds()/1e6)
 	return
 }

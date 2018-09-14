@@ -379,12 +379,10 @@ func clickProcess(ansPos int, question *Question) {
 
 		// inputADBText()
 
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * time.Duration(500+rand.Intn(3000)))
 		go swipeAction() // go back to game selection menu
-		time.Sleep(time.Millisecond * 800)
+		time.Sleep(time.Millisecond * 2000)
 		go clickAction(centerX, nextMatchY) // start new game
-		time.Sleep(time.Millisecond * 1000)
-		go clickAction(centerX, nextMatchY)
 	}
 }
 

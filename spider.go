@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -154,8 +153,8 @@ func (s *spider) Init() {
 				question.Data.Quiz = "game over"
 				questionInfo, _ = json.Marshal(question)
 
-				re := regexp.MustCompile("\"gold\":\\d{8,},") // account that has 8+ digits gold
-				if Autoclick == 1 && re.Match(bs) {
+				// re := regexp.MustCompile("\"gold\":\\d{8,},") // account that has 8+ digits gold
+				if Autoclick == 1 { //&& re.Match(bs)
 					go clickProcess(-1, question)
 				} // swipe back, start new game
 			}

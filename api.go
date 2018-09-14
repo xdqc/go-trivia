@@ -144,7 +144,7 @@ func preProcessOptions(options []string) [][]rune {
 	return newOptions
 }
 
-//GetFromAPI searh the quiz via popular search engins
+//GetFromAPI searh the quiz via popular search engins, evaluate each option giving a score indicating the highest possible answer
 func GetFromAPI(quiz string, options []string) (res map[string]int) {
 	N_opt = len(options)
 
@@ -299,6 +299,7 @@ func CountMatches(quiz string, options []string, trainingStr string, testingStr 
 	// }
 }
 
+//generate probability matrix of [quiz-keywords] x [options], by using kernal functions applying to sliding window, then compute vector length via keywords-weights
 func trainKeyWords(text []rune, quiz string, options []string, res map[string]int) ([]int, int) {
 	keywords, quoted := preProcessQuiz(quiz, false)
 	// Evaluate the match points of each keywords for each option
@@ -740,6 +741,7 @@ func searchBaiduBaike(options []string, id int, c chan string) {
 	c <- text
 }
 
+//start a browser to show the real search result for your reference
 func startBrowser(keywords []string) {
 	var args []string
 	switch runtime.GOOS {
