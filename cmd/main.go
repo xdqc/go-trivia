@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	solver "github.com/xdqc/letterpress-solver"
+	solver "github.com/xdqc/go-quizzer"
 )
 
 var (

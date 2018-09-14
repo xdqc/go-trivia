@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xdqc/letterpress-solver/device"
+	"github.com/xdqc/go-quizzer/device"
 )
 
 var questionHash *Question

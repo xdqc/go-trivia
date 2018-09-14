@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	vision "cloud.google.com/go/vision/apiv1"
-	"github.com/xdqc/letterpress-solver/device"
+	"github.com/xdqc/go-quizzer/device"
 )
 
 func getQuizFromOCR() (quiz string, options []string) {

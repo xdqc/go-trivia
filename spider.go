@@ -19,7 +19,7 @@ import (
 	filter "github.com/antlinker/go-dirtyfilter"
 	"github.com/antlinker/go-dirtyfilter/store"
 	"github.com/coreos/goproxy"
-	"github.com/xdqc/letterpress-solver/device"
+	"github.com/xdqc/go-quizzer/device"
 	"github.com/yanyiwu/gojieba"
 )
 
@@ -42,7 +42,6 @@ func Run(port string, autoclick int, hashquiz int) {
 }
 
 func Close() {
-	db.Close()
 	memoryDb.Close()
 	JB.Free()
 }
@@ -127,21 +126,7 @@ func (s *spider) Init() {
 		}
 		// log.Println(ctx.Req.URL.Host + ctx.Req.URL.Path)
 
-		if ctx.Req.URL.Path == "/api/1.0/lplist_matches.json" || ctx.Req.URL.Path == "/api/1.0/lpcreate_match.json" || ctx.Req.URL.Path == "/api/1.0/lpmatch_detail.json" {
-			//send letterpress match data to webserver
-			//
-			bs, _ := ioutil.ReadAll(resp.Body)
-			println(string(bs))
-			go setMatch(bs)
-			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Path == "/api/1.0/lp_check_word.json" {
-			bs, _ := ioutil.ReadAll(resp.Body)
-			if strings.Contains(string(bs), "\"found\":false") {
-				inValidWord := strings.Split(ctx.Req.URL.RawQuery, "=")[2]
-				go deleteWordDb(inValidWord)
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewReader(bs))
-		} else if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" {
+		if ctx.Req.URL.Path == "/question/bat/findQuiz" || ctx.Req.URL.Path == "/question/dailyChallenge/findQuiz" {
 			bs, _ := ioutil.ReadAll(resp.Body)
 			//bsNew, ansPos := handleQuestionResp(bs)
 			// println("\nquiz\n" + string(bs))

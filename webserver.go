@@ -32,13 +32,6 @@ type Words []struct {
 func RunWeb(port string) {
 
 	r := mux.NewRouter()
-	// 1. LP solver
-	r.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(matchInfo)
-	}).Methods("GET")
-	r.HandleFunc("/words", findWords).Methods("GET")
-	r.HandleFunc("/word", deleteWord).Methods("DELETE")
 
 	// 2. Brain solver
 	r.HandleFunc("/answer", func(w http.ResponseWriter, r *http.Request) {
@@ -126,26 +119,6 @@ func findWords(w http.ResponseWriter, r *http.Request) {
 			hiFreq[c] = 1
 		}
 	}
-
-	res := selectWordsDb(loFreq, hiFreq)
-	ws, _ := json.Marshal(res)
-	log.Println("Fourd words: ", len(res))
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(ws)
-}
-
-func deleteWord(w http.ResponseWriter, r *http.Request) {
-	word, _ := r.URL.Query()["delete"]
-	log.Println(word[0])
-	deleteWordDb(word[0])
-}
-
-func setMatch(jsonBytes []byte) {
-	matchInfo = jsonBytes
-}
-
-func setIdiom(jsonBytes []byte) {
-	idiomInfo = jsonBytes
 }
 
 func fetchAnswerImage(ans string, quiz []string, quoted string, imgTimeChan chan int64) {
