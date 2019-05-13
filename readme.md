@@ -10,10 +10,10 @@
 
     a. **OCR**: [tesseract](https://github.com/otiai10/gosseract), [Google Vision API](https://cloud.google.com/vision/docs/ocr)
     
-    b. Image **hashing**: [dHash, aHash](github.com/devedge/imagehash)
+    b. Image **hashing**: [dHash, aHash](https://github.com/devedge/imagehash)
 
-4. **Machine Learing** for matching the closest option to quiz body, given google/wiki search result as reference.
-    
+4. **Machine Learing** for matching the closest option to quiz body, given google/wiki searching results as reference.
+
     a. Sliding window sketch methodology
 
     b. SVM and kernal tricks
@@ -25,4 +25,4 @@
     
     d. Covariance matrix
 
-     All of this part were implemented in ```Golang``` from scratch, which gave me significantly higher quizzing accuracy than the naive frequency-counting approach used by most relevant projects. 
+     All of these were implemented in ```Golang``` from scratch, which gave me significantly higher quizzing accuracy than the naive frequency-counting approach used by most relevant projects. 
